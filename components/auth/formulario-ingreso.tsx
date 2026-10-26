@@ -10,7 +10,6 @@ import { Campo } from "./campo";
 
 const AVISOS: Record<string, string> = {
   cuenta: "Esta sección es solo para empresas. Ingresa con tu cuenta de empresa.",
-  enlace: "El enlace de confirmación no es válido o ya venció. Inicia sesión y te enviaremos uno nuevo.",
   sesion: "Tu sesión terminó. Vuelve a ingresar.",
 };
 

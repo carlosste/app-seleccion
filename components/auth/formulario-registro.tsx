@@ -104,13 +104,11 @@ export function FormularioRegistro() {
           ✓
         </div>
         <h2 className="centrado" style={{ fontSize: 20 }}>
-          Revisa tu correo
+          Cuenta creada
         </h2>
         <p className="centrado texto-gris" style={{ lineHeight: 1.5 }}>
-          Enviamos un enlace de confirmación a <b>{estado.correo}</b>. Ábrelo para activar la cuenta y entrar al
-          panel de tu empresa.
+          Tu cuenta para <b>{estado.correo}</b> ya está lista. Inicia sesión para entrar al panel de tu empresa.
         </p>
-        {estado.aviso && <div className="nota nota-na">{estado.aviso}</div>}
         <Link href="/empresa/ingreso" className="btn btn-sec">
           Ir a iniciar sesión
         </Link>
@@ -159,7 +157,7 @@ export function FormularioRegistro() {
         <Campo nombre="nombreResponsable" etiqueta="Tu nombre" autoComplete="name" maxLength={100}
           error={error("nombreResponsable")} onBlur={alSalir("nombreResponsable")} onChange={alCambiar("nombreResponsable")} />
         <Campo nombre="correo" etiqueta="Correo corporativo" tipo="email" autoComplete="email" inputMode="email"
-          placeholder="nombre@empresa.com" ayuda="Te enviaremos un enlace para confirmarlo."
+          placeholder="nombre@empresa.com"
           error={error("correo")} onBlur={alSalir("correo")} onChange={alCambiar("correo")} />
         <Campo nombre="clave" etiqueta="Contraseña" tipo="password" autoComplete="new-password" maxLength={72}
           error={error("clave")} onBlur={alSalir("clave")} onChange={alCambiar("clave")} />

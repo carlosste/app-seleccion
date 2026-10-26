@@ -10,7 +10,6 @@ export const REGLAS = {
   ingresoCorreo: { maximo: 5, ventana: 15 * 60, bloqueo: 15 * 60 },
   ingresoIp: { maximo: 20, ventana: 15 * 60, bloqueo: 15 * 60 },
   registroIp: { maximo: 5, ventana: 60 * 60, bloqueo: 60 * 60 },
-  reenvioCorreo: { maximo: 3, ventana: 60 * 60, bloqueo: 60 * 60 },
 } as const;
 
 type Regla = (typeof REGLAS)[keyof typeof REGLAS];

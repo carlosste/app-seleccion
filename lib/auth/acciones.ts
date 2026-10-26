@@ -4,8 +4,6 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
-import { urlSitio } from "@/lib/supabase/config";
-import { enviarEnlaceConfirmacion } from "./correo";
 import type { EstadoIngreso, EstadoRegistro } from "./estados";
 import {
   REGLAS,
@@ -52,14 +50,6 @@ async function siguienteDesdeReferer() {
   }
 }
 
-// Enlace de un solo uso que confirma el correo e inicia la sesión.
-async function enviarConfirmacion(correo: string, nombreEmpresa?: string) {
-  const { data, error } = await crearClienteAdmin().auth.admin.generateLink({ type: "magiclink", email: correo });
-  if (error) throw error;
-  const enlace = `${urlSitio()}/auth/confirmar?token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=magiclink`;
-  await enviarEnlaceConfirmacion(correo, enlace, nombreEmpresa);
-}
-
 // ---------------------------------------------------------------------------
 // Registro de empresa
 // ---------------------------------------------------------------------------
@@ -99,10 +89,11 @@ export async function registrarEmpresa(_previo: EstadoRegistro, fd: FormData): P
 
   // 3. Crear el usuario en Supabase Auth: guarda la contraseña con bcrypt.
   //    createUser nunca modifica una cuenta existente: si el correo ya está, falla.
+  //    Sin confirmación por correo: la cuenta queda activa al crearse.
   const { data: creado, error: errorAuth } = await admin.auth.admin.createUser({
     email: correo,
     password: c.clave,
-    email_confirm: false,
+    email_confirm: true,
     user_metadata: { nombre: c.nombreResponsable.trim() },
   });
 
@@ -136,18 +127,6 @@ export async function registrarEmpresa(_previo: EstadoRegistro, fd: FormData): P
     return { estado: "error", mensaje: "No pudimos crear la cuenta. Intenta de nuevo en unos minutos." };
   }
 
-  // 5. Enlace de confirmación del correo corporativo.
-  try {
-    await enviarConfirmacion(correo, c.nombreEmpresa.trim());
-  } catch (e) {
-    console.error("[registro] envío de confirmación", e);
-    return {
-      estado: "ok",
-      correo,
-      aviso: "La cuenta quedó creada, pero no pudimos enviar el correo. Inicia sesión y te enviaremos un enlace nuevo.",
-    };
-  }
-
   return { estado: "ok", correo };
 }
 
@@ -173,18 +152,9 @@ export async function iniciarSesion(_previo: EstadoIngreso, fd: FormData): Promi
   const { data, error } = await supabase.auth.signInWithPassword({ email: correo, password: c.clave });
 
   if (error || !data.user) {
-    // Supabase solo responde "correo sin confirmar" cuando la contraseña es correcta.
+    // Cuentas creadas antes de quitar la confirmación por correo: Supabase exige confirmarlas.
     if (error?.code === "email_not_confirmed") {
-      const claveReenvio = clave("reenvio", correo);
-      if (!(await consultarBloqueo([claveReenvio]))) {
-        await registrarIntento(claveReenvio, REGLAS.reenvioCorreo);
-        try {
-          await enviarConfirmacion(correo);
-        } catch (e) {
-          console.error("[ingreso] reenvío de confirmación", e);
-        }
-      }
-      return { estado: "aviso", mensaje: "Tu correo aún no está confirmado. Te enviamos un enlace nuevo: ábrelo para activar la cuenta." };
+      return { estado: "aviso", mensaje: "Tu cuenta aún no está activada. Pide que la activen para poder entrar." };
     }
     if (error?.code === "over_request_rate_limit") {
       return { estado: "error", mensaje: "Demasiados intentos. Espera unos minutos y vuelve a intentar." };
@@ -207,26 +177,6 @@ export async function iniciarSesion(_previo: EstadoIngreso, fd: FormData): Promi
 
   await limpiarIntentos(claveCorreo);
   redirect(destinoSeguro(texto(fd, "siguiente") || (await siguienteDesdeReferer())));
-}
-
-// ---------------------------------------------------------------------------
-// Confirmar correo (botón de /auth/confirmar)
-// ---------------------------------------------------------------------------
-// Se confirma con un POST y no al abrir el enlace: los filtros de correo
-// corporativo (por ejemplo Safe Links) abren los enlaces solos y gastarían el token.
-export async function confirmarCorreo(fd: FormData) {
-  const tokenHash = texto(fd, "token_hash");
-  if (!tokenHash) redirect("/empresa/ingreso?error=enlace");
-
-  const supabase = await crearClienteServidor();
-  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "magiclink" });
-  const tipo = (data?.user?.app_metadata as { tipo?: string } | undefined)?.tipo;
-
-  if (error || tipo !== "empresa") {
-    if (!error) await supabase.auth.signOut({ scope: "local" });
-    redirect("/empresa/ingreso?error=enlace");
-  }
-  redirect("/gestion");
 }
 
 // ---------------------------------------------------------------------------

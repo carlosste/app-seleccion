@@ -4,7 +4,7 @@ import type { CamposIngreso, CamposRegistro, Errores } from "./validacion";
 export type EstadoRegistro =
   | { estado: "inicial" }
   | { estado: "error"; mensaje?: string; errores?: Errores<CamposRegistro> }
-  | { estado: "ok"; correo: string; aviso?: string };
+  | { estado: "ok"; correo: string };
 
 export type EstadoIngreso =
   | { estado: "inicial" }
