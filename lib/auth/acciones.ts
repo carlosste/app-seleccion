@@ -56,7 +56,7 @@ async function siguienteDesdeReferer() {
 async function enviarConfirmacion(correo: string, nombreEmpresa?: string) {
   const { data, error } = await crearClienteAdmin().auth.admin.generateLink({ type: "magiclink", email: correo });
   if (error) throw error;
-  const enlace = `${urlSitio()}/auth/confirmar?token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=email`;
+  const enlace = `${urlSitio()}/auth/confirmar?token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=magiclink`;
   await enviarEnlaceConfirmacion(correo, enlace, nombreEmpresa);
 }
 
@@ -219,7 +219,7 @@ export async function confirmarCorreo(fd: FormData) {
   if (!tokenHash) redirect("/empresa/ingreso?error=enlace");
 
   const supabase = await crearClienteServidor();
-  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "email" });
+  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "magiclink" });
   const tipo = (data?.user?.app_metadata as { tipo?: string } | undefined)?.tipo;
 
   if (error || tipo !== "empresa") {

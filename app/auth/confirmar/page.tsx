@@ -21,7 +21,7 @@ async function Formulario({ searchParams }: Pick<PageProps<"/auth/confirmar">, "
   const params = await searchParams;
   const token = typeof params.token_hash === "string" ? params.token_hash : "";
 
-  if (!token || params.type !== "email") {
+  if (!token || params.type !== "magiclink") {
     return (
       <div className="nota nota-na" role="alert">
         El enlace no es válido. Inicia sesión y te enviaremos uno nuevo.
