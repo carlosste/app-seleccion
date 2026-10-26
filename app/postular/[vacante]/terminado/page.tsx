@@ -1,12 +1,10 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { obtenerVacante } from "@/lib/datos-prueba";
+import { vacantePorToken } from "@/lib/vacante-publica";
 
 // 4 · Cuestionario terminado. No muestra las etapas internas.
 export default async function Terminado({ params }: { params: Promise<{ vacante: string }> }) {
-  const { vacante: id } = await params;
-  const vacante = obtenerVacante(id);
-  if (!vacante) notFound();
+  const { vacante: token } = await params;
+  await vacantePorToken(token);
 
   return (
     <div className="contenido" style={{ padding: "64px 24px 32px", gap: 28 }}>
@@ -51,7 +49,7 @@ export default async function Terminado({ params }: { params: Promise<{ vacante:
       </div>
 
       <div style={{ flex: 1 }} />
-      <Link href={`/postular/${vacante.id}`} className="btn btn-sec">
+      <Link href={`/postular/${token}`} className="btn btn-sec">
         Salir
       </Link>
     </div>

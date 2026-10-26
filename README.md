@@ -11,6 +11,15 @@ Proyecto académico (Ingeniería de Sistemas, UCC Cali), pensado para escalar de
 - La grabación de voz es simulada (cronómetro, sin audio real).
 - Botones con acción real: navegación entre pantallas y "Copiar link". El resto de botones (guardar, decidir, agregar) son visuales.
 
+## Acceso de empresas
+
+- Registro: `/empresa/registro` · Ingreso: `/empresa/ingreso` · Panel: `/gestion` (protegido).
+- Configura `.env.local` a partir de `.env.example` y aplica la migración
+  `supabase/migrations/20261026130000_registro_empresas.sql`.
+- En desarrollo, sin `RESEND_API_KEY`, el enlace de confirmación se imprime en la consola del servidor.
+- En Supabase → Authentication: deja activado "Confirm email" y, si quieres sesiones más cortas, baja el
+  "JWT expiry" (por defecto 3600 s).
+
 ## Stack
 
 - Next.js 16 (App Router) + TypeScript

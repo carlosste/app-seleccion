@@ -9,7 +9,7 @@ Proyecto académico (Ingeniería de Sistemas, UCC Cali), pensado para escalar.
 - Next.js (App Router) + React + TypeScript + Tailwind
 - Supabase: Postgres, Auth, Storage (CVs y audios en buckets privados), RLS
 - Gemini API (modelo: gemini-3.1-flash-lite), solo desde el servidor
-- Resend para correos (códigos de acceso)
+- Resend: en pausa hasta tener dominio propio (ver Decisiones de datos)
 - GitHub + Vercel (vistas previas por rama, producción en main)
 
 ## Reglas éticas (obligatorias, no negociables)
@@ -45,8 +45,8 @@ Diseño: azul #2457C5, fondo #F6F7F9, fuente Inter. Interfaz muy sencilla.
 - Vacantes: vacantes, vacante_etapas, requisitos_oferta (público),
   requisitos_minimos (solo personal de la empresa), plantillas_rubrica,
   plantilla_criterios, rubricas, criterios, preguntas.
-- Postulación: postulantes, postulaciones, consentimientos, accesos_codigo,
-  respuestas, entrevistas.
+- Postulación: postulantes, postulaciones, consentimientos, respuestas,
+  entrevistas.
 - IA y decisiones: evaluaciones_ia, llamadas_ia, decisiones.
 - Auditoría: registro_actividad.
 - Vistas: v_postulaciones_staff (oculta nombre, correo, teléfono y CV hasta
@@ -81,10 +81,14 @@ Nunca subir .env.local al repositorio.
   la fecha de nacimiento.
 - Un postulante puede aplicar a varias vacantes de la misma empresa: una
   postulación por vacante.
-- Código de acceso: lo envía la app con Resend. Se guarda solo el hash en
-  `accesos_codigo` (`codigo_hash`, `enviado_at`, `usado_at`). El código sirve
-  mientras la vacante esté abierta (`vacantes.estado`); al cerrarla, deja de
-  funcionar.
+- Cuenta y código: Supabase Auth maneja el correo de confirmación y el código
+  de 6 dígitos. Resend queda en pausa hasta tener dominio propio. Se quitó
+  `accesos_codigo`.
+- Una cuenta por persona: el documento (país + número) es único. El teléfono
+  no es único. Solo el documento se usa para evitar cuentas repetidas.
+- Postularse a otra vacante: la persona entra con su cuenta existente y se crea
+  una postulación nueva. No hay una cuenta por vacante. Que la vacante esté
+  abierta se revisa al postularse, no con el código.
 - Límites de ingreso: 5 intentos fallidos de código o contraseña bloquean el
   ingreso 15 minutos. Máximo 3 códigos enviados por hora por postulante.
 - Requisitos: `requisitos_oferta` y `requisitos_minimos` van separados porque
@@ -93,7 +97,8 @@ Nunca subir .env.local al repositorio.
 ## Estado de la base de datos (2026-10-26)
 - Proyecto Supabase `app-seleccion` (id `wknyyiejvafdcwkdpoqr`, us-east-1,
   plan gratis). Migraciones en `supabase\migrations\`: `esquema_inicial` y
-  `ajustes_seguridad`. Aplicadas, todas las tablas con RLS activo.
+  `ajustes_seguridad` y `documento_unico`. Aplicadas, todas las tablas con RLS
+  activo.
 - Advisors de seguridad: `accesos_codigo` sin políticas es intencional (solo
   el servidor con la service role). Las funciones auxiliares de RLS son
   `SECURITY DEFINER` y `authenticated` debe poder ejecutarlas para que las

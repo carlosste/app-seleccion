@@ -1,27 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Barra } from "@/components/barra";
-import {
-  candidatoDetalle,
-  evaluacionEjemplo,
-  hojaVidaEjemplo,
-  obtenerVacante,
-  respuestasEjemplo,
-} from "@/lib/datos-prueba";
+import { evaluacionEjemplo, hojaVidaEjemplo, respuestasEjemplo } from "@/lib/datos-prueba";
+import { obtenerPostulante } from "@/lib/gestion/datos";
 
 // E · Detalle del postulante: respuestas transcritas, CV sin datos personales y evaluación con evidencia.
-export function generateStaticParams() {
-  return [{ postulante: candidatoDetalle }];
-}
-
-export default async function DetallePostulante({
-  params,
-}: {
-  params: Promise<{ vacante: string; postulante: string }>;
-}) {
-  const { vacante: idVacante, postulante } = await params;
-  const vacante = obtenerVacante(idVacante);
-  if (!vacante || postulante !== candidatoDetalle) notFound();
+// La postulación se busca con la sesión de la empresa: si es de otra empresa, 404.
+export default async function DetallePostulante({ params }: PageProps<"/gestion/[vacante]/postulantes/[postulante]">) {
+  const { vacante: idVacante, postulante: numero } = await params;
+  const datos = await obtenerPostulante(idVacante, numero);
+  if (!datos) notFound();
+  const { vacante } = datos;
+  const postulante = datos.numero;
 
   return (
     <>
@@ -30,10 +20,24 @@ export default async function DetallePostulante({
           <Link href={`/gestion/${vacante.id}/postulantes`} className="volver">
             ← {vacante.cargo} · Postulantes
           </Link>
-          <h1 className="titulo-pagina">Candidato #{postulante}</h1>
+          <h1 className="titulo-pagina">{datos.revelado && datos.nombre ? datos.nombre : `Candidato #${postulante}`}</h1>
         </div>
-        <span className="chip chip-grande">Datos personales ocultos hasta la entrevista</span>
+        <div className="flex">
+          {!datos.revelado && <span className="chip chip-grande">Datos personales ocultos hasta la entrevista</span>}
+          {datos.revelado && datos.tieneCv ? (
+            <a href={`/api/gestion/cv/${datos.id}`} target="_blank" rel="noopener noreferrer" className="btn btn-sec btn-chico">
+              Ver CV original
+            </a>
+          ) : (
+            <button type="button" className="btn btn-sec btn-chico" disabled title="El CV original se habilita al revelar el nombre en la entrevista final.">
+              Ver CV original
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Fase 3 (Gemini): reemplazar por respuestas y evaluaciones_ia reales de esta postulación. */}
+      <div className="nota nota-na">Respuestas y evaluación: datos de ejemplo hasta conectar la IA.</div>
 
       <div className="dos">
         <section className="ancho">

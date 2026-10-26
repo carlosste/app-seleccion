@@ -720,3 +720,241 @@ td {
     padding: 20px 16px;
   }
 }
+
+/* ---------- Ingreso y registro de empresas ---------- */
+
+.auth-pantalla {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px;
+  background: var(--fondo);
+}
+
+.auth-tarjeta {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px;
+  gap: 20px;
+}
+
+.auth-tarjeta-ancha {
+  max-width: 640px;
+}
+
+.auth-cabecera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.auth-cabecera h1 {
+  font-size: 24px;
+}
+
+.auth-cabecera p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 0;
+  padding-top: 4px;
+}
+
+.grupo legend {
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gris);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fila-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.inp:focus-visible,
+.btn:focus-visible,
+.ver-clave:focus-visible,
+.check input:focus-visible {
+  outline: 2px solid var(--azul);
+  outline-offset: 2px;
+}
+
+.inp-error {
+  border-color: #b42318;
+  background: #fffafa;
+}
+
+.campo-error {
+  font-size: 12px;
+  color: #b42318;
+  line-height: 1.4;
+}
+
+.campo-ayuda {
+  font-size: 12px;
+  color: var(--gris);
+  line-height: 1.4;
+}
+
+.inp-clave {
+  position: relative;
+}
+
+.inp-clave .inp {
+  padding-right: 76px;
+}
+
+.ver-clave {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--azul);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--tx2);
+  cursor: pointer;
+}
+
+.check input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--azul);
+}
+
+.nota-error {
+  background: #fdecea;
+  color: #8a1c12;
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.girando {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .girando {
+    animation-duration: 2.4s;
+  }
+}
+
+.medidor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: -6px;
+}
+
+.medidor-barras {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.medidor-barras span {
+  height: 4px;
+  border-radius: 99px;
+  background: var(--barra);
+}
+
+.medidor-barras[data-nivel="1"] span.on {
+  background: #b42318;
+}
+
+.medidor-barras[data-nivel="2"] span.on {
+  background: #c46a0a;
+}
+
+.medidor-barras[data-nivel="3"] span.on,
+.medidor-barras[data-nivel="4"] span.on {
+  background: var(--verde);
+}
+
+.icono-ok {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--verde-cl);
+  color: var(--verde);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.nav-usuario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--gris);
+}
+
+.btn-enlace {
+  border: 0;
+  background: none;
+  color: var(--azul);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vacio {
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+}
