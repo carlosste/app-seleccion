@@ -17,9 +17,9 @@ export default async function Vacantes() {
             Cada vacante tiene su link de postulación, sus requisitos y su rúbrica.
           </span>
         </div>
-        <button type="button" className="btn btn-chico" style={{ height: 44 }}>
+        <Link href="/gestion/nueva" className="btn btn-chico" style={{ height: 44 }}>
           + Nueva vacante
-        </button>
+        </Link>
       </div>
 
       {vacantes.length === 0 ? (
