@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { agregarRequisito, guardarRequisito, quitarRequisito } from "@/lib/gestion/acciones-configuracion";
 import type { RequisitoVacante } from "@/lib/gestion/configuracion";
-import type { Sugerencia } from "@/lib/gestion/sugerencias";
 
 type Datos = { oferta: string; minimo: string };
 type Resultado = { ok: boolean; mensaje?: string };
@@ -12,19 +11,10 @@ type Resultado = { ok: boolean; mensaje?: string };
 // Requisitos de la vacante: lo que pide la oferta (público) y el mínimo aceptable
 // (interno). Cada cambio se guarda al salir del campo. El mínimo se ve transparente
 // hasta que se enfoca.
-export function RequisitosEditor({
-  vacanteId,
-  requisitos,
-  tipos,
-}: {
-  vacanteId: string;
-  requisitos: RequisitoVacante[];
-  tipos: Sugerencia[];
-}) {
+export function RequisitosEditor({ vacanteId, requisitos }: { vacanteId: string; requisitos: RequisitoVacante[] }) {
   const router = useRouter();
   const [pendiente, empezar] = useTransition();
   const [aviso, setAviso] = useState<string | null>(null);
-  const [abierto, setAbierto] = useState(false);
 
   function ejecutar(accion: () => Promise<Resultado>) {
     empezar(async () => {
@@ -32,11 +22,6 @@ export function RequisitosEditor({
       setAviso(r.ok ? null : (r.mensaje ?? "No pudimos guardar el cambio."));
       router.refresh();
     });
-  }
-
-  function agregar(datos: Datos) {
-    setAbierto(false);
-    ejecutar(() => agregarRequisito(vacanteId, datos));
   }
 
   return (
@@ -67,7 +52,7 @@ export function RequisitosEditor({
             {requisitos.length === 0 && (
               <tr>
                 <td colSpan={3} className="texto-gris">
-                  Aún no hay requisitos. Agrega el primero abajo.
+                  Esta vacante no tiene requisitos. Agrega el primero abajo.
                 </td>
               </tr>
             )}
@@ -75,35 +60,15 @@ export function RequisitosEditor({
         </table>
       </div>
 
-      <div className="flex" style={{ gap: 10, position: "relative" }}>
-        <button type="button" className="btn btn-punto" disabled={pendiente} onClick={() => setAbierto((v) => !v)} aria-expanded={abierto}>
+      <div className="flex">
+        <button
+          type="button"
+          className="btn btn-punto"
+          disabled={pendiente}
+          onClick={() => ejecutar(() => agregarRequisito(vacanteId, { oferta: "", minimo: "" }))}
+        >
           + Agregar requisito
         </button>
-        {abierto && (
-          <div className="tarjeta" role="menu" style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 260, padding: 8 }}>
-            {tipos.map((t) => (
-              <button
-                key={t.nombre}
-                type="button"
-                role="menuitem"
-                className="btn-enlace"
-                style={{ textAlign: "left", padding: "8px 10px" }}
-                onClick={() => agregar({ oferta: t.oferta, minimo: t.minimo })}
-              >
-                {t.nombre}
-              </button>
-            ))}
-            <button
-              type="button"
-              role="menuitem"
-              className="btn-enlace"
-              style={{ textAlign: "left", padding: "8px 10px" }}
-              onClick={() => agregar({ oferta: "", minimo: "" })}
-            >
-              Personalizado
-            </button>
-          </div>
-        )}
       </div>
       <div className="nota nota-az">
         La IA lee el CV y aplica estos mínimos. Si no logra leer un dato, el CV pasa a &quot;Por revisar&quot; en vez de

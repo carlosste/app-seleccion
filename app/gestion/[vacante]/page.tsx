@@ -1,15 +1,15 @@
 import { EtapasEditor } from "@/components/gestion/etapas-editor";
 import { RequisitosEditor } from "@/components/gestion/requisitos-editor";
-import { listarEtapas, listarRequisitos } from "@/lib/gestion/configuracion";
-import { obtenerVacante } from "@/lib/gestion/datos";
-import { sugerenciasPara } from "@/lib/gestion/sugerencias";
+import { listarEtapas, listarPreguntas, listarRequisitos } from "@/lib/gestion/configuracion";
 
 // B · Requisitos y etapas. Cada requisito tiene valor de la oferta (público) y mínimo (interno).
 export default async function Requisitos({ params }: PageProps<"/gestion/[vacante]">) {
   const { vacante: id } = await params;
-  const vacante = await obtenerVacante(id);
-  if (!vacante) return null;
-  const [requisitos, etapas] = await Promise.all([listarRequisitos(id), listarEtapas(id)]);
+  const [requisitos, etapas, preguntas] = await Promise.all([
+    listarRequisitos(id),
+    listarEtapas(id),
+    listarPreguntas(id),
+  ]);
 
   return (
     <>
@@ -21,7 +21,7 @@ export default async function Requisitos({ params }: PageProps<"/gestion/[vacant
             postulante.
           </span>
         </div>
-        <RequisitosEditor vacanteId={id} requisitos={requisitos} tipos={sugerenciasPara(vacante.cargo)} />
+        <RequisitosEditor vacanteId={id} requisitos={requisitos} />
       </section>
 
       <section className="tarjeta">
@@ -29,7 +29,7 @@ export default async function Requisitos({ params }: PageProps<"/gestion/[vacant
           <h2 style={{ fontSize: 18, marginBottom: 4 }}>Etapas del proceso</h2>
           <span className="texto-gris">La empresa decide cuántas etapas tiene esta vacante, en qué orden y de qué tipo.</span>
         </div>
-        <EtapasEditor vacanteId={id} etapas={etapas} />
+        <EtapasEditor vacanteId={id} etapas={etapas} preguntas={preguntas} />
       </section>
     </>
   );

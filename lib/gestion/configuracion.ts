@@ -6,6 +6,7 @@ import { crearClienteServidor } from "@/lib/supabase/servidor";
 
 export type RequisitoVacante = { id: string; oferta: string; minimo: string };
 export type EtapaVacante = { id: string; tipo: "cv" | "texto" | "voz" | "entrevista"; orden: number; nombre: string | null };
+export type PreguntaVacante = { id: string; etapaId: string; texto: string };
 export type CriterioVacante = { id: string; nombre: string; descripcion: string; peso: number };
 
 export async function listarRequisitos(vacanteId: string): Promise<RequisitoVacante[]> {
@@ -63,4 +64,17 @@ export async function listarCriterios(vacanteId: string): Promise<CriterioVacant
     .returns<{ id: string; nombre: string; descripcion: string | null; peso: number }[]>();
   if (error) throw new Error(`No se pudieron leer los criterios: ${error.message}`);
   return data.map((c) => ({ id: c.id, nombre: c.nombre, descripcion: c.descripcion ?? "", peso: c.peso }));
+}
+
+export async function listarPreguntas(vacanteId: string): Promise<PreguntaVacante[]> {
+  await requerirEmpresa();
+  const supabase = await crearClienteServidor();
+  const { data, error } = await supabase
+    .from("preguntas")
+    .select("id, etapa_id, texto")
+    .eq("vacante_id", vacanteId)
+    .order("orden")
+    .returns<{ id: string; etapa_id: string; texto: string }[]>();
+  if (error) throw new Error(`No se pudieron leer las preguntas: ${error.message}`);
+  return data.map((p) => ({ id: p.id, etapaId: p.etapa_id, texto: p.texto }));
 }

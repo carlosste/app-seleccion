@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { CRITERIOS_POR_DEFECTO } from "./criterios-por-defecto";
+import { REQUISITOS_POR_DEFECTO } from "./requisitos-por-defecto";
 import { type Peso, repartir } from "./repartir";
 
 // Acciones de requisitos, etapas y rúbrica. Cada una comprueba que la vacante sea de
@@ -73,6 +74,30 @@ export async function agregarRequisito(vacanteId: string, datos: DatosRequisito)
 
   refrescar(vacanteId);
   return { ok: true };
+}
+
+// Se llama al crear la vacante: deja los requisitos por defecto guardados.
+export async function sembrarRequisitosPorDefecto(vacanteId: string): Promise<void> {
+  const supabase = await clienteDeVacante(vacanteId);
+  if (!supabase) return;
+  for (const datos of REQUISITOS_POR_DEFECTO) {
+    const oferta = datos.oferta.trim();
+    const { data: requisito, error } = await supabase
+      .from("requisitos_oferta")
+      .insert({ vacante_id: vacanteId, descripcion: oferta, valor_oferta: oferta })
+      .select("id")
+      .single();
+    if (error || !requisito) {
+      console.error("[requisitos] sembrar", error);
+      return;
+    }
+    if (datos.minimo.trim()) {
+      const { error: errorMinimo } = await supabase
+        .from("requisitos_minimos")
+        .insert({ requisito_id: requisito.id, valor_minimo: datos.minimo.trim() });
+      if (errorMinimo) console.error("[requisitos] sembrar minimo", errorMinimo);
+    }
+  }
 }
 
 export async function guardarRequisito(id: string, vacanteId: string, datos: DatosRequisito): Promise<Resultado> {
