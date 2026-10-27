@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { CRITERIOS_POR_DEFECTO } from "./criterios-por-defecto";
 import { type Peso, repartir } from "./repartir";
 
 // Acciones de requisitos, etapas y rúbrica. Cada una comprueba que la vacante sea de
@@ -10,7 +11,7 @@ import { type Peso, repartir } from "./repartir";
 
 type Cliente = Awaited<ReturnType<typeof crearClienteServidor>>;
 type Resultado = { ok: true } | { ok: false; mensaje: string };
-type DatosRequisito = { nombre: string; oferta: string; minimo: string };
+type DatosRequisito = { oferta: string; minimo: string };
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const TIPOS_ETAPA = ["cv", "texto", "voz", "entrevista"];
@@ -35,24 +36,24 @@ function refrescar(vacanteId: string) {
   revalidatePath(`/gestion/${vacanteId}`, "layout");
 }
 
+// ---------------------------------------------------------------------------
+// Requisitos: lo que pide la oferta (público) y el mínimo aceptable (interno).
+// ---------------------------------------------------------------------------
 function revisarRequisito(d: DatosRequisito): string | null {
-  if (!d.nombre.trim() || d.nombre.trim().length > 80) return "El requisito necesita un nombre de hasta 80 caracteres.";
   if (d.oferta.length > 300 || d.minimo.length > 300) return "Cada texto admite hasta 300 caracteres.";
   return null;
 }
 
-// ---------------------------------------------------------------------------
-// Requisitos: lo público (oferta) y lo interno (mínimo) van en tablas separadas.
-// ---------------------------------------------------------------------------
 export async function agregarRequisito(vacanteId: string, datos: DatosRequisito): Promise<Resultado> {
   const error = revisarRequisito(datos);
   if (error) return { ok: false, mensaje: error };
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return NO_ENCONTRADA;
 
+  const oferta = datos.oferta.trim();
   const { data: requisito, error: errorOferta } = await supabase
     .from("requisitos_oferta")
-    .insert({ vacante_id: vacanteId, descripcion: datos.nombre.trim(), valor_oferta: datos.oferta.trim() })
+    .insert({ vacante_id: vacanteId, descripcion: oferta, valor_oferta: oferta })
     .select("id")
     .single();
   if (errorOferta || !requisito) {
@@ -80,9 +81,10 @@ export async function guardarRequisito(id: string, vacanteId: string, datos: Dat
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return NO_ENCONTRADA;
 
+  const oferta = datos.oferta.trim();
   const { error: errorOferta } = await supabase
     .from("requisitos_oferta")
-    .update({ descripcion: datos.nombre.trim(), valor_oferta: datos.oferta.trim() })
+    .update({ descripcion: oferta, valor_oferta: oferta })
     .eq("id", id)
     .eq("vacante_id", vacanteId);
   if (errorOferta) {
@@ -120,7 +122,7 @@ export async function quitarRequisito(id: string, vacanteId: string): Promise<Re
 }
 
 // ---------------------------------------------------------------------------
-// Etapas: la empresa define cuántas y en qué orden. Un tipo puede repetirse.
+// Etapas: la empresa define cuántas, en qué orden, con qué nombre. Un tipo puede repetirse.
 // ---------------------------------------------------------------------------
 export async function agregarEtapa(vacanteId: string, tipo: string): Promise<Resultado> {
   if (!TIPOS_ETAPA.includes(tipo)) return { ok: false, mensaje: "Tipo de etapa no válido." };
@@ -140,6 +142,60 @@ export async function agregarEtapa(vacanteId: string, tipo: string): Promise<Res
   if (error) {
     console.error("[etapas] insert", error);
     return FALLO;
+  }
+  refrescar(vacanteId);
+  return { ok: true };
+}
+
+export async function renombrarEtapa(id: string, vacanteId: string, nombre: string): Promise<Resultado> {
+  if (nombre.trim().length > 80) return { ok: false, mensaje: "El nombre de la etapa admite hasta 80 caracteres." };
+  const supabase = await clienteDeVacante(vacanteId);
+  if (!supabase) return NO_ENCONTRADA;
+  const { error } = await supabase
+    .from("vacante_etapas")
+    .update({ nombre: nombre.trim() || null })
+    .eq("id", id)
+    .eq("vacante_id", vacanteId);
+  if (error) {
+    console.error("[etapas] renombrar", error);
+    return FALLO;
+  }
+  refrescar(vacanteId);
+  return { ok: true };
+}
+
+// Intercambia el orden con la etapa de arriba o de abajo. El orden es único por
+// vacante, así que el cambio pasa por un valor temporal.
+export async function moverEtapa(id: string, vacanteId: string, direccion: "subir" | "bajar"): Promise<Resultado> {
+  const supabase = await clienteDeVacante(vacanteId);
+  if (!supabase) return NO_ENCONTRADA;
+
+  const { data: etapas } = await supabase
+    .from("vacante_etapas")
+    .select("id, orden")
+    .eq("vacante_id", vacanteId)
+    .order("orden")
+    .returns<{ id: string; orden: number }[]>();
+  if (!etapas) return FALLO;
+
+  const i = etapas.findIndex((e) => e.id === id);
+  const j = direccion === "subir" ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= etapas.length) return { ok: true };
+
+  const a = etapas[i];
+  const b = etapas[j];
+  const temporal = Math.max(...etapas.map((e) => e.orden)) + 1;
+  const pasos = [
+    supabase.from("vacante_etapas").update({ orden: temporal }).eq("id", a.id),
+    supabase.from("vacante_etapas").update({ orden: a.orden }).eq("id", b.id),
+    supabase.from("vacante_etapas").update({ orden: b.orden }).eq("id", a.id),
+  ];
+  for (const paso of pasos) {
+    const { error } = await paso;
+    if (error) {
+      console.error("[etapas] mover", error);
+      return FALLO;
+    }
   }
   refrescar(vacanteId);
   return { ok: true };
@@ -166,6 +222,30 @@ async function aplicarPesos(supabase: Cliente, pesos: Peso[]) {
   );
 }
 
+// Crea la rúbrica con los criterios por defecto si la vacante aún no tiene una.
+// Así los criterios quedan guardados y, si la empresa los quita, no vuelven solos.
+export async function sembrarRubricaSiFalta(vacanteId: string): Promise<void> {
+  const supabase = await clienteDeVacante(vacanteId);
+  if (!supabase) return;
+
+  const { data: existente } = await supabase.from("rubricas").select("id").eq("vacante_id", vacanteId).maybeSingle();
+  if (existente) return;
+
+  const { data: rubrica, error } = await supabase
+    .from("rubricas")
+    .insert({ vacante_id: vacanteId })
+    .select("id")
+    .single();
+  if (error || !rubrica) {
+    console.error("[rubrica] sembrar", error);
+    return;
+  }
+  const { error: errorCriterios } = await supabase
+    .from("criterios")
+    .insert(CRITERIOS_POR_DEFECTO.map((c) => ({ ...c, rubrica_id: rubrica.id })));
+  if (errorCriterios) console.error("[rubrica] criterios por defecto", errorCriterios);
+}
+
 function revisarCriterio(nombre: string, descripcion: string): string | null {
   if (!nombre.trim() || nombre.trim().length > 80) return "El criterio necesita un nombre de hasta 80 caracteres.";
   if (descripcion.length > 300) return "La descripción admite hasta 300 caracteres.";
@@ -178,15 +258,9 @@ export async function agregarCriterio(vacanteId: string, nombre: string, descrip
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return NO_ENCONTRADA;
 
-  const { data: rubrica, error: errorRubrica } = await supabase
-    .from("rubricas")
-    .upsert({ vacante_id: vacanteId }, { onConflict: "vacante_id" })
-    .select("id")
-    .single();
-  if (errorRubrica || !rubrica) {
-    console.error("[rubrica] upsert", errorRubrica);
-    return FALLO;
-  }
+  await sembrarRubricaSiFalta(vacanteId);
+  const { data: rubrica } = await supabase.from("rubricas").select("id").eq("vacante_id", vacanteId).maybeSingle<{ id: string }>();
+  if (!rubrica) return FALLO;
 
   const { data: existentes } = await supabase.from("criterios").select("id, peso").eq("rubrica_id", rubrica.id);
   const n = (existentes?.length ?? 0) + 1;

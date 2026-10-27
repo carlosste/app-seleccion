@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { sembrarRubricaSiFalta } from "./acciones-configuracion";
 import type { EstadoPublicar, EstadoVacante } from "./estados";
 
 // Etapas por defecto de toda vacante nueva. La revisión del CV es automática y no es una etapa.
@@ -50,6 +51,8 @@ export async function crearVacante(_previo: EstadoVacante, fd: FormData): Promis
       mensaje: "La vacante se creó, pero no pudimos agregar sus etapas. Revísala desde la lista de vacantes.",
     };
   }
+
+  await sembrarRubricaSiFalta(vacante.id);
 
   redirect(`/gestion/${vacante.id}`);
 }

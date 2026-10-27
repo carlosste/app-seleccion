@@ -6,23 +6,25 @@ import { agregarRequisito, guardarRequisito, quitarRequisito } from "@/lib/gesti
 import type { RequisitoVacante } from "@/lib/gestion/configuracion";
 import type { Sugerencia } from "@/lib/gestion/sugerencias";
 
-type Datos = { nombre: string; oferta: string; minimo: string };
+type Datos = { oferta: string; minimo: string };
 type Resultado = { ok: boolean; mensaje?: string };
 
-// Requisitos de la vacante. Cada cambio se guarda al salir del campo. El mínimo es
-// interno: se muestra borroso y se aclara al enfocarlo.
+// Requisitos de la vacante: lo que pide la oferta (público) y el mínimo aceptable
+// (interno). Cada cambio se guarda al salir del campo. El mínimo se ve transparente
+// hasta que se enfoca.
 export function RequisitosEditor({
   vacanteId,
   requisitos,
-  sugerencias,
+  tipos,
 }: {
   vacanteId: string;
   requisitos: RequisitoVacante[];
-  sugerencias: Sugerencia[];
+  tipos: Sugerencia[];
 }) {
   const router = useRouter();
   const [pendiente, empezar] = useTransition();
   const [aviso, setAviso] = useState<string | null>(null);
+  const [abierto, setAbierto] = useState(false);
 
   function ejecutar(accion: () => Promise<Resultado>) {
     empezar(async () => {
@@ -30,6 +32,11 @@ export function RequisitosEditor({
       setAviso(r.ok ? null : (r.mensaje ?? "No pudimos guardar el cambio."));
       router.refresh();
     });
+  }
+
+  function agregar(datos: Datos) {
+    setAbierto(false);
+    ejecutar(() => agregarRequisito(vacanteId, datos));
   }
 
   return (
@@ -40,10 +47,9 @@ export function RequisitosEditor({
         </div>
       )}
       <div className="tabla-caja">
-        <table style={{ minWidth: 720 }}>
+        <table style={{ minWidth: 640 }}>
           <thead>
             <tr>
-              <th style={{ width: 170 }}>Requisito</th>
               <th>Lo que pide la oferta (público)</th>
               <th>Mínimo aceptable (interno)</th>
               <th style={{ width: 90 }}></th>
@@ -58,40 +64,50 @@ export function RequisitosEditor({
                 onQuitar={() => ejecutar(() => quitarRequisito(r.id, vacanteId))}
               />
             ))}
+            {requisitos.length === 0 && (
+              <tr>
+                <td colSpan={3} className="texto-gris">
+                  Aún no hay requisitos. Agrega el primero abajo.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      <div style={{ borderTop: "1px solid var(--linea)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-        <b style={{ fontSize: 14 }}>Sugeridos para filtrar más rápido</b>
-        <div className="flex">
-          {sugerencias.map((s) => {
-            const yaEsta = requisitos.some((r) => r.nombre === s.nombre);
-            return (
+      <div className="flex" style={{ gap: 10, position: "relative" }}>
+        <button type="button" className="btn btn-punto" disabled={pendiente} onClick={() => setAbierto((v) => !v)} aria-expanded={abierto}>
+          + Agregar requisito
+        </button>
+        {abierto && (
+          <div className="tarjeta" role="menu" style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 260, padding: 8 }}>
+            {tipos.map((t) => (
               <button
-                key={s.nombre}
+                key={t.nombre}
                 type="button"
-                className="pill"
-                disabled={yaEsta || pendiente}
-                onClick={() => ejecutar(() => agregarRequisito(vacanteId, s))}
+                role="menuitem"
+                className="btn-enlace"
+                style={{ textAlign: "left", padding: "8px 10px" }}
+                onClick={() => agregar({ oferta: t.oferta, minimo: t.minimo })}
               >
-                + <span className="borroso">{s.nombre}</span>
+                {t.nombre}
               </button>
-            );
-          })}
-          <button
-            type="button"
-            className="pill punto"
-            disabled={pendiente}
-            onClick={() => ejecutar(() => agregarRequisito(vacanteId, { nombre: "Nuevo requisito", oferta: "", minimo: "" }))}
-          >
-            + Requisito personalizado
-          </button>
-        </div>
-        <div className="nota nota-az">
-          La IA lee el CV y aplica estos mínimos. Si no logra leer un dato, el CV pasa a &quot;Por revisar&quot; en vez de
-          descartarse. La app no permite requisitos discriminatorios (edad máxima, género, estado civil).
-        </div>
+            ))}
+            <button
+              type="button"
+              role="menuitem"
+              className="btn-enlace"
+              style={{ textAlign: "left", padding: "8px 10px" }}
+              onClick={() => agregar({ oferta: "", minimo: "" })}
+            >
+              Personalizado
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="nota nota-az">
+        La IA lee el CV y aplica estos mínimos. Si no logra leer un dato, el CV pasa a &quot;Por revisar&quot; en vez de
+        descartarse. La app no permite requisitos discriminatorios (edad máxima, género, estado civil).
       </div>
     </>
   );
@@ -106,34 +122,24 @@ function FilaRequisito({
   onGuardar: (datos: Datos) => void;
   onQuitar: () => void;
 }) {
-  const [nombre, setNombre] = useState(requisito.nombre);
   const [oferta, setOferta] = useState(requisito.oferta);
   const [minimo, setMinimo] = useState(requisito.minimo);
-  const datos = { nombre, oferta, minimo };
+  const datos = { oferta, minimo };
 
   return (
     <tr>
       <td>
         <input
           className="inp"
-          value={nombre}
-          aria-label="Nombre del requisito"
-          onChange={(e) => setNombre(e.target.value)}
-          onBlur={() => onGuardar(datos)}
-        />
-      </td>
-      <td>
-        <input
-          className="inp"
           value={oferta}
-          aria-label="Oferta"
+          aria-label="Lo que pide la oferta"
           onChange={(e) => setOferta(e.target.value)}
           onBlur={() => onGuardar(datos)}
         />
       </td>
       <td>
         <input
-          className="inp inp-resaltado borroso"
+          className="inp inp-resaltado transparente"
           value={minimo}
           aria-label="Mínimo aceptable"
           onChange={(e) => setMinimo(e.target.value)}

@@ -21,7 +21,7 @@ export default async function Requisitos({ params }: PageProps<"/gestion/[vacant
             postulante.
           </span>
         </div>
-        <RequisitosEditor vacanteId={id} requisitos={requisitos} sugerencias={sugerenciasPara(vacante.cargo)} />
+        <RequisitosEditor vacanteId={id} requisitos={requisitos} tipos={sugerenciasPara(vacante.cargo)} />
       </section>
 
       <section className="tarjeta">

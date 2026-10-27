@@ -1,9 +1,11 @@
 import { RubricaEditor } from "@/components/rubrica-editor";
+import { sembrarRubricaSiFalta } from "@/lib/gestion/acciones-configuracion";
 import { listarCriterios } from "@/lib/gestion/configuracion";
 
 // C · Rúbrica: criterios con peso. La IA puntúa con esta rúbrica y nunca evalúa rasgos personales.
 export default async function Rubrica({ params }: PageProps<"/gestion/[vacante]/rubrica">) {
   const { vacante: id } = await params;
+  await sembrarRubricaSiFalta(id);
   const criterios = await listarCriterios(id);
 
   return (
