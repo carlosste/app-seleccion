@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { agregarEtapa, moverEtapa, quitarEtapa, renombrarEtapa } from "@/lib/gestion/acciones-configuracion";
 import type { EtapaVacante, PreguntaVacante } from "@/lib/gestion/configuracion";
-import { generarPreguntas, guardarPregunta, quitarPregunta } from "@/lib/gestion/preguntas";
+import { agregarPreguntaManual, generarPreguntas, guardarPregunta, quitarPregunta } from "@/lib/gestion/preguntas";
 
 const TIPOS = [
   { valor: "texto", titulo: "Preguntas por texto" },
@@ -13,12 +13,19 @@ const TIPOS = [
   { valor: "cv", titulo: "Revisión de CV" },
 ];
 
+const ENFOQUES = [
+  { valor: "cargo", titulo: "Del cargo" },
+  { valor: "social", titulo: "Sociales o situacionales" },
+];
+
+const MODOS = [...ENFOQUES, { valor: "mixta", titulo: "Mezcla de ambas" }];
+
 const titulo = (valor: string) => TIPOS.find((t) => t.valor === valor)?.titulo ?? valor;
 
 type Resultado = { ok: boolean; mensaje?: string };
 
 // Etapas del proceso: se nombran, se ordenan con las flechas y se quitan. Cada etapa
-// (salvo la revisión de CV) tiene sus preguntas: se generan con IA y se pueden editar o quitar.
+// (salvo la revisión de CV) tiene sus preguntas: generadas con IA, escritas a mano, o ambas.
 export function EtapasEditor({
   vacanteId,
   etapas,
@@ -62,8 +69,9 @@ export function EtapasEditor({
             onRenombrar={(nombre) => ejecutar(() => renombrarEtapa(e.id, vacanteId, nombre))}
             onMover={(direccion) => ejecutar(() => moverEtapa(e.id, vacanteId, direccion))}
             onQuitar={() => ejecutar(() => quitarEtapa(e.id, vacanteId))}
-            onGenerar={() => ejecutar(() => generarPreguntas(vacanteId, e.id))}
-            onGuardarPregunta={(id, texto) => ejecutar(() => guardarPregunta(id, vacanteId, texto))}
+            onGenerar={(modo) => ejecutar(() => generarPreguntas(vacanteId, e.id, modo))}
+            onAgregarPregunta={(texto, enfoque) => ejecutar(() => agregarPreguntaManual(vacanteId, e.id, texto, enfoque))}
+            onGuardarPregunta={(id, texto, enfoque) => ejecutar(() => guardarPregunta(id, vacanteId, texto, enfoque))}
             onQuitarPregunta={(id) => ejecutar(() => quitarPregunta(id, vacanteId))}
           />
         ))}
@@ -100,6 +108,7 @@ function FilaEtapa({
   onMover,
   onQuitar,
   onGenerar,
+  onAgregarPregunta,
   onGuardarPregunta,
   onQuitarPregunta,
 }: {
@@ -112,11 +121,16 @@ function FilaEtapa({
   onRenombrar: (nombre: string) => void;
   onMover: (direccion: "subir" | "bajar") => void;
   onQuitar: () => void;
-  onGenerar: () => void;
-  onGuardarPregunta: (id: string, texto: string) => void;
+  onGenerar: (modo: string) => void;
+  onAgregarPregunta: (texto: string, enfoque: string) => void;
+  onGuardarPregunta: (id: string, texto: string, enfoque: string) => void;
   onQuitarPregunta: (id: string) => void;
 }) {
   const [nombre, setNombre] = useState(etapa.nombre ?? "");
+  const [modo, setModo] = useState("cargo");
+  const [agregando, setAgregando] = useState(false);
+  const [nueva, setNueva] = useState("");
+  const [enfoqueNueva, setEnfoqueNueva] = useState("cargo");
 
   return (
     <li className="paso" style={{ flexWrap: "wrap", alignItems: "center", gap: 12 }}>
@@ -150,22 +164,76 @@ function FilaEtapa({
       {etapa.tipo !== "cv" && (
         <details style={{ width: "100%" }}>
           <summary style={{ cursor: "pointer", fontSize: 14, fontWeight: 600 }}>Preguntas ({preguntas.length})</summary>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
             {preguntas.map((p, i) => (
               <FilaPregunta
                 key={p.id}
                 numero={i + 1}
                 pregunta={p}
                 deshabilitado={deshabilitado}
-                onGuardar={(texto) => onGuardarPregunta(p.id, texto)}
+                onGuardar={(texto, enfoque) => onGuardarPregunta(p.id, texto, enfoque)}
                 onQuitar={() => onQuitarPregunta(p.id)}
               />
             ))}
             {preguntas.length === 0 && <span className="texto-gris">Aún no hay preguntas para esta etapa.</span>}
-            <div>
-              <button type="button" className="btn btn-sec btn-chico" disabled={deshabilitado} onClick={onGenerar}>
-                {preguntas.length ? "Regenerar preguntas con IA" : "Generar preguntas con IA"}
+
+            {agregando ? (
+              <div className="tarjeta" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <textarea
+                  className="inp"
+                  rows={2}
+                  value={nueva}
+                  placeholder="Escribe la pregunta"
+                  aria-label="Nueva pregunta"
+                  onChange={(e) => setNueva(e.target.value)}
+                />
+                <div className="flex" style={{ gap: 8 }}>
+                  <select className="inp" value={enfoqueNueva} onChange={(e) => setEnfoqueNueva(e.target.value)} aria-label="Enfoque de la pregunta">
+                    {ENFOQUES.map((m) => (
+                      <option key={m.valor} value={m.valor}>
+                        {m.titulo}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-chico"
+                    disabled={deshabilitado || !nueva.trim()}
+                    onClick={() => {
+                      onAgregarPregunta(nueva, enfoqueNueva);
+                      setNueva("");
+                      setAgregando(false);
+                    }}
+                  >
+                    Guardar pregunta
+                  </button>
+                  <button type="button" className="btn-enlace" onClick={() => setAgregando(false)}>
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <button type="button" className="btn btn-punto btn-chico" disabled={deshabilitado} onClick={() => setAgregando(true)}>
+                  + Agregar pregunta
+                </button>
+              </div>
+            )}
+
+            <div className="flex" style={{ gap: 8, flexWrap: "wrap" }}>
+              <select className="inp" value={modo} onChange={(e) => setModo(e.target.value)} aria-label="Enfoque de las preguntas con IA">
+                {MODOS.map((m) => (
+                  <option key={m.valor} value={m.valor}>
+                    {m.titulo}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="btn btn-sec btn-chico" disabled={deshabilitado} onClick={() => onGenerar(modo)}>
+                Generar con IA
               </button>
+              <span className="texto-gris" style={{ fontSize: 12 }}>
+                Reemplaza solo las preguntas creadas por la IA.
+              </span>
             </div>
           </div>
         </details>
@@ -184,26 +252,49 @@ function FilaPregunta({
   numero: number;
   pregunta: PreguntaVacante;
   deshabilitado: boolean;
-  onGuardar: (texto: string) => void;
+  onGuardar: (texto: string, enfoque: string) => void;
   onQuitar: () => void;
 }) {
   const [texto, setTexto] = useState(pregunta.texto);
+  const [enfoque, setEnfoque] = useState<string>(pregunta.enfoque);
+
+  function guardar(nuevoTexto: string, nuevoEnfoque: string) {
+    if (nuevoTexto.trim() !== pregunta.texto || nuevoEnfoque !== pregunta.enfoque) onGuardar(nuevoTexto, nuevoEnfoque);
+  }
 
   return (
     <div className="flex" style={{ gap: 8, alignItems: "flex-start" }}>
       <b style={{ paddingTop: 10 }}>{numero}</b>
-      <textarea
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+        <textarea
+          className="inp"
+          rows={2}
+          value={texto}
+          aria-label={`Pregunta ${numero}`}
+          disabled={deshabilitado}
+          onChange={(e) => setTexto(e.target.value)}
+          onBlur={() => guardar(texto, enfoque)}
+        />
+        <span className="texto-gris" style={{ fontSize: 12 }}>
+          {pregunta.origen === "ia" ? "Creada con IA" : "Escrita a mano"}
+        </span>
+      </div>
+      <select
         className="inp"
-        rows={2}
-        value={texto}
-        aria-label={`Pregunta ${numero}`}
+        value={enfoque}
         disabled={deshabilitado}
-        onChange={(e) => setTexto(e.target.value)}
-        onBlur={() => {
-          if (texto.trim() !== pregunta.texto) onGuardar(texto);
+        aria-label={`Enfoque de la pregunta ${numero}`}
+        onChange={(e) => {
+          setEnfoque(e.target.value);
+          guardar(texto, e.target.value);
         }}
-        style={{ flex: 1 }}
-      />
+      >
+        {ENFOQUES.map((m) => (
+          <option key={m.valor} value={m.valor}>
+            {m.titulo}
+          </option>
+        ))}
+      </select>
       <button type="button" className="btn-enlace" disabled={deshabilitado} onClick={onQuitar} style={{ paddingTop: 10 }}>
         Quitar
       </button>
