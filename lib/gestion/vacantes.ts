@@ -1,9 +1,10 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
-import type { EstadoVacante } from "./estados";
+import type { EstadoPublicar, EstadoVacante } from "./estados";
 
 // Etapas por defecto de toda vacante nueva. La revisión del CV es automática y no es una etapa.
 const ETAPAS_POR_DEFECTO = ["texto", "voz", "entrevista"] as const;
@@ -51,4 +52,29 @@ export async function crearVacante(_previo: EstadoVacante, fd: FormData): Promis
   }
 
   redirect(`/gestion/${vacante.id}`);
+}
+
+// Pasa la vacante de borrador a abierta: desde ese momento su link público recibe postulaciones.
+export async function publicarVacante(_previo: EstadoPublicar, fd: FormData): Promise<EstadoPublicar> {
+  const id = String(fd.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { estado: "error", mensaje: "Vacante no válida." };
+
+  const { empresa } = await requerirEmpresa();
+  const supabase = await crearClienteServidor();
+  const { data, error } = await supabase
+    .from("vacantes")
+    .update({ estado: "abierta" })
+    .eq("id", id)
+    .eq("empresa_id", empresa.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("[vacante] publicar", error);
+    return { estado: "error", mensaje: "No pudimos publicar la vacante. Intenta de nuevo." };
+  }
+
+  revalidatePath(`/gestion/${id}`, "layout");
+  revalidatePath("/gestion");
+  return { estado: "ok" };
 }

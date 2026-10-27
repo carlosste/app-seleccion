@@ -82,7 +82,13 @@ export async function obtenerVacante(id: string) {
     .eq("empresa_id", empresa.id)
     .maybeSingle<{ id: string; cargo: string; estado: string; enlace_token: string; postulaciones: { count: number }[] }>();
   if (!data) return null;
-  return { id: data.id, cargo: data.cargo, estado: data.estado, total: data.postulaciones[0]?.count ?? 0 };
+  return {
+    id: data.id,
+    cargo: data.cargo,
+    estado: data.estado,
+    enlaceToken: data.enlace_token,
+    total: data.postulaciones[0]?.count ?? 0,
+  };
 }
 
 export type PostulanteFila = {

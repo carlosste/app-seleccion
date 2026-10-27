@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pestanas } from "@/components/pestanas";
+import { PublicarVacante } from "@/components/gestion/publicar-vacante";
 import { obtenerVacante } from "@/lib/gestion/datos";
 
 // Encabezado común de la vacante: título y pestañas Requisitos / Rúbrica / Postulantes.
@@ -19,6 +20,7 @@ export default async function LayoutVacante({ children, params }: LayoutProps<"/
         </Link>
         <h1 className="titulo-pagina">{vacante.cargo}</h1>
       </div>
+      <PublicarVacante id={vacante.id} estado={vacante.estado} enlaceToken={vacante.enlaceToken} />
       <Pestanas base={`/gestion/${vacante.id}`} total={vacante.total} />
       {children}
     </>
