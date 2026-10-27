@@ -1,23 +1,16 @@
 import { RubricaEditor } from "@/components/rubrica-editor";
-import { criterios } from "@/lib/datos-prueba";
+import { listarCriterios } from "@/lib/gestion/configuracion";
 
 // C · Rúbrica: criterios con peso. La IA puntúa con esta rúbrica y nunca evalúa rasgos personales.
-export default function Rubrica() {
+export default async function Rubrica({ params }: PageProps<"/gestion/[vacante]/rubrica">) {
+  const { vacante: id } = await params;
+  const criterios = await listarCriterios(id);
+
   return (
     <div className="dos">
       <section className="tarjeta ancho">
-        <div className="flex" style={{ justifyContent: "space-between" }}>
-          <h2 style={{ fontSize: 18 }}>Criterios de evaluación</h2>
-          <div className="flex">
-            <button type="button" className="btn btn-sec btn-chico">
-              Subir rúbrica en PDF
-            </button>
-            <button type="button" className="btn btn-sec btn-chico">
-              Usar plantilla: cargo técnico
-            </button>
-          </div>
-        </div>
-        <RubricaEditor criterios={criterios} />
+        <h2 style={{ fontSize: 18 }}>Criterios de evaluación</h2>
+        <RubricaEditor vacanteId={id} criterios={criterios} />
       </section>
 
       <aside className="lado">

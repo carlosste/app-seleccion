@@ -958,3 +958,15 @@ td {
   text-align: center;
   padding: 40px 20px;
 }
+
+/* Contenido interno que no se muestra en claro (mínimos y sugerencias). Se aclara al enfocarlo. */
+.borroso {
+  filter: blur(4px);
+  user-select: none;
+  transition: filter 0.2s;
+}
+
+.borroso:focus {
+  filter: none;
+  user-select: auto;
+}
