@@ -16,8 +16,9 @@ export function CopiarLink({ ruta }: { ruta: string }) {
     }
   }
 
+  // aria-live: el lector de pantalla anuncia "¡Copiado!" al cambiar el texto.
   return (
-    <button type="button" className="btn btn-sec btn-chico" onClick={copiar}>
+    <button type="button" className="btn btn-sec btn-chico" onClick={copiar} aria-live="polite">
       {copiado ? "¡Copiado!" : "Copiar link"}
     </button>
   );

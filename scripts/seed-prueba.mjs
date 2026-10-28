@@ -53,6 +53,13 @@ if (!usuario) {
   usuario = creado.user;
 }
 
+// El ingreso y proxy.ts solo aceptan cuentas marcadas como empresa en app_metadata
+// (lo mismo que hace registrar_empresa en un registro normal).
+const { error: errorTipo } = await db.auth.admin.updateUserById(usuario.id, {
+  app_metadata: { ...usuario.app_metadata, tipo: "empresa", empresa_id: empresa.id },
+});
+verificar(errorTipo, "marcar la cuenta como empresa");
+
 const { error: errorPersonal } = await db.from("usuarios_empresa").upsert({
   id: usuario.id,
   empresa_id: empresa.id,
@@ -136,4 +143,4 @@ if (!vacante) {
   console.log(`La vacante "${CARGO}" ya existe; no se duplica.`);
 }
 
-console.log(`Listo. Ingresa en /acceso con ${CORREO} y la contraseña de SEED_CONTRASENA.`);
+console.log(`Listo. Ingresa en /empresa/ingreso con ${CORREO} y la contraseña de SEED_CONTRASENA.`);

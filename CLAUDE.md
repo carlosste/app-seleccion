@@ -49,8 +49,9 @@ Diseño: azul #2457C5, fondo #F6F7F9, fuente Inter. Interfaz muy sencilla.
   entrevistas.
 - IA y decisiones: evaluaciones_ia, llamadas_ia, decisiones.
 - Auditoría: registro_actividad.
-- Vistas: v_postulaciones_staff (oculta nombre, correo, teléfono y CV hasta
-  revelar), v_vacantes_publicas (solo oferta).
+- Vista: v_postulaciones_staff (oculta nombre, correo, teléfono y CV hasta
+  revelar). La oferta pública sale de la función `vacante_publica(token)`.
+- Sin políticas, solo service role: intentos_ingreso (límites de intentos).
 
 RLS: cada empresa solo ve sus datos. Registrar tokens usados por empresa en
 `llamadas_ia`. `rubricas` y `criterios` se copian desde `plantillas_rubrica`
@@ -94,17 +95,21 @@ Nunca subir .env.local al repositorio.
 - Requisitos: `requisitos_oferta` y `requisitos_minimos` van separados porque
   RLS filtra filas, no columnas. Así el valor mínimo nunca llega al link público.
 
-## Estado de la base de datos (2026-10-26)
+## Estado de la base de datos (2026-10-28)
 - Proyecto Supabase `app-seleccion` (id `wknyyiejvafdcwkdpoqr`, us-east-1,
-  plan gratis). Migraciones en `supabase\migrations\`: `esquema_inicial` y
-  `ajustes_seguridad` y `documento_unico`. Aplicadas, todas las tablas con RLS
-  activo.
-- Advisors de seguridad: `accesos_codigo` sin políticas es intencional (solo
+  plan gratis). Las 10 migraciones de `supabase\migrations\` están aplicadas,
+  la última `correcciones_seguridad`. Todas las tablas con RLS activo.
+- Advisors de seguridad: `intentos_ingreso` sin políticas es intencional (solo
   el servidor con la service role). Las funciones auxiliares de RLS son
   `SECURITY DEFINER` y `authenticated` debe poder ejecutarlas para que las
-  políticas funcionen; `anon` ya no puede.
-- Pendiente de la base: buckets de Storage y sus políticas; regla de que los
-  pesos de la rúbrica sumen 100; datos de prueba.
+  políticas funcionen. "Protección de contraseñas filtradas" sigue apagada.
+- Bucket `cvs` privado: 4 MB, solo PDF.
+- Los pesos de la rúbrica suman 100 por código (`repartir`), no por la base.
+
+## Despliegue
+- Vercel, equipo `carloslozano`, proyecto `app-seleccion`. Producción:
+  https://app-seleccion-mu.vercel.app (se despliega solo con cada push a main).
+  Ojo: `app-seleccion.vercel.app` es de otra persona, no de este proyecto.
 
 ## Correcciones de seguridad (2026-10-28)
 - Migración `20261028120000_correcciones_seguridad.sql` (fase 1 de la revisión
@@ -134,6 +139,17 @@ Nunca subir .env.local al repositorio.
   audios al cerrar la vacante, o almacenamiento propio de la empresa. Motivo:
   el plan gratis de Supabase tiene 1 GB de Storage. Con 3 preguntas de voz de
   5 a 10 min por postulante, se llenan entre unos 150 y 550 postulantes.
+
+## Decisiones abiertas de la revisión técnica (2026-10-28)
+Ninguna está decidida: preguntar antes de cambiarlas.
+- Contraseña del postulante: se crea, pero no hay pantalla para entrar con ella
+  (siempre se entra con código). ¿Quitarla o agregar "Ingresar con contraseña"?
+- Rol `entrevistador`: hoy RLS lo trata igual que a gestión humana.
+- `llamadas_ia`: no se registran los tokens de Gemini ni hay tope por empresa.
+- `publicarVacante` pasa a "abierta" desde cualquier estado (¿reabrir cerradas?).
+- Agregar preguntas con postulaciones recibidas sigue permitido (rompe
+  "preguntas iguales para todos").
+- La página de preguntas del postulante todavía usa datos de prueba.
 
 ## Forma de trabajar
 - Nombres de tablas, columnas y variables de dominio en español.

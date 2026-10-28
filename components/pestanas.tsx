@@ -16,9 +16,14 @@ export function Pestanas({ base, total }: { base: string; total: number }) {
   ];
 
   return (
-    <nav className="pestanas">
+    <nav className="pestanas" aria-label="Secciones de la vacante">
       {pestanas.map((p) => (
-        <Link key={p.href} href={p.href} className={p.activa ? "pestana on" : "pestana"}>
+        <Link
+          key={p.href}
+          href={p.href}
+          className={p.activa ? "pestana on" : "pestana"}
+          aria-current={p.activa ? "page" : undefined}
+        >
           {p.texto}
         </Link>
       ))}

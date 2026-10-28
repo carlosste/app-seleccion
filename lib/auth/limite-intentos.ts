@@ -24,9 +24,16 @@ export function clave(prefijo: string, valor: string) {
   return createHash("sha256").update(`${prefijo}:${valor}`).digest("hex");
 }
 
+// Primero las cabeceras que pone Vercel con la IP real del cliente; x-forwarded-for queda
+// de último porque detrás de otros proxies el cliente puede escribir su primer valor.
 export async function obtenerIp() {
   const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "desconocida";
+  return (
+    h.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip")?.trim() ||
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "desconocida"
+  );
 }
 
 // Si la base falla, se deja pasar (y se registra el error) para no bloquear a todos.

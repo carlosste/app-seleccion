@@ -8,7 +8,9 @@ export async function NavGestion() {
   return (
     <header className="nav">
       <div className="marca">
-        <div className="logo">LOGO</div>
+        <div className="logo" aria-hidden="true">
+          LOGO
+        </div>
         {empresa.nombre} · Selección
       </div>
       <nav className="nav-links">
