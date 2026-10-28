@@ -34,7 +34,7 @@ export default async function Terminado({ params }: { params: Promise<{ vacante:
         <div>
           <b style={{ fontSize: 16 }}>Espera el contacto de la empresa</b>
           <p style={{ marginTop: 6, fontSize: 14, lineHeight: 1.5, color: "var(--tx2)" }}>
-            Cuando revisen tus respuestas, te avisaremos por correo si continúas en el proceso.
+            Cuando revisen tus respuestas, vuelve a entrar para ver si continúas en el proceso.
           </p>
         </div>
       </div>
@@ -43,8 +43,8 @@ export default async function Terminado({ params }: { params: Promise<{ vacante:
         <div>
           <b style={{ fontSize: 16 }}>Si continúas, vuelve a ingresar</b>
           <p style={{ marginTop: 6, fontSize: 14, lineHeight: 1.5, color: "var(--tx2)" }}>
-            Entra desde el enlace de esta vacante: te enviaremos un código nuevo a tu correo para responder las
-            siguientes preguntas o agendar tu entrevista.
+            Entra desde el enlace de esta vacante con tu ID y tu contraseña (tu número de documento) para responder
+            las siguientes preguntas o agendar tu entrevista.
           </p>
         </div>
       </div>

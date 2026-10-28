@@ -34,8 +34,8 @@ Proyecto académico (Ingeniería de Sistemas, UCC Cali), pensado para escalar.
 Preguntas iguales para todos los postulantes del mismo cargo.
 
 ## Pantallas
-Postulante (móvil primero): postulación, ingreso con código + contraseña,
-preguntas (texto/voz), confirmación.
+Postulante (móvil primero): postulación con hoja de vida, ingreso con ID +
+contraseña, preguntas (texto/voz), confirmación.
 Gestión humana (escritorio): vacantes activas, requisitos y etapas, rúbrica,
 postulantes a ciegas, detalle del postulante.
 Diseño: azul #2457C5, fondo #F6F7F9, fuente Inter. Interfaz muy sencilla.
@@ -82,16 +82,22 @@ Nunca subir .env.local al repositorio.
   la fecha de nacimiento.
 - Un postulante puede aplicar a varias vacantes de la misma empresa: una
   postulación por vacante.
-- Cuenta y código: Supabase Auth maneja el correo de confirmación y el código
-  de 6 dígitos. Resend queda en pausa hasta tener dominio propio. Se quitó
-  `accesos_codigo`.
-- Una cuenta por persona: el documento (país + número) es único. El teléfono
-  no es único. Solo el documento se usa para evitar cuentas repetidas.
-- Postularse a otra vacante: la persona entra con su cuenta existente y se crea
-  una postulación nueva. No hay una cuenta por vacante. Que la vacante esté
-  abierta se revisa al postularse, no con el código.
-- Límites de ingreso: 5 intentos fallidos de código o contraseña bloquean el
-  ingreso 15 minutos. Máximo 3 códigos enviados por hora por postulante.
+- **Modo de pruebas sin correos (2026-10-28, decisión de Carlos).** La app no
+  envía ningún correo. El postulante llena nombre, correo, teléfono, documento
+  y sube la hoja de vida en la primera pantalla; la cuenta se crea ya
+  confirmada desde el servidor y entra directo a las preguntas. Para volver a
+  entrar usa **ID = número de documento** y **contraseña = número de
+  documento**. Es inseguro a propósito (quien conozca el documento de alguien
+  entra a su postulación): solo para pruebas, cambiar antes de usar la app con
+  postulantes reales.
+- El país del documento ya no se pide: se guarda "CO" fijo, porque la base exige
+  país y número juntos. El documento va de 6 a 20 letras o números (Supabase
+  pide contraseñas de al menos 6).
+- Una cuenta por persona: el documento es único. El teléfono no es único.
+- Postularse a otra vacante: se llena el formulario con el mismo documento y
+  correo; se usa la cuenta existente y se crea una postulación nueva.
+- Límites de ingreso: 5 intentos fallidos de ID/contraseña bloquean 15 minutos
+  (por documento y por red). Máximo 20 postulaciones por hora desde una red.
 - Requisitos: `requisitos_oferta` y `requisitos_minimos` van separados porque
   RLS filtra filas, no columnas. Así el valor mínimo nunca llega al link público.
 
@@ -124,13 +130,18 @@ Nunca subir .env.local al repositorio.
   service role. Bucket `cvs`: 4 MB, solo PDF (Vercel corta a los 4,5 MB).
 - Advisors: los avisos de `vacante_publica` y `vacante_abierta` (anon) y de las
   funciones auxiliares de RLS (authenticated) son intencionales.
-- Flujo del postulante (fase 2): si el documento ya tiene cuenta, se entra con el
-  correo de esa cuenta y se crea otra postulación. Límites con
-  `intentos_ingreso`: 3 códigos por hora por correo y 5 códigos fallidos → 15
-  min. El CV se valida (firma `%PDF-`, 4 MB) antes de usar el código. Un correo
-  de empresa no puede postularse.
+- Flujo del postulante: el CV se valida por su firma `%PDF-` y 4 MB como
+  máximo. Un correo de empresa no puede postularse. (Desde el 2026-10-28 ya no
+  hay código por correo: ver "Modo de pruebas sin correos".)
 
 ## Pendientes
+
+### Correos (en pausa hasta tener dominio propio y proveedor, p. ej. Resend)
+- Volver a un ingreso seguro: código por correo o contraseña elegida por el
+  postulante, en lugar de ID y contraseña = documento.
+- Avisos al postulante: confirmación de postulación y aviso cuando pasa de
+  etapa. Hoy debe volver a entrar para ver si sigue en el proceso.
+- Con el correo de vuelta, pedir otra vez el país del documento.
 
 ### Mejora a futuro: tope de uso de la IA (decidido el 2026-10-28)
 No se hace por ahora: primero, que toda la app funcione. Cuando se retome:
@@ -152,8 +163,6 @@ No se hace por ahora: primero, que toda la app funcione. Cuando se retome:
 
 ## Decisiones abiertas de la revisión técnica (2026-10-28)
 Ninguna está decidida: preguntar antes de cambiarlas.
-- Contraseña del postulante: se crea, pero no hay pantalla para entrar con ella
-  (siempre se entra con código). ¿Quitarla o agregar "Ingresar con contraseña"?
 - Rol `entrevistador`: hoy RLS lo trata igual que a gestión humana.
 - `publicarVacante` pasa a "abierta" desde cualquier estado (¿reabrir cerradas?).
 - Agregar preguntas con postulaciones recibidas sigue permitido (rompe

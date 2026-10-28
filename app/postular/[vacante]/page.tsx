@@ -1,20 +1,25 @@
-import { cookies } from "next/headers";
+import Link from "next/link";
 import { EncabezadoEmpresa } from "@/components/encabezado-empresa";
 import { vacantePorToken } from "@/lib/vacante-publica";
-import { enviarCodigo } from "../acciones";
+import { postularse } from "../acciones";
 
 const MENSAJES: Record<string, string> = {
-  datos: "Revisa tus datos. Nombre, correo, teléfono y documento son obligatorios, y debes aceptar el tratamiento de datos.",
+  datos:
+    "Revisa tus datos. Nombre, correo, teléfono y documento (de 6 a 20 letras o números) son obligatorios, y debes aceptar el tratamiento de datos.",
+  cv: "Sube tu hoja de vida en PDF (un PDF real, no otro archivo renombrado), de máximo 4 MB.",
   documento: "Ya existe una cuenta con ese documento y otro correo. Escribe el correo que usaste la primera vez.",
   "correo-documento": "Ese correo ya tiene una cuenta con otro documento. Revisa el número de documento.",
-  correo: "No pudimos enviar el código. Revisa el correo e intenta de nuevo.",
-  espera: "Ya te enviamos un código hace poco. Espera un minuto antes de pedir otro.",
-  limite: "Pediste demasiados códigos. Revisa tu correo (también la carpeta de spam) o intenta en una hora.",
-  sesion: "Tu ingreso venció o no has entrado. Escribe tus datos para recibir un código nuevo.",
+  "correo-registrado": "Ese correo ya está registrado en otra cuenta. Usa otro correo.",
+  empresa: "Ese correo es de una cuenta de empresa. Para postularte usa tu correo personal.",
+  limite: "Esta empresa ya no recibe más postulaciones por ahora.",
+  "limite-intentos": "Hubo demasiadas postulaciones desde tu red. Intenta de nuevo en una hora.",
+  "sin-postulacion": "Aún no te has postulado a esta vacante. Llena el formulario y sube tu hoja de vida.",
+  sesion: "Tu sesión venció o no has entrado. Ingresa con tu ID y contraseña.",
   general: "Algo salió mal. Intenta de nuevo.",
 };
 
-// 1 · Postulación. Llega desde el link de la vacante (enlace_token).
+// 1 · Postulación. Llega desde el link de la vacante (enlace_token). Aquí se envían los datos
+// y la hoja de vida; después solo se entra a responder las preguntas.
 export default async function Postulacion({
   params,
   searchParams,
@@ -25,7 +30,6 @@ export default async function Postulacion({
   const { vacante: token } = await params;
   const { error } = await searchParams;
   const vacante = await vacantePorToken(token);
-  const correoGuardado = (await cookies()).get("postulacion_correo")?.value;
 
   return (
     <>
@@ -45,7 +49,7 @@ export default async function Postulacion({
           </div>
         )}
 
-        <form action={enviarCodigo} className="tarjeta tarjeta-compacta">
+        <form action={postularse} className="tarjeta tarjeta-compacta">
           <input type="hidden" name="token" value={token} />
 
           <div className="campo">
@@ -72,7 +76,6 @@ export default async function Postulacion({
               required
               maxLength={254}
               autoComplete="email"
-              defaultValue={correoGuardado}
             />
           </div>
           <div className="campo">
@@ -90,19 +93,6 @@ export default async function Postulacion({
             />
           </div>
           <div className="campo">
-            <label htmlFor="pais">País del documento</label>
-            <input
-              id="pais"
-              name="pais"
-              className="inp"
-              placeholder="CO"
-              required
-              maxLength={2}
-              pattern="[A-Za-z]{2}"
-              title="Código de dos letras, por ejemplo CO"
-            />
-          </div>
-          <div className="campo">
             <label htmlFor="documento">Número de documento</label>
             <input
               id="documento"
@@ -111,8 +101,17 @@ export default async function Postulacion({
               placeholder="1234567890"
               required
               inputMode="numeric"
-              pattern="[A-Za-z0-9.\- ]{5,20}"
+              pattern="[A-Za-z0-9.\- ]{6,20}"
+              title="De 6 a 20 letras o números"
+              aria-describedby="documento-ayuda"
             />
+            <span id="documento-ayuda" className="texto-gris" style={{ fontSize: 12 }}>
+              Con este número vuelves a entrar: es tu ID y tu contraseña.
+            </span>
+          </div>
+          <div className="campo">
+            <label htmlFor="cv">Hoja de vida (PDF, máximo 4 MB)</label>
+            <input id="cv" name="cv" type="file" accept="application/pdf" className="inp" required />
           </div>
 
           <div className="flex" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
@@ -123,11 +122,13 @@ export default async function Postulacion({
           </div>
 
           <button type="submit" className="btn">
-            Enviar código
+            Postularme
           </button>
         </form>
 
-        <p className="texto-gris centrado">Te enviaremos un código a tu correo para continuar el proceso.</p>
+        <p className="texto-gris centrado">
+          ¿Ya te postulaste? <Link href={`/postular/${token}/ingreso`}>Ingresa con tu ID</Link>
+        </p>
       </div>
     </>
   );

@@ -1,21 +1,16 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { EncabezadoEmpresa } from "@/components/encabezado-empresa";
 import { vacantePorToken } from "@/lib/vacante-publica";
-import { verificarCodigo } from "../../acciones";
+import { ingresar } from "../../acciones";
 
 const MENSAJES: Record<string, string> = {
-  codigo: "El código no es correcto o ya venció. Revisa el correo o pide uno nuevo.",
-  bloqueo: "Escribiste mal el código demasiadas veces. Espera 15 minutos y pide uno nuevo.",
-  clave: "La contraseña debe tener al menos 8 caracteres (solo la primera vez).",
-  "clave-debil": "Esa contraseña es muy débil o aparece en filtraciones conocidas. Elige otra.",
-  cv: "Sube tu hoja de vida en PDF (un PDF real, no otro archivo renombrado), de máximo 4 MB.",
-  empresa: "Ese correo es de una cuenta de empresa. Para postularte usa tu correo personal.",
-  limite: "Esta empresa ya no recibe más postulaciones por ahora.",
+  credenciales: "El ID o la contraseña no son correctos. Los dos son tu número de documento.",
+  bloqueo: "Demasiados intentos fallidos. Espera 15 minutos e intenta de nuevo.",
   general: "Algo salió mal. Intenta de nuevo.",
 };
 
-// 2 · Ingreso con código. La primera vez crea la contraseña y sube la hoja de vida.
+// 2 · Ingreso de quien ya se postuló: ID y contraseña (por ahora, los dos son el número de
+// documento). No sube nada: entra directo a sus preguntas.
 export default async function Ingreso({
   params,
   searchParams,
@@ -27,9 +22,6 @@ export default async function Ingreso({
   const { error } = await searchParams;
   const vacante = await vacantePorToken(token);
 
-  const correo = (await cookies()).get("postulacion_correo")?.value;
-  if (!correo) redirect(`/postular/${token}?error=sesion`);
-
   return (
     <div className="contenido" style={{ padding: "48px 24px", gap: 28 }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
@@ -39,8 +31,7 @@ export default async function Ingreso({
       <div className="centrado">
         <h1 style={{ fontSize: 24, marginBottom: 8 }}>Ingresa a tu proceso</h1>
         <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--gris)" }}>
-          Usa el código que te enviamos a <b>{correo}</b> para postularte a <b>{vacante.cargo}</b>. La primera
-          vez, crea tu contraseña. Sube tu hoja de vida si es tu primera postulación a esta vacante.
+          Vacante: <b>{vacante.cargo}</b>. Tu ID y tu contraseña son tu número de documento.
         </p>
       </div>
 
@@ -50,48 +41,44 @@ export default async function Ingreso({
         </div>
       )}
 
-      <form action={verificarCodigo} className="tarjeta" encType="multipart/form-data">
+      <form action={ingresar} className="tarjeta">
         <input type="hidden" name="token" value={token} />
 
         <div className="campo">
-          <label htmlFor="codigo">Código de acceso</label>
+          <label htmlFor="id">ID</label>
           <input
-            id="codigo"
-            name="codigo"
+            id="id"
+            name="id"
             className="inp"
-            placeholder="123456"
+            placeholder="Tu número de documento"
             required
-            maxLength={10}
+            maxLength={20}
             inputMode="numeric"
-            autoComplete="one-time-code"
-            style={{ height: 48, fontSize: 18, letterSpacing: "0.12em" }}
+            autoComplete="username"
+            style={{ height: 48 }}
           />
         </div>
         <div className="campo">
-          <label htmlFor="contrasena">Contraseña (solo la primera vez)</label>
+          <label htmlFor="contrasena">Contraseña</label>
           <input
             id="contrasena"
             name="contrasena"
             type="password"
             className="inp"
-            placeholder="Mínimo 8 caracteres"
-            minLength={8}
-            maxLength={72}
-            autoComplete="new-password"
+            placeholder="Tu número de documento"
+            required
+            maxLength={20}
+            autoComplete="current-password"
             style={{ height: 48 }}
           />
-        </div>
-        <div className="campo">
-          <label htmlFor="cv">Hoja de vida (PDF, máximo 4 MB)</label>
-          <input id="cv" name="cv" type="file" accept="application/pdf" className="inp" />
         </div>
 
         <button type="submit" className="btn">
           Ingresar
         </button>
-        <a href={`/postular/${token}`} className="centrado" style={{ fontSize: 13 }}>
-          Cambiar mis datos o pedir otro código
-        </a>
+        <Link href={`/postular/${token}`} className="centrado" style={{ fontSize: 13 }}>
+          ¿Aún no te postulas? Llena el formulario
+        </Link>
       </form>
     </div>
   );

@@ -15,7 +15,7 @@ export default async function Preguntas({ params }: { params: Promise<{ vacante:
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(`/postular/${token}?error=sesion`);
+  if (!user) redirect(`/postular/${token}/ingreso`);
 
   const { data: postulacion } = await supabase
     .from("postulaciones")
@@ -23,7 +23,7 @@ export default async function Preguntas({ params }: { params: Promise<{ vacante:
     .eq("postulante_id", user.id)
     .eq("vacante_id", vacante.id)
     .maybeSingle();
-  if (!postulacion) redirect(`/postular/${token}?error=sesion`);
+  if (!postulacion) redirect(`/postular/${token}?error=sin-postulacion`);
 
   return <PreguntasVoz preguntas={preguntasVoz} rutaTerminado={`/postular/${token}/terminado`} />;
 }

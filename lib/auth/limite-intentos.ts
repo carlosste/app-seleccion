@@ -6,15 +6,12 @@ import { crearClienteAdmin } from "@/lib/supabase/admin";
 // Reglas (CLAUDE.md, "Límites de ingreso"): 5 fallos en 15 min bloquean 15 min.
 // Además, una IP que falla muchas veces con correos distintos también se bloquea
 // (frena el "credential stuffing").
-// Postulantes: máximo 3 códigos enviados por hora a un mismo correo.
+// Postulantes: las mismas reglas de ingreso, contadas por documento (su ID) e IP.
 export const REGLAS = {
   ingresoCorreo: { maximo: 5, ventana: 15 * 60, bloqueo: 15 * 60 },
   ingresoIp: { maximo: 20, ventana: 15 * 60, bloqueo: 15 * 60 },
   registroIp: { maximo: 5, ventana: 60 * 60, bloqueo: 60 * 60 },
-  codigoEnvioCorreo: { maximo: 3, ventana: 60 * 60, bloqueo: 60 * 60 },
-  codigoEnvioIp: { maximo: 10, ventana: 60 * 60, bloqueo: 60 * 60 },
-  codigoFalloCorreo: { maximo: 5, ventana: 15 * 60, bloqueo: 15 * 60 },
-  codigoFalloIp: { maximo: 20, ventana: 15 * 60, bloqueo: 15 * 60 },
+  postulacionIp: { maximo: 20, ventana: 60 * 60, bloqueo: 60 * 60 },
 } as const;
 
 type Regla = (typeof REGLAS)[keyof typeof REGLAS];
