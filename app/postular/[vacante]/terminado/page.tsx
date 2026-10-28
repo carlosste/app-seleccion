@@ -20,7 +20,7 @@ export default async function Terminado({ params }: { params: Promise<{ vacante:
             justifyContent: "center",
           }}
         >
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1F7A4D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--verde)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M5 12.5l4.5 4.5L19 7.5" />
           </svg>
         </div>

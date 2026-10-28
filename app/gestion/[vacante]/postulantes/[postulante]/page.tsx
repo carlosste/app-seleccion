@@ -10,7 +10,7 @@ import { obtenerPostulante } from "@/lib/gestion/datos";
 import { type EstadoRequisito, type VeredictoCv, VERSION_PUNTAJE } from "@/lib/gestion/tipos-evaluacion";
 
 const VEREDICTO: Record<VeredictoCv, { texto: string; color: string }> = {
-  cumple: { texto: "Cumple", color: "#1F6B44" },
+  cumple: { texto: "Cumple", color: "var(--verde-tx)" },
   no_cumple: { texto: "No cumple", color: "var(--naranja)" },
   por_revisar: { texto: "Por revisar", color: "var(--tx2)" },
 };

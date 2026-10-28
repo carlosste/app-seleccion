@@ -56,7 +56,7 @@ export function EtapasEditor({
         </div>
       )}
 
-      <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+      <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 16 }}>
         {etapas.map((e, i) => (
           <FilaEtapa
             key={e.id}
@@ -136,9 +136,12 @@ function FilaEtapa({
   const sinEditar = deshabilitado || bloqueada;
 
   return (
-    <li className="paso" style={{ flexWrap: "wrap", alignItems: "center", gap: 12 }}>
-      <b>{posicion}</b>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 220 }}>
+    <li className="paso" data-tipo={etapa.tipo}>
+      <b aria-hidden="true">{posicion}</b>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 220 }}>
+        <span className="etapa-tipo">
+          Etapa {posicion} · {titulo(etapa.tipo)}
+        </span>
         <input
           className="inp"
           value={nombre}
@@ -151,9 +154,6 @@ function FilaEtapa({
             if (nombre.trim() !== (etapa.nombre ?? "")) onRenombrar(nombre);
           }}
         />
-        <span className="texto-gris" style={{ fontSize: 12 }}>
-          {titulo(etapa.tipo)}
-        </span>
         {bloqueada && (
           <span className="chip" style={{ alignSelf: "flex-start" }}>
             {etapa.llegaron > 0
@@ -162,7 +162,7 @@ function FilaEtapa({
           </span>
         )}
       </div>
-      <div className="flex" style={{ gap: 6 }}>
+      <div className="flex" style={{ gap: 8 }}>
         <button type="button" className="btn btn-sec btn-chico" disabled={deshabilitado || esPrimera} onClick={() => onMover("subir")} aria-label="Subir etapa">
           ↑
         </button>
@@ -187,9 +187,9 @@ function FilaEtapa({
       </div>
 
       {etapa.tipo !== "cv" && (
-        <details style={{ width: "100%" }}>
-          <summary style={{ cursor: "pointer", fontSize: 14, fontWeight: 600 }}>Preguntas ({preguntas.length})</summary>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+        <details className="etapa-preguntas">
+          <summary>Preguntas ({preguntas.length})</summary>
+          <div className="lista-preguntas">
             {preguntas.map((p, i) => (
               <FilaPregunta
                 key={p.id}
@@ -202,65 +202,77 @@ function FilaEtapa({
             ))}
             {preguntas.length === 0 && <span className="texto-gris">Aún no hay preguntas para esta etapa.</span>}
 
-            {bloqueada ? null : agregando ? (
-              <div className="tarjeta" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <textarea
-                  className="inp"
-                  rows={2}
-                  value={nueva}
-                  placeholder="Escribe la pregunta"
-                  aria-label="Nueva pregunta"
-                  onChange={(e) => setNueva(e.target.value)}
-                />
-                <div className="flex" style={{ gap: 8 }}>
-                  <select className="inp" value={enfoqueNueva} onChange={(e) => setEnfoqueNueva(e.target.value)} aria-label="Enfoque de la pregunta">
-                    {ENFOQUES.map((m) => (
-                      <option key={m.valor} value={m.valor}>
-                        {m.titulo}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="btn btn-chico"
-                    disabled={deshabilitado || !nueva.trim()}
-                    onClick={() => {
-                      onAgregarPregunta(nueva, enfoqueNueva);
-                      setNueva("");
-                      setAgregando(false);
-                    }}
-                  >
-                    Guardar pregunta
-                  </button>
-                  <button type="button" className="btn-enlace" onClick={() => setAgregando(false)}>
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <button type="button" className="btn btn-punto btn-chico" disabled={deshabilitado} onClick={() => setAgregando(true)}>
-                  + Agregar pregunta
-                </button>
-              </div>
-            )}
-
+            {/* Herramientas aparte de la lista, para que no se mezclen con las preguntas. */}
             {!bloqueada && (
-            <div className="flex" style={{ gap: 8, flexWrap: "wrap" }}>
-              <select className="inp" value={modo} onChange={(e) => setModo(e.target.value)} aria-label="Enfoque de las preguntas con IA">
-                {MODOS.map((m) => (
-                  <option key={m.valor} value={m.valor}>
-                    {m.titulo}
-                  </option>
-                ))}
-              </select>
-              <button type="button" className="btn btn-sec btn-chico" disabled={deshabilitado} onClick={() => onGenerar(modo)}>
-                Generar con IA
-              </button>
-              <span className="texto-gris" style={{ fontSize: 12 }}>
-                Reemplaza solo las preguntas creadas por la IA.
-              </span>
-            </div>
+              <div className="herramientas-preguntas">
+                <span className="etq">Agregar o generar preguntas</span>
+                {agregando ? (
+                  <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+                    <textarea
+                      className="area"
+                      style={{ minHeight: 72 }}
+                      value={nueva}
+                      placeholder="Escribe la pregunta"
+                      aria-label="Nueva pregunta"
+                      onChange={(e) => setNueva(e.target.value)}
+                    />
+                    <div className="flex" style={{ gap: 8 }}>
+                      <select
+                        className="inp"
+                        style={{ width: "auto", height: 40 }}
+                        value={enfoqueNueva}
+                        onChange={(e) => setEnfoqueNueva(e.target.value)}
+                        aria-label="Enfoque de la pregunta"
+                      >
+                        {ENFOQUES.map((m) => (
+                          <option key={m.valor} value={m.valor}>
+                            {m.titulo}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn-chico"
+                        disabled={deshabilitado || !nueva.trim()}
+                        onClick={() => {
+                          onAgregarPregunta(nueva, enfoqueNueva);
+                          setNueva("");
+                          setAgregando(false);
+                        }}
+                      >
+                        Guardar pregunta
+                      </button>
+                      <button type="button" className="btn-enlace" onClick={() => setAgregando(false)}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" className="btn btn-punto btn-chico" disabled={deshabilitado} onClick={() => setAgregando(true)}>
+                    + Escribir una pregunta
+                  </button>
+                )}
+                <span aria-hidden="true" style={{ width: 1, height: 28, background: "var(--primario-borde)" }} />
+                <select
+                  className="inp"
+                  style={{ width: "auto", height: 40 }}
+                  value={modo}
+                  onChange={(e) => setModo(e.target.value)}
+                  aria-label="Enfoque de las preguntas con IA"
+                >
+                  {MODOS.map((m) => (
+                    <option key={m.valor} value={m.valor}>
+                      {m.titulo}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" className="btn btn-claro btn-chico" disabled={deshabilitado} onClick={() => onGenerar(modo)}>
+                  {deshabilitado ? "Generando…" : "Generar con IA"}
+                </button>
+                <span className="texto-gris" style={{ fontSize: 12, width: "100%" }}>
+                  Generar con IA reemplaza solo las preguntas creadas por la IA; las escritas a mano se conservan.
+                </span>
+              </div>
             )}
           </div>
         </details>
@@ -290,12 +302,14 @@ function FilaPregunta({
   }
 
   return (
-    <div className="flex" style={{ gap: 8, alignItems: "flex-start" }}>
-      <b style={{ paddingTop: 10 }}>{numero}</b>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+    <div className="pregunta-fila">
+      <span className="pregunta-numero" aria-hidden="true">
+        {numero}
+      </span>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: "1 1 280px" }}>
         <textarea
-          className="inp"
-          rows={2}
+          className="area"
+          style={{ minHeight: 64 }}
           value={texto}
           aria-label={`Pregunta ${numero}`}
           disabled={deshabilitado}
@@ -308,6 +322,7 @@ function FilaPregunta({
       </div>
       <select
         className="inp"
+        style={{ width: "auto", height: 40, marginTop: 4 }}
         value={enfoque}
         disabled={deshabilitado}
         aria-label={`Enfoque de la pregunta ${numero}`}
@@ -328,7 +343,7 @@ function FilaPregunta({
         disabled={deshabilitado}
         aria-label={`Quitar la pregunta ${numero}`}
         onClick={onQuitar}
-        style={{ paddingTop: 10 }}
+        style={{ paddingTop: 14, color: "var(--peligro)" }}
       >
         Quitar
       </button>

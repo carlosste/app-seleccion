@@ -42,7 +42,13 @@ Postulante (móvil primero): postulación con hoja de vida, ingreso con ID +
 contraseña, preguntas (texto/voz), confirmación.
 Gestión humana (escritorio): vacantes activas, requisitos y etapas, rúbrica,
 postulantes a ciegas, detalle del postulante.
-Diseño: azul #2457C5, fondo #F6F7F9, fuente Inter. Interfaz muy sencilla.
+Diseño (desde 2026-10-28, paleta "Violeta y durazno" elegida por Carlos): violeta
+#7C3AED como color principal, durazno #F97316 de acento, fondos lavanda suaves
+(#FAF7FF, página #F3EEFB), fuente Inter. Los colores viven como variables en
+`app/globals.css` (`--primario`, `--acento`, `--verde`, `--peligro`…); todo texto
+cumple contraste AA. Botones con estados al pasar el mouse, presionar y enfocar;
+cada tipo de etapa tiene su color (texto violeta, voz durazno, entrevista verde,
+CV gris). Interfaz sencilla.
 
 ## Tablas (Supabase)
 - Acceso y empresa: empresas, usuarios_empresa.
