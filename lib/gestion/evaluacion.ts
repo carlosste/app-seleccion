@@ -7,7 +7,7 @@ import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { sembrarRubricaSiFalta } from "./acciones-configuracion";
 import { NOMBRE_ETAPA } from "./datos";
-import type { EstadoRequisito, EvaluacionEtapa, ResultadoCv, ResultadoRubrica, VeredictoCv } from "./tipos-evaluacion";
+import { type EstadoRequisito, type EvaluacionEtapa, type ResultadoCv, type ResultadoRubrica, type VeredictoCv, VERSION_PUNTAJE } from "./tipos-evaluacion";
 
 // "Evaluar con IA": gestión humana lo pide desde el detalle del postulante (así no se gastan
 // tokens en cada postulación que llega). Hace dos cosas:
@@ -103,7 +103,7 @@ export async function evaluarPostulacion(vacanteId: string, postulacionId: strin
   await sembrarRubricaSiFalta(vacante.id);
   const anterior = previas?.find((e) => e.tarea === "puntuar_rubrica")?.resultado as ResultadoRubrica | undefined;
   try {
-    const r = await puntuarRespuestas(supabase, vacante, postulacion.id, cv, anterior);
+    const r = await puntuarRespuestas(supabase, vacante, postulacion.id, anterior);
     if (r.tipo === "sin-respuestas") hechos.push("Todavía no hay respuestas para puntuar.");
     else if (r.tipo === "sin-cambios") hechos.push("No hay respuestas nuevas desde la última evaluación.");
     else if (r.tipo === "sin-rubrica") hechos.push("La vacante no tiene criterios en la rúbrica: no se puntuó.");
@@ -190,6 +190,8 @@ async function analizarCv(
         ? requisitos.map((q, i) => `${i + 1}. Mínimo: ${q.minimo}`).join("\n")
         : "(ninguno: solo resume la hoja de vida)"),
     [{ mimeType: "application/pdf", data: pdf }],
+    // Temperatura 0: el mismo CV siempre da el mismo veredicto (de esto depende un descarte).
+    { temperatura: 0 },
   );
 
   const hojaDeVida = (Array.isArray(r.hoja_de_vida) ? r.hoja_de_vida : [])
@@ -230,7 +232,6 @@ async function puntuarRespuestas(
   supabase: Cliente,
   vacante: { id: string; cargo: string; descripcion: string | null },
   postulacionId: string,
-  cv: ResultadoCv | undefined,
   anterior: ResultadoRubrica | undefined,
 ): Promise<Puntuacion> {
   const [{ data: respuestas }, { data: preguntas }, { data: etapas }, { data: rubrica }] = await Promise.all([
@@ -254,7 +255,8 @@ async function puntuarRespuestas(
   if (!respuestas?.length) return { tipo: "sin-respuestas" };
   // Una evaluación del formato anterior (un solo puntaje, sin etapas) se rehace completa.
   const previa = Array.isArray(anterior?.etapas) ? anterior : undefined;
-  if (previa && previa.respuestasEvaluadas === respuestas.length) return { tipo: "sin-cambios" };
+  const vigente = (e: EvaluacionEtapa) => e.version === VERSION_PUNTAJE;
+  if (previa && previa.respuestasEvaluadas === respuestas.length && previa.etapas.every(vigente)) return { tipo: "sin-cambios" };
 
   const { data: criterios } = rubrica
     ? await supabase
@@ -292,11 +294,11 @@ async function puntuarRespuestas(
     if (!respondidas.length) continue;
     const nombre = etapa.nombre?.trim() || NOMBRE_ETAPA[etapa.tipo];
     const conservada = anteriores.get(etapa.id);
-    if (conservada && conservada.respuestasEvaluadas === respondidas.length) {
+    if (conservada && conservada.respuestasEvaluadas === respondidas.length && vigente(conservada)) {
       resultado.push(conservada);
       continue;
     }
-    const { evaluacion, modelo } = await puntuarEtapa(vacante, criterios, cv, nombre, respondidas);
+    const { evaluacion, modelo } = await puntuarEtapa(vacante, criterios, nombre, respondidas);
     resultado.push({ ...evaluacion, etapaId: etapa.id, nombre });
     etapasNuevas.push(nombre);
     modeloUsado = modelo;
@@ -315,10 +317,12 @@ async function puntuarRespuestas(
   };
 }
 
+// Cada etapa se califica SOLO con sus respuestas (sin la hoja de vida ni otras etapas), con
+// una escala fija y temperatura 0: así se compara a todos con el mismo criterio, también
+// cuando se evalúan muchos seguidos con "Analizar todos".
 async function puntuarEtapa(
   vacante: { cargo: string; descripcion: string | null },
   criterios: Criterio[],
-  cv: ResultadoCv | undefined,
   nombreEtapa: string,
   respondidas: Numerada[],
 ): Promise<{ evaluacion: Omit<EvaluacionEtapa, "etapaId" | "nombre">; modelo: string }> {
@@ -332,15 +336,19 @@ async function puntuarEtapa(
       'Para cada criterio, en el mismo orden: {"indice", "puntaje", "evidencia"}. puntaje es un entero de 0 a 100, ' +
       'o null si las respuestas de esta etapa no dan evidencia para ese criterio (por ejemplo "rapidez de respuesta": ' +
       'no tienes tiempos). evidencia cita la pregunta y lo que respondió, por ejemplo "Pregunta 2 · describe pasos ' +
-      'ordenados". Una respuesta evasiva, fuera de tema o vacía baja el puntaje del criterio que debía mostrar. ' +
+      'ordenados". Usa siempre esta escala, igual para todos los postulantes: 90-100 respuesta completa, correcta y ' +
+      "con ejemplos concretos; 70-89 correcta pero general o con algún vacío; 50-69 incompleta o superficial; menos " +
+      "de 50 incorrecta, evasiva o sin contenido. " +
+      "Una respuesta evasiva, fuera de tema o vacía baja el puntaje del criterio que debía mostrar. " +
       "Evalúa solo el contenido de las respuestas: nunca la edad, el género, el origen, la forma de hablar ni rasgos " +
       "personales. No digas si es el mejor ni si debe pasar: eso lo decide una persona. " +
       '"fortalezas": una frase. "profundizar": una frase con lo que conviene preguntar en la entrevista. ' +
       'Devuelve {"criterios": [...], "fortalezas": "...", "profundizar": "..."}.',
     `Cargo: ${vacante.cargo}\nDescripción: ${vacante.descripcion?.trim() || "(sin descripción)"}\nEtapa: ${nombreEtapa}\n\n` +
       `Rúbrica:\n${criterios.map((c, i) => `${i + 1}. ${c.nombre} (peso ${c.peso}%): ${c.descripcion ?? ""}`).join("\n")}\n\n` +
-      (cv?.hojaDeVida.length ? `Hoja de vida (resumen): ${cv.hojaDeVida.map((d) => `${d.etiqueta}: ${d.valor}`).join("; ")}\n\n` : "") +
       `Respuestas de esta etapa:\n${respondidas.map((x) => `Pregunta ${x.numero}: ${x.pregunta}\nRespuesta: ${x.respuesta}`).join("\n\n")}`,
+    [],
+    { temperatura: 0 },
   );
 
   const dados = Array.isArray(r.criterios) ? r.criterios : [];
@@ -370,6 +378,7 @@ async function puntuarEtapa(
       profundizar: texto(r.profundizar, 400),
       respuestasEvaluadas: respondidas.length,
       fecha: new Date().toISOString(),
+      version: VERSION_PUNTAJE,
     },
   };
 }

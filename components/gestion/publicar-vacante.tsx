@@ -32,7 +32,8 @@ export function PublicarVacante({ id, estado, enlaceToken }: { id: string; estad
       <div>
         <b>Esta vacante está en borrador</b>
         <div className="texto-gris" style={{ fontSize: 14 }}>
-          Publícala para generar su link de postulación.
+          Publícala para generar su link de postulación. Al publicar, las preguntas de la primera etapa quedan fijas
+          para que todos respondan las mismas.
         </div>
         {resultado.estado === "error" && (
           <div className="nota nota-error" role="alert">

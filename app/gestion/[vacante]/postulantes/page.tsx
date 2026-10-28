@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Barra } from "@/components/barra";
 import { Estado } from "@/components/estado";
+import { AnalizarTodos } from "@/components/gestion/analizar-todos";
 import { listarPostulantes } from "@/lib/gestion/datos";
 
 // D · Postulantes a ciegas: sin nombres ni datos personales hasta la entrevista.
@@ -14,6 +15,11 @@ export default async function ListaPostulantes({ params }: PageProps<"/gestion/[
       <div className="nota nota-az">
         Revisión a ciegas: nombres y datos personales ocultos hasta la entrevista. La IA ordena y puntúa; la decisión es de gestión humana.
       </div>
+
+      <AnalizarTodos
+        vacanteId={vacante}
+        postulantes={postulantes.filter((p) => p.decision === "pendiente").map((p) => ({ id: p.id, numero: p.numero }))}
+      />
 
       {postulantes.length === 0 ? (
         <div className="tarjeta vacio">

@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { pedirJson } from "@/lib/ia/gemini";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
-import { MENSAJE_CON_POSTULACIONES, tienePostulaciones } from "./postulaciones";
 
 // Preguntas por etapa. La IA las propone según el cargo, la descripción y la rúbrica,
 // o de enfoque social (situaciones cotidianas). La empresa puede editarlas, quitarlas
@@ -48,6 +47,35 @@ async function clienteDeVacante(vacanteId: string) {
   return data ? { supabase, vacante: data } : null;
 }
 
+type Cliente = Awaited<ReturnType<typeof crearClienteServidor>>;
+
+// Todos los postulantes de una etapa responden las mismas preguntas (decisión de Carlos,
+// 2026-10-28): la primera etapa se bloquea al publicar y las demás cuando alguien llega.
+// La base lo vuelve a exigir con un trigger; esto solo da un mensaje claro y evita gastar
+// tokens en preguntas que no se podrían guardar.
+async function motivoBloqueo(supabase: Cliente, etapaId: string): Promise<string | null> {
+  const { data: bloqueada, error } = await supabase.rpc("etapa_bloqueada", { p_etapa: etapaId });
+  if (error) {
+    console.error("[preguntas] etapa_bloqueada", error);
+    return "No pudimos comprobar si la etapa está bloqueada. Intenta de nuevo.";
+  }
+  if (!bloqueada) return null;
+  const { data: llegaron } = await supabase.rpc("postulantes_en_etapa", { p_etapa: etapaId });
+  return Number(llegaron) > 0
+    ? `Las preguntas de esta etapa están bloqueadas: ${llegaron} postulante(s) ya llegaron a ella.`
+    : "Las preguntas de la primera etapa se bloquean al publicar la vacante: todos responden las mismas.";
+}
+
+async function etapaDePregunta(supabase: Cliente, id: string, vacanteId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("preguntas")
+    .select("etapa_id")
+    .eq("id", id)
+    .eq("vacante_id", vacanteId)
+    .maybeSingle<{ etapa_id: string }>();
+  return data?.etapa_id ?? null;
+}
+
 function textoValido(texto: string): string | null {
   const limpio = texto.trim();
   return limpio && limpio.length <= LARGO_PREGUNTA ? limpio : null;
@@ -62,9 +90,9 @@ export async function generarPreguntas(vacanteId: string, etapaId: string, modo:
   if (!acceso) return { ok: false, mensaje: "Vacante no encontrada." };
   const { supabase, vacante } = acceso;
   if (modo !== "cargo" && modo !== "social" && modo !== "mixta") return { ok: false, mensaje: "Enfoque no válido." };
-  // Regenerar borra las preguntas de la IA y, en cascada, sus respuestas. Se revisa antes
-  // de llamar a Gemini para no gastar tokens.
-  if (await tienePostulaciones(supabase, vacanteId)) return { ok: false, mensaje: MENSAJE_CON_POSTULACIONES };
+  // Regenerar borra las preguntas de la IA. Si la etapa está bloqueada ni se llama a Gemini.
+  const bloqueo = await motivoBloqueo(supabase, etapaId);
+  if (bloqueo) return { ok: false, mensaje: bloqueo };
 
   const { data: etapas } = await supabase
     .from("vacante_etapas")
@@ -168,6 +196,8 @@ export async function agregarPreguntaManual(
     .eq("vacante_id", vacanteId)
     .maybeSingle<{ tipo: string }>();
   if (!etapa || etapa.tipo === "cv") return { ok: false, mensaje: "Esta etapa no admite preguntas." };
+  const bloqueo = await motivoBloqueo(supabase, etapaId);
+  if (bloqueo) return { ok: false, mensaje: bloqueo };
 
   const { data: ultima } = await supabase
     .from("preguntas")
@@ -200,6 +230,10 @@ export async function guardarPregunta(id: string, vacanteId: string, texto: stri
   if (!enfoqueOk) return { ok: false, mensaje: "Enfoque no válido." };
   const acceso = await clienteDeVacante(vacanteId);
   if (!acceso) return { ok: false, mensaje: "Vacante no encontrada." };
+  const etapaId = await etapaDePregunta(acceso.supabase, id, vacanteId);
+  if (!etapaId) return { ok: false, mensaje: "Pregunta no encontrada." };
+  const bloqueo = await motivoBloqueo(acceso.supabase, etapaId);
+  if (bloqueo) return { ok: false, mensaje: bloqueo };
 
   const { error } = await acceso.supabase
     .from("preguntas")
@@ -217,7 +251,10 @@ export async function guardarPregunta(id: string, vacanteId: string, texto: stri
 export async function quitarPregunta(id: string, vacanteId: string): Promise<Resultado> {
   const acceso = await clienteDeVacante(vacanteId);
   if (!acceso) return { ok: false, mensaje: "Vacante no encontrada." };
-  if (await tienePostulaciones(acceso.supabase, vacanteId)) return { ok: false, mensaje: MENSAJE_CON_POSTULACIONES };
+  const etapaId = await etapaDePregunta(acceso.supabase, id, vacanteId);
+  if (!etapaId) return { ok: false, mensaje: "Pregunta no encontrada." };
+  const bloqueo = await motivoBloqueo(acceso.supabase, etapaId);
+  if (bloqueo) return { ok: false, mensaje: bloqueo };
 
   const { error } = await acceso.supabase.from("preguntas").delete().eq("id", id).eq("vacante_id", vacanteId);
   if (error) {

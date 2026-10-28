@@ -24,7 +24,9 @@ Proyecto académico (Ingeniería de Sistemas, UCC Cali), pensado para escalar.
   queda "por revisar", nunca descartado.
 - Solo edad mínima; prohibido filtrar por edad máxima, género o estado civil.
 - Revisión a ciegas en primeras etapas ("Candidato #014"); nombre visible
-  solo en la entrevista final.
+  solo en la entrevista final. **Excepción (2026-10-28, decisión de Carlos):**
+  el CV original se puede ver y descargar en cualquier etapa, porque gestión
+  humana lo necesita a la mano. La interfaz sigue mostrando solo el número.
 - Rapidez de respuesta suma un poco; lentitud no resta.
 
 ## Flujo de etapas (configurable por empresa y vacante)
@@ -105,8 +107,8 @@ Nunca subir .env.local al repositorio.
 
 ## Estado de la base de datos (2026-10-28)
 - Proyecto Supabase `app-seleccion` (id `wknyyiejvafdcwkdpoqr`, us-east-1,
-  plan gratis). Las 12 migraciones de `supabase\migrations\` están aplicadas,
-  la última `eliminar_vacante`. Todas las tablas con RLS activo.
+  plan gratis). Las 13 migraciones de `supabase\migrations\` están aplicadas,
+  la última `bloqueo_preguntas`. Todas las tablas con RLS activo.
 - 2026-10-28, ~21:47 UTC: base vaciada a pedido de Carlos (todas las empresas,
   cuentas, vacantes, postulantes y CVs). Se conservan el esquema, funciones,
   políticas y el bucket `cvs`. Para datos de prueba: `scripts/seed-postulantes.mjs`.
@@ -147,6 +149,24 @@ Nunca subir .env.local al repositorio.
   de 15 s: leerlo tarda unos 13-14 s. `evaluaciones_ia.modelo` guarda el
   modelo que respondió de verdad (puede ser uno de respaldo).
 - `GEMINI_API_KEY` está en `.env.local` desde el 2026-10-28.
+
+## Preguntas fijas, análisis por etapa y CV (2026-10-28, decisión de Carlos)
+- Migración `20261028190000_bloqueo_preguntas` (aplicada y probada): un trigger
+  en `preguntas` impide crear, editar o borrar preguntas de una etapa
+  bloqueada (`etapa_bloqueada`): la primera etapa de preguntas al publicar la
+  vacante, y cualquier etapa a la que ya llegó un postulante
+  (`postulantes_en_etapa`). Publicar exige preguntas en la primera etapa;
+  después de publicar no se reordenan etapas.
+- Detalle del postulante: una pestaña por cada etapa de preguntas de la
+  vacante, con sus respuestas y su análisis; el total va en la columna lateral.
+- Cada etapa se califica solo con sus respuestas (sin hoja de vida), escala
+  fija y temperatura 0. `VERSION_PUNTAJE` (hoy 2) marca el criterio: una etapa
+  calificada con otra versión se recalifica. "Analizar todos" (lista de
+  postulantes) evalúa a los que siguen en proceso, uno por uno, desde el
+  navegador.
+- CV: `/api/gestion/cv/[id]` lo entrega en cualquier etapa (en la página o con
+  `?descargar=1`), con nombre de archivo `candidato-NNN.pdf`, y registra
+  `ver_cv` / `descargar_cv` en `registro_actividad`.
 
 ## Evaluación por etapa (2026-10-28, decisión de Carlos)
 - `puntuar_rubrica` guarda un puntaje por cada etapa de preguntas (texto, voz…)

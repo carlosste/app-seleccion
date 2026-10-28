@@ -229,10 +229,16 @@ export async function renombrarEtapa(id: string, vacanteId: string, nombre: stri
 
 // Intercambia el orden con la etapa de arriba o de abajo. El orden es único por
 // vacante, así que el cambio pasa por un valor temporal.
+// Después de publicar el orden queda fijo: moverlo cambiaría cuál es la primera etapa, que
+// es la que se bloquea al publicar (todos responden las mismas preguntas).
 export async function moverEtapa(id: string, vacanteId: string, direccion: "subir" | "bajar"): Promise<Resultado> {
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return NO_ENCONTRADA;
   if (await tienePostulaciones(supabase, vacanteId)) return CON_POSTULACIONES;
+  const { data: vacante } = await supabase.from("vacantes").select("estado").eq("id", vacanteId).maybeSingle<{ estado: string }>();
+  if (vacante?.estado !== "borrador") {
+    return { ok: false, mensaje: "La vacante ya está publicada: el orden de las etapas no se cambia. Puedes agregar etapas al final." };
+  }
 
   const { data: etapas } = await supabase
     .from("vacante_etapas")
@@ -269,7 +275,10 @@ export async function quitarEtapa(id: string, vacanteId: string): Promise<Result
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return NO_ENCONTRADA;
   if (await tienePostulaciones(supabase, vacanteId)) return CON_POSTULACIONES;
-  const { error }= await supabase.from("vacante_etapas").delete().eq("id", id).eq("vacante_id", vacanteId);
+  // Una etapa con preguntas bloqueadas (la primera, ya publicada) no se quita.
+  const { data: bloqueada } = await supabase.rpc("etapa_bloqueada", { p_etapa: id });
+  if (bloqueada) return { ok: false, mensaje: "Esta etapa está bloqueada desde que se publicó la vacante: no se puede quitar." };
+  const { error } = await supabase.from("vacante_etapas").delete().eq("id", id).eq("vacante_id", vacanteId);
   if (error) {
     console.error("[etapas] delete", error);
     return FALLO;

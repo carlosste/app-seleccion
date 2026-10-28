@@ -131,6 +131,9 @@ function FilaEtapa({
   const [agregando, setAgregando] = useState(false);
   const [nueva, setNueva] = useState("");
   const [enfoqueNueva, setEnfoqueNueva] = useState("cargo");
+  // Preguntas bloqueadas: nadie las cambia, así todos los postulantes responden las mismas.
+  const bloqueada = etapa.bloqueada && etapa.tipo !== "cv";
+  const sinEditar = deshabilitado || bloqueada;
 
   return (
     <li className="paso" style={{ flexWrap: "wrap", alignItems: "center", gap: 12 }}>
@@ -151,6 +154,13 @@ function FilaEtapa({
         <span className="texto-gris" style={{ fontSize: 12 }}>
           {titulo(etapa.tipo)}
         </span>
+        {bloqueada && (
+          <span className="chip" style={{ alignSelf: "flex-start" }}>
+            {etapa.llegaron > 0
+              ? `Preguntas bloqueadas: ${etapa.llegaron} postulante(s) ya llegaron`
+              : "Preguntas bloqueadas al publicar: todos responden las mismas"}
+          </span>
+        )}
       </div>
       <div className="flex" style={{ gap: 6 }}>
         <button type="button" className="btn btn-sec btn-chico" disabled={deshabilitado || esPrimera} onClick={() => onMover("subir")} aria-label="Subir etapa">
@@ -162,7 +172,7 @@ function FilaEtapa({
         <button
           type="button"
           className="btn-enlace"
-          disabled={deshabilitado}
+          disabled={sinEditar}
           aria-label={`Quitar la etapa ${posicion}`}
           onClick={() => {
             const aviso =
@@ -185,14 +195,14 @@ function FilaEtapa({
                 key={p.id}
                 numero={i + 1}
                 pregunta={p}
-                deshabilitado={deshabilitado}
+                deshabilitado={sinEditar}
                 onGuardar={(texto, enfoque) => onGuardarPregunta(p.id, texto, enfoque)}
                 onQuitar={() => onQuitarPregunta(p.id)}
               />
             ))}
             {preguntas.length === 0 && <span className="texto-gris">Aún no hay preguntas para esta etapa.</span>}
 
-            {agregando ? (
+            {bloqueada ? null : agregando ? (
               <div className="tarjeta" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <textarea
                   className="inp"
@@ -235,6 +245,7 @@ function FilaEtapa({
               </div>
             )}
 
+            {!bloqueada && (
             <div className="flex" style={{ gap: 8, flexWrap: "wrap" }}>
               <select className="inp" value={modo} onChange={(e) => setModo(e.target.value)} aria-label="Enfoque de las preguntas con IA">
                 {MODOS.map((m) => (
@@ -250,6 +261,7 @@ function FilaEtapa({
                 Reemplaza solo las preguntas creadas por la IA.
               </span>
             </div>
+            )}
           </div>
         </details>
       )}
