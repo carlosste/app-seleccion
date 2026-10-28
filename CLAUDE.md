@@ -107,6 +107,9 @@ Nunca subir .env.local al repositorio.
 - Proyecto Supabase `app-seleccion` (id `wknyyiejvafdcwkdpoqr`, us-east-1,
   plan gratis). Las 12 migraciones de `supabase\migrations\` están aplicadas,
   la última `eliminar_vacante`. Todas las tablas con RLS activo.
+- 2026-10-28, ~21:47 UTC: base vaciada a pedido de Carlos (todas las empresas,
+  cuentas, vacantes, postulantes y CVs). Se conservan el esquema, funciones,
+  políticas y el bucket `cvs`. Para datos de prueba: `scripts/seed-postulantes.mjs`.
 - Advisors de seguridad: `intentos_ingreso` sin políticas es intencional (solo
   el servidor con la service role). Las funciones auxiliares de RLS son
   `SECURITY DEFINER` y `authenticated` debe poder ejecutarlas para que las

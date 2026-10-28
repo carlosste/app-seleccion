@@ -5,6 +5,7 @@ import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { pedirJsonConModelo } from "@/lib/ia/gemini";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { sembrarRubricaSiFalta } from "./acciones-configuracion";
 import { NOMBRE_ETAPA } from "./datos";
 import type { EstadoRequisito, ResultadoCv, ResultadoRubrica, VeredictoCv } from "./tipos-evaluacion";
 
@@ -97,7 +98,9 @@ export async function evaluarPostulacion(vacanteId: string, postulacionId: strin
     }
   }
 
-  // 2. Rúbrica: solo si hay respuestas nuevas.
+  // 2. Rúbrica: solo si hay respuestas nuevas. Si la vacante nunca abrió la pestaña Rúbrica,
+  // se crea la de por defecto (lo mismo que hace esa pestaña al abrirse).
+  await sembrarRubricaSiFalta(vacante.id);
   const anterior = previas?.find((e) => e.tarea === "puntuar_rubrica")?.resultado as ResultadoRubrica | undefined;
   try {
     const r = await puntuarRespuestas(supabase, vacante, postulacion.id, cv, anterior);
