@@ -131,6 +131,16 @@ Nunca subir .env.local al repositorio.
   de empresa no puede postularse.
 
 ## Pendientes
+
+### Mejora a futuro: tope de uso de la IA (decidido el 2026-10-28)
+No se hace por ahora: primero, que toda la app funcione. Cuando se retome:
+- Registrar cada llamada a Gemini en `llamadas_ia` (empresa, tarea, modelo,
+  tokens de entrada y salida). `pedirJson` debe devolver `usageMetadata` y la
+  fila se guarda con la service role.
+- Tope diario por empresa: antes de llamar a Gemini, sumar los tokens del día y
+  bloquear con un mensaje claro si se pasó.
+- Motivo: hoy cualquier cuenta de empresa registrada puede llamar a la IA sin
+  límite, y cada llamada cuesta. CLAUDE.md ya pedía registrar los tokens.
 - **Borrado y espacio (paréntesis, para cuando sea plan de pago).** Hoy la app
   es de prueba y no borra archivos. Para la versión de pago, cada empresa
   definirá cuánto tiempo se guardan CVs, audios y grabaciones (por ejemplo,
@@ -145,7 +155,6 @@ Ninguna está decidida: preguntar antes de cambiarlas.
 - Contraseña del postulante: se crea, pero no hay pantalla para entrar con ella
   (siempre se entra con código). ¿Quitarla o agregar "Ingresar con contraseña"?
 - Rol `entrevistador`: hoy RLS lo trata igual que a gestión humana.
-- `llamadas_ia`: no se registran los tokens de Gemini ni hay tope por empresa.
 - `publicarVacante` pasa a "abierta" desde cualquier estado (¿reabrir cerradas?).
 - Agregar preguntas con postulaciones recibidas sigue permitido (rompe
   "preguntas iguales para todos").
