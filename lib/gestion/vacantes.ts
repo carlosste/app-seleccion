@@ -58,6 +58,32 @@ export async function crearVacante(_previo: EstadoVacante, fd: FormData): Promis
   redirect(`/gestion/${vacante.id}`);
 }
 
+// Descripción pública de la vacante: es lo único que ve el postulante además del cargo.
+// La redacta la empresa (puede pedir un borrador a la IA y ajustarlo). Los requisitos
+// mínimos nunca van aquí: son internos.
+export async function guardarDescripcion(vacanteId: string, texto: string): Promise<{ ok: boolean; mensaje: string }> {
+  if (!/^[0-9a-f-]{36}$/i.test(vacanteId)) return { ok: false, mensaje: "Vacante no válida." };
+  const descripcion = texto.trim();
+  if (descripcion.length > 2000) return { ok: false, mensaje: "La descripción admite hasta 2000 caracteres." };
+
+  const { empresa } = await requerirEmpresa();
+  const supabase = await crearClienteServidor();
+  const { data, error } = await supabase
+    .from("vacantes")
+    .update({ descripcion: descripcion || null })
+    .eq("id", vacanteId)
+    .eq("empresa_id", empresa.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    console.error("[vacante] descripcion", error);
+    return { ok: false, mensaje: "No pudimos guardar la descripción. Intenta de nuevo." };
+  }
+
+  revalidatePath(`/gestion/${vacanteId}`, "layout");
+  return { ok: true, mensaje: "Descripción guardada. Así la ven los postulantes." };
+}
+
 // Pasa la vacante de borrador a abierta: desde ese momento su link público recibe postulaciones.
 export async function publicarVacante(_previo: EstadoPublicar, fd: FormData): Promise<EstadoPublicar> {
   const id = String(fd.get("id") ?? "");

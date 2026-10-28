@@ -969,3 +969,13 @@ td {
   color: inherit;
   text-shadow: none;
 }
+
+/* Pestañas de respuestas en el detalle del postulante */
+button.pill {
+  cursor: pointer;
+}
+
+button.pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -236,3 +236,46 @@ export async function ingresar(formData: FormData) {
   if (!postulacion) redirect(`/postular/${token}?error=sin-postulacion`);
   redirect(`/postular/${token}/preguntas`);
 }
+
+const LARGO_RESPUESTA = 3000;
+
+export type ResultadoRespuesta = { ok: true; fin?: boolean } | { ok: false; mensaje: string };
+
+// Pantalla 3: guarda una respuesta. Por ahora las preguntas de voz también se responden
+// por escrito (decisión de Carlos, 2026-10-28). La base (puede_responder) revisa que la
+// pregunta sea de una etapa que ya alcanzó y que la postulación siga en proceso.
+export async function responderPregunta(token: string, preguntaId: string, texto: string): Promise<ResultadoRespuesta> {
+  const limpio = texto.trim();
+  if (limpio.length < 2 || limpio.length > LARGO_RESPUESTA) {
+    return { ok: false, mensaje: `Escribe tu respuesta (máximo ${LARGO_RESPUESTA} caracteres).` };
+  }
+  if (!/^[0-9a-f-]{36}$/i.test(preguntaId)) return { ok: false, mensaje: "Pregunta no válida." };
+
+  const vacante = await vacantePorToken(token);
+  const supabase = await crearClienteServidor();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, mensaje: "Tu sesión venció. Vuelve a ingresar con tu ID y contraseña." };
+
+  const { data: postulacion } = await supabase
+    .from("postulaciones")
+    .select("id, estado")
+    .eq("postulante_id", user.id)
+    .eq("vacante_id", vacante.id)
+    .maybeSingle<{ id: string; estado: string }>();
+  if (!postulacion) return { ok: false, mensaje: "Aún no te has postulado a esta vacante." };
+  // La revisión de CV es interna: si quedó descartada, el postulante solo ve que terminó.
+  if (postulacion.estado !== "en_proceso") return { ok: true, fin: true };
+
+  const { error } = await supabase
+    .from("respuestas")
+    .insert({ postulacion_id: postulacion.id, pregunta_id: preguntaId, modalidad: "texto", texto: limpio });
+  if (error) {
+    // Ya estaba respondida (doble clic o dos pestañas): para el postulante no es un error.
+    if (error.code === "23505") return { ok: true };
+    console.error("[postulacion] responder", error);
+    return { ok: false, mensaje: "No pudimos guardar tu respuesta. Intenta de nuevo." };
+  }
+  return { ok: true };
+}
