@@ -7,7 +7,7 @@ import { verificarCodigo } from "../../acciones";
 const MENSAJES: Record<string, string> = {
   codigo: "El código no es correcto o ya venció. Revisa el correo o pide uno nuevo.",
   clave: "La contraseña debe tener al menos 8 caracteres (solo la primera vez).",
-  cv: "Sube tu hoja de vida en PDF, de máximo 5 MB.",
+  cv: "Sube tu hoja de vida en PDF, de máximo 4 MB.",
   sesion: "Tu sesión de ingreso venció. Empieza de nuevo.",
   general: "Algo salió mal. Intenta de nuevo.",
 };
@@ -75,7 +75,7 @@ export default async function Ingreso({
           />
         </div>
         <div className="campo">
-          <label htmlFor="cv">Hoja de vida (PDF, máximo 5 MB)</label>
+          <label htmlFor="cv">Hoja de vida (PDF, máximo 4 MB)</label>
           <input id="cv" name="cv" type="file" accept="application/pdf" className="inp" />
         </div>
 

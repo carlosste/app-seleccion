@@ -2,12 +2,14 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { vacantePorToken } from "@/lib/vacante-publica";
 
 const COOKIE_CORREO = "postulacion_correo";
 const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const LIMITE_CV_BYTES = 5 * 1024 * 1024;
+// Igual al límite del bucket "cvs". Vercel corta los cuerpos de más de 4,5 MB.
+const LIMITE_CV_BYTES = 4 * 1024 * 1024;
 const VERSION_TEXTO = "v1";
 
 function normalizarDocumento(texto: string) {
@@ -37,7 +39,8 @@ export async function enviarCodigo(formData: FormData) {
 
   const supabase = await crearClienteServidor();
 
-  const { data: disponible, error: errorDisponible } = await supabase.rpc("documento_disponible", {
+  // Solo el servidor puede preguntar si un documento tiene cuenta (no es pública).
+  const { data: disponible, error: errorDisponible } = await crearClienteAdmin().rpc("documento_disponible", {
     p_pais: pais,
     p_numero: documento,
   });
@@ -129,21 +132,14 @@ export async function verificarCodigo(formData: FormData) {
       .upload(ruta, cv, { contentType: "application/pdf", upsert: true });
     if (errorSubida) redirect(`/postular/${token}/ingreso?error=general`);
 
-    const { data: primera } = await supabase
-      .from("vacante_etapas")
-      .select("id")
-      .eq("vacante_id", vacante.id)
-      .order("orden")
-      .limit(1)
-      .maybeSingle();
-
+    // La base exige que la postulación empiece en la primera etapa de la vacante.
     const { data: nueva, error: errorPostulacion } = await supabase
       .from("postulaciones")
       .insert({
         postulante_id: usuario.id,
         vacante_id: vacante.id,
         cv_path: ruta,
-        etapa_actual_id: primera?.id ?? null,
+        etapa_actual_id: vacante.primera_etapa_id,
       })
       .select("id")
       .single();

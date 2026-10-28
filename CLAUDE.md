@@ -106,6 +106,20 @@ Nunca subir .env.local al repositorio.
 - Pendiente de la base: buckets de Storage y sus políticas; regla de que los
   pesos de la rúbrica sumen 100; datos de prueba.
 
+## Correcciones de seguridad (2026-10-28)
+- Migración `20261028120000_correcciones_seguridad.sql` (fase 1 de la revisión
+  técnica). Probada en seco contra la base real con 28 pruebas de RLS.
+  **PENDIENTE aplicarla en Supabase.**
+- Qué cambia: la oferta pública sale de la función `vacante_publica(token)` y ya
+  no de `v_vacantes_publicas` (se borra); nadie sin sesión lista vacantes ni
+  etapas. El postulante solo escribe `postulante_id, vacante_id, cv_path,
+  etapa_actual_id` y la base exige vacante abierta, primera etapa y su propio CV.
+  Respuestas y consentimientos: solo ver y crear, sin editar ni borrar.
+  Preguntas: solo las de etapas alcanzadas. `documento_disponible`: solo
+  service role. Bucket `cvs`: 4 MB, solo PDF (Vercel corta a los 4,5 MB).
+- Código: `lib/vacante-publica.ts` usa la vista vieja mientras la función no
+  exista. Ese respaldo es temporal: se quita al aplicar la migración.
+
 ## Pendientes
 - **Borrado y espacio (paréntesis, para cuando sea plan de pago).** Hoy la app
   es de prueba y no borra archivos. Para la versión de pago, cada empresa
