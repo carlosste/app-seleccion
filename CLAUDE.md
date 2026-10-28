@@ -105,14 +105,58 @@ Nunca subir .env.local al repositorio.
 
 ## Estado de la base de datos (2026-10-28)
 - Proyecto Supabase `app-seleccion` (id `wknyyiejvafdcwkdpoqr`, us-east-1,
-  plan gratis). Las 10 migraciones de `supabase\migrations\` están aplicadas,
-  la última `correcciones_seguridad`. Todas las tablas con RLS activo.
+  plan gratis). Las 12 migraciones de `supabase\migrations\` están aplicadas,
+  la última `eliminar_vacante`. Todas las tablas con RLS activo.
 - Advisors de seguridad: `intentos_ingreso` sin políticas es intencional (solo
   el servidor con la service role). Las funciones auxiliares de RLS son
   `SECURITY DEFINER` y `authenticated` debe poder ejecutarlas para que las
   políticas funcionen. "Protección de contraseñas filtradas" sigue apagada.
 - Bucket `cvs` privado: 4 MB, solo PDF.
 - Los pesos de la rúbrica suman 100 por código (`repartir`), no por la base.
+
+## Flujo real de la postulación (2026-10-28, decisión de Carlos)
+- Migración `20261028170000_flujo_postulacion.sql`, aplicada y probada con roles
+  reales (13 pruebas en una transacción deshecha).
+- **Revisión de CV interna.** El postulante no la ve: aunque su etapa sea "cv",
+  responde de una vez la siguiente etapa de texto o voz (`orden_alcanzado`). Las
+  preguntas de entrevista nunca le llegan.
+- **Preguntas reales.** Salen de `preguntas_pendientes(postulacion)` y cada
+  respuesta se guarda al enviarla; al volver sigue donde iba. **Por ahora la voz
+  se responde por escrito** (para la entrega del 50 %); la grabación va después.
+- **"Evaluar con IA" a mano**, desde el detalle del postulante, para ahorrar
+  tokens (no se llama a Gemini en cada postulación). Lee el CV una sola vez
+  (`leer_cv`): hoja de vida sin datos personales + requisitos mínimos. Si no
+  cumple uno, `registrar_revision_cv` lo descarta solo; si cumple y sigue en
+  "cv", pasa a la siguiente etapa; si falta un dato, queda "por revisar". Luego
+  puntúa las respuestas con la rúbrica (`puntuar_rubrica`) solo si hay
+  respuestas nuevas. El ajuste lo calcula el servidor (promedio ponderado); los
+  criterios sin evidencia no cuentan.
+- **Decisión humana** con `decidir_postulacion`: "Pasa" → siguiente etapa (o
+  seleccionada si era la última); "No pasa" → descartada. Solo `gestion_humana`.
+  Al pasar a la entrevista se revela el nombre.
+- La descripción pública se edita en la pestaña Requisitos ("Redactar/Mejorar
+  con IA" solo propone; se guarda a mano). Es lo único que ve el postulante
+  además del cargo.
+- A la IA solo se le envía el **mínimo** de cada requisito, nunca lo que pide la
+  oferta: con los dos, comparaba contra la oferta y descartaba de más (probado
+  el 2026-10-28 con un CV ficticio).
+- Con un PDF adjunto (el CV), cada intento a Gemini espera hasta 40 s en vez
+  de 15 s: leerlo tarda unos 13-14 s. `evaluaciones_ia.modelo` guarda el
+  modelo que respondió de verdad (puede ser uno de respaldo).
+- `GEMINI_API_KEY` está en `.env.local` desde el 2026-10-28.
+
+## Vacantes: requisitos por cargo y eliminar (2026-10-28, decisión de Carlos)
+- Al crear una vacante, la IA propone de 4 a 6 requisitos propios del cargo
+  (`proponerRequisitos` en `lib/gestion/requisitos-por-defecto.ts`); el código
+  agrega siempre "Mayor de 18 años". El mínimo se escribe para entenderse solo
+  (la revisión de CV solo recibe el mínimo). Se filtran edad, género, estado
+  civil, apariencia, religión, condición física, salud y vacunas. Si la IA
+  falla, la vacante queda solo con la edad mínima y la pestaña Requisitos avisa.
+- "Sugerir con IA según el cargo" (pestaña Requisitos) reemplaza la lista.
+- **Eliminar solo vacantes sin postulantes** (`eliminar_vacante`, migración
+  `20261028180000_eliminar_vacante`, aplicada y probada). Con postulantes, el
+  botón es "Cerrar vacante": estado `cerrada`, deja de recibir y sale de la
+  lista, sin borrar datos. Hoy no hay pantalla para ver o reabrir las cerradas.
 
 ## Despliegue
 - Vercel, equipo `carloslozano`, proyecto `app-seleccion`. Producción:
@@ -169,7 +213,6 @@ Ninguna está decidida: preguntar antes de cambiarlas.
 - `publicarVacante` pasa a "abierta" desde cualquier estado (¿reabrir cerradas?).
 - Agregar preguntas con postulaciones recibidas sigue permitido (rompe
   "preguntas iguales para todos").
-- La página de preguntas del postulante todavía usa datos de prueba.
 
 ## Forma de trabajar
 - Nombres de tablas, columnas y variables de dominio en español.

@@ -2,7 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { agregarRequisito, guardarRequisito, quitarRequisito } from "@/lib/gestion/acciones-configuracion";
+import {
+  agregarRequisito,
+  guardarRequisito,
+  quitarRequisito,
+  reemplazarRequisitosConIa,
+} from "@/lib/gestion/acciones-configuracion";
 import type { RequisitoVacante } from "@/lib/gestion/configuracion";
 
 type Datos = { oferta: string; minimo: string };
@@ -15,6 +20,7 @@ export function RequisitosEditor({ vacanteId, requisitos }: { vacanteId: string;
   const router = useRouter();
   const [pendiente, empezar] = useTransition();
   const [aviso, setAviso] = useState<string | null>(null);
+  const [confirmarIa, setConfirmarIa] = useState(false);
 
   function ejecutar(accion: () => Promise<Resultado>) {
     empezar(async () => {
@@ -60,16 +66,44 @@ export function RequisitosEditor({ vacanteId, requisitos }: { vacanteId: string;
         </table>
       </div>
 
-      <div className="flex">
-        <button
-          type="button"
-          className="btn btn-punto"
-          disabled={pendiente}
-          onClick={() => ejecutar(() => agregarRequisito(vacanteId, { oferta: "", minimo: "" }))}
-        >
-          + Agregar requisito
-        </button>
-      </div>
+      {confirmarIa ? (
+        <div className="nota nota-na" role="alertdialog" aria-label="Confirmar sugerencia de la IA" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <span>
+            <b>¿Reemplazar todos los requisitos por los que sugiera la IA para este cargo?</b> Los actuales se borran; después
+            puedes editar los nuevos.
+          </span>
+          <div className="flex" style={{ gap: 10 }}>
+            <button type="button" className="btn btn-sec btn-chico" onClick={() => setConfirmarIa(false)}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="btn btn-chico"
+              autoFocus
+              onClick={() => {
+                setConfirmarIa(false);
+                ejecutar(() => reemplazarRequisitosConIa(vacanteId));
+              }}
+            >
+              Sí, reemplazar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex">
+          <button
+            type="button"
+            className="btn btn-punto"
+            disabled={pendiente}
+            onClick={() => ejecutar(() => agregarRequisito(vacanteId, { oferta: "", minimo: "" }))}
+          >
+            + Agregar requisito
+          </button>
+          <button type="button" className="btn btn-sec btn-chico" disabled={pendiente} onClick={() => setConfirmarIa(true)}>
+            {pendiente ? "Un momento…" : "Sugerir con IA según el cargo"}
+          </button>
+        </div>
+      )}
       <div className="nota nota-az">
         La IA lee el CV y aplica estos mínimos. Si no logra leer un dato, el CV pasa a &quot;Por revisar&quot; en vez de
         descartarse. La app no permite requisitos discriminatorios (edad máxima, género, estado civil).

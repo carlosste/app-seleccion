@@ -5,7 +5,7 @@ import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { CRITERIOS_POR_DEFECTO } from "./criterios-por-defecto";
 import { MENSAJE_CON_POSTULACIONES, tienePostulaciones } from "./postulaciones";
-import { REQUISITOS_POR_DEFECTO } from "./requisitos-por-defecto";
+import { REQUISITOS_POR_DEFECTO, type RequisitoPropuesto, proponerRequisitos } from "./requisitos-por-defecto";
 import { type Peso, repartir } from "./repartir";
 
 // Acciones de requisitos, etapas y rúbrica. Cada una comprueba que la vacante sea de
@@ -79,11 +79,15 @@ export async function agregarRequisito(vacanteId: string, datos: DatosRequisito)
   return { ok: true };
 }
 
-// Se llama al crear la vacante: deja los requisitos por defecto guardados.
-export async function sembrarRequisitosPorDefecto(vacanteId: string): Promise<void> {
+// Se llama al crear la vacante: guarda los requisitos que propuso la IA para el cargo
+// (o, si la IA no respondió, los de por defecto).
+export async function sembrarRequisitosPorDefecto(
+  vacanteId: string,
+  requisitos: RequisitoPropuesto[] = REQUISITOS_POR_DEFECTO,
+): Promise<void> {
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return;
-  for (const datos of REQUISITOS_POR_DEFECTO) {
+  for (const datos of requisitos.filter((r) => !revisarRequisito(r)).slice(0, 10)) {
     const oferta = datos.oferta.trim();
     const { data: requisito, error } = await supabase
       .from("requisitos_oferta")
@@ -101,6 +105,37 @@ export async function sembrarRequisitosPorDefecto(vacanteId: string): Promise<vo
       if (errorMinimo) console.error("[requisitos] sembrar minimo", errorMinimo);
     }
   }
+}
+
+// "Sugerir con IA según el cargo": reemplaza todos los requisitos de la vacante por los que
+// propone la IA. Solo borra los actuales si la IA respondió bien.
+export async function reemplazarRequisitosConIa(vacanteId: string): Promise<Resultado> {
+  const supabase = await clienteDeVacante(vacanteId);
+  if (!supabase) return NO_ENCONTRADA;
+  const { data: vacante } = await supabase
+    .from("vacantes")
+    .select("cargo, descripcion")
+    .eq("id", vacanteId)
+    .maybeSingle<{ cargo: string; descripcion: string | null }>();
+  if (!vacante) return NO_ENCONTRADA;
+
+  let propuestos: RequisitoPropuesto[];
+  try {
+    propuestos = await proponerRequisitos(vacante.cargo, vacante.descripcion ?? "");
+  } catch (error) {
+    console.error("[ia] proponerRequisitos", error);
+    return { ok: false, mensaje: "No pudimos consultar la IA. Intenta de nuevo en unos minutos." };
+  }
+
+  // Borrar la oferta borra su mínimo en cascada.
+  const { error } = await supabase.from("requisitos_oferta").delete().eq("vacante_id", vacanteId);
+  if (error) {
+    console.error("[requisitos] reemplazar", error);
+    return FALLO;
+  }
+  await sembrarRequisitosPorDefecto(vacanteId, propuestos);
+  refrescar(vacanteId);
+  return { ok: true };
 }
 
 export async function guardarRequisito(id: string, vacanteId: string, datos: DatosRequisito): Promise<Resultado> {

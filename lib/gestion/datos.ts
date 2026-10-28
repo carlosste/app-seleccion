@@ -2,6 +2,7 @@ import "server-only";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import type { Decision } from "@/lib/datos-prueba";
+import type { ResultadoCv, ResultadoRubrica } from "./tipos-evaluacion";
 
 // Datos del panel de gestión. Cada función:
 // 1) exige una sesión de empresa (requerirEmpresa),
@@ -77,17 +78,23 @@ export async function obtenerVacante(id: string) {
   const supabase = await crearClienteServidor();
   const { data } = await supabase
     .from("vacantes")
-    .select("id, cargo, estado, enlace_token, postulaciones(count)")
+    .select("id, cargo, descripcion, estado, enlace_token")
     .eq("id", id)
     .eq("empresa_id", empresa.id)
-    .maybeSingle<{ id: string; cargo: string; estado: string; enlace_token: string; postulaciones: { count: number }[] }>();
+    .maybeSingle<{ id: string; cargo: string; descripcion: string | null; estado: string; enlace_token: string }>();
   if (!data) return null;
+  // Conteo directo, con la misma tabla y el mismo filtro que la lista de postulantes.
+  const { count } = await supabase
+    .from("postulaciones")
+    .select("id", { count: "exact", head: true })
+    .eq("vacante_id", data.id);
   return {
     id: data.id,
     cargo: data.cargo,
+    descripcion: data.descripcion ?? "",
     estado: data.estado,
     enlaceToken: data.enlace_token,
-    total: data.postulaciones[0]?.count ?? 0,
+    total: count ?? 0,
   };
 }
 
@@ -110,47 +117,64 @@ export async function listarPostulantes(vacanteId: string): Promise<PostulanteFi
   const [{ data: filas }, { data: etapas }] = await Promise.all([
     supabase
       .from("v_postulaciones_staff")
-      .select("id, numero_anonimo, etapa_actual_id")
+      .select("id, numero_anonimo, etapa_actual_id, estado")
       .eq("vacante_id", vacante.id)
-      .returns<{ id: string; numero_anonimo: number; etapa_actual_id: string | null }[]>(),
+      .returns<{ id: string; numero_anonimo: number; etapa_actual_id: string | null; estado: EstadoPostulacion }[]>(),
     supabase.from("vacante_etapas").select("id, tipo, orden, nombre").eq("vacante_id", vacante.id).returns<Etapa[]>(),
   ]);
   if (!filas?.length) return [];
 
   const ids = filas.map((f) => f.id);
-  const [{ data: evaluaciones }, { data: decisiones }] = await Promise.all([
-    supabase
-      .from("evaluaciones_ia")
-      .select("postulacion_id, ajuste_total")
-      .eq("tarea", "puntuar_rubrica")
-      .in("postulacion_id", ids)
-      .returns<{ postulacion_id: string; ajuste_total: number | null }[]>(),
-    supabase
-      .from("decisiones")
-      .select("postulacion_id, resultado, created_at")
-      .in("postulacion_id", ids)
-      .order("created_at", { ascending: false })
-      .returns<{ postulacion_id: string; resultado: "pasa" | "no_pasa" }[]>(),
-  ]);
+  const { data: evaluaciones } = await supabase
+    .from("evaluaciones_ia")
+    .select("postulacion_id, tarea, ajuste_total, resultado")
+    .in("postulacion_id", ids)
+    .returns<{ postulacion_id: string; tarea: string; ajuste_total: number | null; resultado: unknown }[]>();
 
   // El nombre que le puso la empresa; si no tiene, el del tipo de etapa.
-  const nombreEtapa = new Map((etapas ?? []).map((e) => [e.id, e.nombre?.trim() || NOMBRE_ETAPA[e.tipo]]));
-  const ajuste = new Map((evaluaciones ?? []).map((e) => [e.postulacion_id, e.ajuste_total]));
-  const ultimaDecision = new Map<string, "pasa" | "no_pasa">();
-  for (const d of decisiones ?? []) if (!ultimaDecision.has(d.postulacion_id)) ultimaDecision.set(d.postulacion_id, d.resultado);
+  const etapaPorId = new Map((etapas ?? []).map((e) => [e.id, e]));
+  const ajuste = new Map<string, number | null>();
+  const porRevisar = new Set<string>();
+  for (const e of evaluaciones ?? []) {
+    if (e.tarea === "puntuar_rubrica") ajuste.set(e.postulacion_id, e.ajuste_total);
+    if (e.tarea === "leer_cv" && (e.resultado as ResultadoCv).veredicto === "por_revisar") porRevisar.add(e.postulacion_id);
+  }
 
   return filas
     .map((f) => {
-      const d = ultimaDecision.get(f.id);
+      const etapa = f.etapa_actual_id ? etapaPorId.get(f.etapa_actual_id) : undefined;
+      const nombre = etapa ? etapa.nombre?.trim() || NOMBRE_ETAPA[etapa.tipo] : "Sin etapa";
+      const valor = ajuste.get(f.id);
       return {
         id: f.id,
         numero: formatoNumero(f.numero_anonimo),
-        etapa: (f.etapa_actual_id && nombreEtapa.get(f.etapa_actual_id)) || "Por revisar",
-        ajuste: ajuste.get(f.id) == null ? null : Math.round(Number(ajuste.get(f.id))),
-        decision: (d === "pasa" ? "pasa" : d === "no_pasa" ? "no" : "pendiente") as Decision,
+        etapa: f.estado === "en_proceso" && porRevisar.has(f.id) ? `${nombre} · CV por revisar` : nombre,
+        ajuste: valor == null ? null : Math.round(Number(valor)),
+        decision: DECISION_POR_ESTADO[f.estado],
       };
     })
     .sort((a, b) => (b.ajuste ?? -1) - (a.ajuste ?? -1));
+}
+
+type EstadoPostulacion = "en_proceso" | "descartada" | "seleccionada";
+
+// Cada "Pasa" mueve a la siguiente etapa, así que mientras siga en proceso la etapa actual
+// está pendiente de decisión. "Pasa" en la lista es haber superado la última etapa.
+const DECISION_POR_ESTADO: Record<EstadoPostulacion, Decision> = {
+  en_proceso: "pendiente",
+  descartada: "no",
+  seleccionada: "pasa",
+};
+
+// Hasta qué etapa llegó el postulante. Igual que orden_alcanzado en la base: si está en la
+// revisión de CV, ya responde la siguiente etapa de preguntas.
+function ordenAlcanzado(etapas: Etapa[], actual: Etapa | undefined): number {
+  if (!actual) return 0;
+  if (actual.tipo !== "cv") return actual.orden;
+  const siguiente = etapas
+    .filter((e) => e.orden > actual.orden && (e.tipo === "texto" || e.tipo === "voz"))
+    .sort((a, b) => a.orden - b.orden)[0];
+  return siguiente?.orden ?? actual.orden;
 }
 
 export async function obtenerPostulante(vacanteId: string, numero: string) {
@@ -161,18 +185,80 @@ export async function obtenerPostulante(vacanteId: string, numero: string) {
 
   const { data } = await supabase
     .from("v_postulaciones_staff")
-    .select("id, numero_anonimo, nombre_revelado_at, nombre")
+    .select("id, numero_anonimo, nombre_revelado_at, nombre, etapa_actual_id, estado")
     .eq("vacante_id", vacante.id)
     .eq("numero_anonimo", Number(numero))
-    .maybeSingle<{ id: string; numero_anonimo: number; nombre_revelado_at: string | null; nombre: string | null }>();
+    .maybeSingle<{
+      id: string;
+      numero_anonimo: number;
+      nombre_revelado_at: string | null;
+      nombre: string | null;
+      etapa_actual_id: string | null;
+      estado: EstadoPostulacion;
+    }>();
   if (!data) return null;
 
   // Solo se informa si hay CV; la ruta del archivo nunca sale al navegador.
-  const { data: cv } = await supabase
-    .from("postulaciones")
-    .select("cv_path")
-    .eq("id", data.id)
-    .maybeSingle<{ cv_path: string | null }>();
+  const [{ data: cv }, { data: etapasDatos }, { data: preguntas }, { data: respuestas }, { data: evaluaciones }, { data: decisiones }] =
+    await Promise.all([
+      supabase.from("postulaciones").select("cv_path").eq("id", data.id).maybeSingle<{ cv_path: string | null }>(),
+      supabase.from("vacante_etapas").select("id, tipo, orden, nombre").eq("vacante_id", vacante.id).order("orden").returns<Etapa[]>(),
+      supabase
+        .from("preguntas")
+        .select("id, etapa_id, texto, orden")
+        .eq("vacante_id", vacante.id)
+        .order("orden")
+        .returns<{ id: string; etapa_id: string; texto: string; orden: number }[]>(),
+      supabase
+        .from("respuestas")
+        .select("pregunta_id, texto, transcripcion, respondida_at")
+        .eq("postulacion_id", data.id)
+        .returns<{ pregunta_id: string; texto: string | null; transcripcion: string | null; respondida_at: string }[]>(),
+      supabase
+        .from("evaluaciones_ia")
+        .select("tarea, resultado, ajuste_total, created_at")
+        .eq("postulacion_id", data.id)
+        .returns<{ tarea: string; resultado: unknown; ajuste_total: number | null; created_at: string }[]>(),
+      supabase
+        .from("decisiones")
+        .select("resultado, motivo, etapa_id, usuario_id, created_at")
+        .eq("postulacion_id", data.id)
+        .order("created_at", { ascending: false })
+        .returns<{ resultado: "pasa" | "no_pasa"; motivo: string | null; etapa_id: string | null; usuario_id: string | null; created_at: string }[]>(),
+    ]);
+
+  const etapas = etapasDatos ?? [];
+  const nombreDe = (e: Etapa) => e.nombre?.trim() || NOMBRE_ETAPA[e.tipo];
+  const actual = etapas.find((e) => e.id === data.etapa_actual_id);
+  const siguiente = actual ? etapas.find((e) => e.orden > actual.orden) : etapas[0];
+  const alcanzado = ordenAlcanzado(etapas, actual);
+
+  // Respuestas agrupadas por etapa de preguntas (texto o voz), con las que faltan.
+  const respuestaDe = new Map((respuestas ?? []).map((r) => [r.pregunta_id, r]));
+  let contador = 0;
+  const grupos: GrupoRespuestas[] = etapas
+    .filter((e) => e.tipo === "texto" || e.tipo === "voz")
+    .map((e) => ({
+      etapaId: e.id,
+      tipo: e.tipo as "texto" | "voz",
+      nombre: nombreDe(e),
+      alcanzada: e.orden <= alcanzado,
+      preguntas: (preguntas ?? [])
+        .filter((p) => p.etapa_id === e.id)
+        .map((p) => {
+          const r = respuestaDe.get(p.id);
+          return {
+            numero: ++contador,
+            pregunta: p.texto,
+            respuesta: r ? (r.transcripcion ?? r.texto ?? "").trim() : null,
+            respondidaAt: r?.respondida_at ?? null,
+          };
+        }),
+    }));
+
+  const leerCv = evaluaciones?.find((e) => e.tarea === "leer_cv");
+  const rubrica = evaluaciones?.find((e) => e.tarea === "puntuar_rubrica");
+  const etapaPorId = new Map(etapas.map((e) => [e.id, e]));
 
   return {
     vacante,
@@ -181,5 +267,38 @@ export async function obtenerPostulante(vacanteId: string, numero: string) {
     revelado: Boolean(data.nombre_revelado_at),
     nombre: data.nombre,
     tieneCv: Boolean(cv?.cv_path),
+    estado: data.estado,
+    etapaActual: actual ? nombreDe(actual) : null,
+    // Lo que pasa al decidir "Pasa": otra etapa o, si era la última, quedar seleccionado.
+    siguienteEtapa: siguiente ? nombreDe(siguiente) : null,
+    grupos,
+    totalRespuestas: respuestas?.length ?? 0,
+    cv: leerCv ? { ...(leerCv.resultado as ResultadoCv), fecha: leerCv.created_at } : null,
+    rubrica: rubrica
+      ? {
+          ...(rubrica.resultado as ResultadoRubrica),
+          ajuste: rubrica.ajuste_total == null ? null : Math.round(Number(rubrica.ajuste_total)),
+          fecha: rubrica.created_at,
+        }
+      : null,
+    decisiones: (decisiones ?? []).map((d) => {
+      const e = d.etapa_id ? etapaPorId.get(d.etapa_id) : undefined;
+      return {
+        resultado: d.resultado,
+        // Sin usuario = la tomó el sistema por requisitos mínimos (revisión de CV con IA).
+        automatica: d.usuario_id == null,
+        motivo: d.motivo === "requisito_minimo" ? null : d.motivo,
+        etapa: e ? nombreDe(e) : "Etapa borrada",
+        fecha: d.created_at,
+      };
+    }),
   };
 }
+
+export type GrupoRespuestas = {
+  etapaId: string;
+  tipo: "texto" | "voz";
+  nombre: string;
+  alcanzada: boolean;
+  preguntas: { numero: number; pregunta: string; respuesta: string | null; respondidaAt: string | null }[];
+};
