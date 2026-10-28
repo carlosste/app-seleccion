@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CopiarLink } from "@/components/copiar-link";
 import { Barra } from "@/components/barra";
+import { QuitarVacante } from "@/components/gestion/quitar-vacante";
 import { porcentaje } from "@/lib/datos-prueba";
 import { listarVacantes } from "@/lib/gestion/datos";
 
@@ -63,6 +64,7 @@ export default async function Vacantes() {
                 </Link>
                 {v.estado === "abierta" && <CopiarLink ruta={`/postular/${v.enlaceToken}`} />}
               </div>
+              <QuitarVacante id={v.id} cargo={v.cargo} postulados={v.postulados} />
             </article>
           ))}
         </div>

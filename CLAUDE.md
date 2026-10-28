@@ -105,8 +105,8 @@ Nunca subir .env.local al repositorio.
 
 ## Estado de la base de datos (2026-10-28)
 - Proyecto Supabase `app-seleccion` (id `wknyyiejvafdcwkdpoqr`, us-east-1,
-  plan gratis). Las 11 migraciones de `supabase\migrations\` están aplicadas,
-  la última `flujo_postulacion`. Todas las tablas con RLS activo.
+  plan gratis). Las 12 migraciones de `supabase\migrations\` están aplicadas,
+  la última `eliminar_vacante`. Todas las tablas con RLS activo.
 - Advisors de seguridad: `intentos_ingreso` sin políticas es intencional (solo
   el servidor con la service role). Las funciones auxiliares de RLS son
   `SECURITY DEFINER` y `authenticated` debe poder ejecutarlas para que las
@@ -144,6 +144,19 @@ Nunca subir .env.local al repositorio.
   de 15 s: leerlo tarda unos 13-14 s. `evaluaciones_ia.modelo` guarda el
   modelo que respondió de verdad (puede ser uno de respaldo).
 - `GEMINI_API_KEY` está en `.env.local` desde el 2026-10-28.
+
+## Vacantes: requisitos por cargo y eliminar (2026-10-28, decisión de Carlos)
+- Al crear una vacante, la IA propone de 4 a 6 requisitos propios del cargo
+  (`proponerRequisitos` en `lib/gestion/requisitos-por-defecto.ts`); el código
+  agrega siempre "Mayor de 18 años". El mínimo se escribe para entenderse solo
+  (la revisión de CV solo recibe el mínimo). Se filtran edad, género, estado
+  civil, apariencia, religión, condición física, salud y vacunas. Si la IA
+  falla, la vacante queda solo con la edad mínima y la pestaña Requisitos avisa.
+- "Sugerir con IA según el cargo" (pestaña Requisitos) reemplaza la lista.
+- **Eliminar solo vacantes sin postulantes** (`eliminar_vacante`, migración
+  `20261028180000_eliminar_vacante`, aplicada y probada). Con postulantes, el
+  botón es "Cerrar vacante": estado `cerrada`, deja de recibir y sale de la
+  lista, sin borrar datos. Hoy no hay pantalla para ver o reabrir las cerradas.
 
 ## Despliegue
 - Vercel, equipo `carloslozano`, proyecto `app-seleccion`. Producción:

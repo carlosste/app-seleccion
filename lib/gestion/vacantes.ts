@@ -6,6 +6,7 @@ import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { sembrarRequisitosPorDefecto, sembrarRubricaSiFalta } from "./acciones-configuracion";
 import type { EstadoPublicar, EstadoVacante } from "./estados";
+import { type RequisitoPropuesto, proponerRequisitos } from "./requisitos-por-defecto";
 
 // Etapas por defecto de toda vacante nueva. La revisión del CV es automática y no es una etapa.
 const ETAPAS_POR_DEFECTO = ["texto", "voz", "entrevista"] as const;
@@ -23,6 +24,15 @@ export async function crearVacante(_previo: EstadoVacante, fd: FormData): Promis
 
   const sesion = await requerirEmpresa();
   const supabase = await crearClienteServidor();
+
+  // Requisitos propios del cargo (bodeguero, auxiliar de enfermería…), no unos fijos.
+  // Si la IA falla, la vacante se crea igual y se avisa en la pestaña Requisitos.
+  let requisitos: RequisitoPropuesto[] | undefined;
+  try {
+    requisitos = await proponerRequisitos(cargo, descripcion);
+  } catch (errorIa) {
+    console.error("[ia] proponerRequisitos", errorIa);
+  }
 
   const { data: vacante, error } = await supabase
     .from("vacantes")
@@ -52,10 +62,10 @@ export async function crearVacante(_previo: EstadoVacante, fd: FormData): Promis
     };
   }
 
-  await sembrarRequisitosPorDefecto(vacante.id);
+  await sembrarRequisitosPorDefecto(vacante.id, requisitos);
   await sembrarRubricaSiFalta(vacante.id);
 
-  redirect(`/gestion/${vacante.id}`);
+  redirect(`/gestion/${vacante.id}${requisitos ? "" : "?aviso=requisitos-ia"}`);
 }
 
 // Descripción pública de la vacante: es lo único que ve el postulante además del cargo.
@@ -82,6 +92,51 @@ export async function guardarDescripcion(vacanteId: string, texto: string): Prom
 
   revalidatePath(`/gestion/${vacanteId}`, "layout");
   return { ok: true, mensaje: "Descripción guardada. Así la ven los postulantes." };
+}
+
+type Resultado = { ok: boolean; mensaje: string };
+
+// Elimina una vacante SIN postulantes (decisión de Carlos, 2026-10-28). La función de la
+// base revisa el rol, la empresa y que no tenga postulaciones, con el mismo candado que
+// usa una postulación nueva. Etapas, requisitos, rúbrica y preguntas se van en cascada.
+export async function eliminarVacante(vacanteId: string): Promise<Resultado> {
+  if (!/^[0-9a-f-]{36}$/i.test(vacanteId)) return { ok: false, mensaje: "Vacante no válida." };
+  const { rol } = await requerirEmpresa();
+  if (rol !== "gestion_humana") return { ok: false, mensaje: "Solo gestión humana puede eliminar vacantes." };
+
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase.rpc("eliminar_vacante", { p_vacante: vacanteId });
+  if (error) {
+    console.error("[vacante] eliminar", error);
+    const conocido = ["42501", "P0001", "P0002"].includes(error.code ?? "");
+    return { ok: false, mensaje: conocido ? error.message : "No pudimos eliminar la vacante. Intenta de nuevo." };
+  }
+  revalidatePath("/gestion");
+  return { ok: true, mensaje: "Vacante eliminada." };
+}
+
+// Una vacante con postulantes no se borra: se cierra. Deja de recibir postulaciones (el link
+// público solo muestra vacantes abiertas) y sale de la lista, sin borrar datos de nadie.
+export async function cerrarVacante(vacanteId: string): Promise<Resultado> {
+  if (!/^[0-9a-f-]{36}$/i.test(vacanteId)) return { ok: false, mensaje: "Vacante no válida." };
+  const { empresa, rol } = await requerirEmpresa();
+  if (rol !== "gestion_humana") return { ok: false, mensaje: "Solo gestión humana puede cerrar vacantes." };
+
+  const supabase = await crearClienteServidor();
+  const { data, error } = await supabase
+    .from("vacantes")
+    .update({ estado: "cerrada" })
+    .eq("id", vacanteId)
+    .eq("empresa_id", empresa.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    console.error("[vacante] cerrar", error);
+    return { ok: false, mensaje: "No pudimos cerrar la vacante. Intenta de nuevo." };
+  }
+  revalidatePath("/gestion");
+  revalidatePath(`/gestion/${vacanteId}`, "layout");
+  return { ok: true, mensaje: "Vacante cerrada." };
 }
 
 // Pasa la vacante de borrador a abierta: desde ese momento su link público recibe postulaciones.

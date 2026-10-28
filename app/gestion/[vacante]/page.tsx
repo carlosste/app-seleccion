@@ -5,8 +5,9 @@ import { listarEtapas, listarPreguntas, listarRequisitos } from "@/lib/gestion/c
 import { obtenerVacante } from "@/lib/gestion/datos";
 
 // B · Descripción, requisitos y etapas. Cada requisito tiene valor de la oferta (público) y mínimo (interno).
-export default async function Requisitos({ params }: PageProps<"/gestion/[vacante]">) {
+export default async function Requisitos({ params, searchParams }: PageProps<"/gestion/[vacante]">) {
   const { vacante: id } = await params;
+  const { aviso } = await searchParams;
   const [vacante, requisitos, etapas, preguntas] = await Promise.all([
     obtenerVacante(id),
     listarRequisitos(id),
@@ -36,6 +37,12 @@ export default async function Requisitos({ params }: PageProps<"/gestion/[vacant
             postulante.
           </span>
         </div>
+        {aviso === "requisitos-ia" && (
+          <div className="nota nota-na" role="status">
+            La IA no respondió al crear la vacante: solo quedó la edad mínima. Usa “Sugerir con IA según el cargo” o agrega los
+            requisitos a mano.
+          </div>
+        )}
         <RequisitosEditor vacanteId={id} requisitos={requisitos} />
       </section>
 
