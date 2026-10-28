@@ -158,6 +158,13 @@ Nunca subir .env.local al repositorio.
   botón es "Cerrar vacante": estado `cerrada`, deja de recibir y sale de la
   lista, sin borrar datos. Hoy no hay pantalla para ver o reabrir las cerradas.
 
+## Sesiones separadas (2026-10-28)
+- La empresa usa la cookie de sesión por defecto de Supabase; el postulante, la
+  suya (`sb-postulante-auth-token`, `crearClientePostulante`). `proxy.ts` solo
+  mira la del postulante en `/postular/...` y nunca lo manda a `/gestion`. Así
+  se puede probar empresa y postulante en el mismo navegador sin que una sesión
+  saque a la otra.
+
 ## Despliegue
 - Vercel, equipo `carloslozano`, proyecto `app-seleccion`. Producción:
   https://app-seleccion-mu.vercel.app (se despliega solo con cada push a main).

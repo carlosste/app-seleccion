@@ -10,7 +10,7 @@ import {
   registrarIntento,
 } from "@/lib/auth/limite-intentos";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
-import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { crearClientePostulante } from "@/lib/supabase/servidor";
 import { vacantePorToken, type VacantePublica } from "@/lib/vacante-publica";
 
 // MODO DE PRUEBAS (2026-10-28, decisión de Carlos): no se envían correos. El postulante entra
@@ -27,7 +27,7 @@ const LIMITE_CV_BYTES = 4 * 1024 * 1024;
 const VERSION_TEXTO = "v1";
 const CONSENTIMIENTOS = ["datos", "grabacion"] as const;
 
-type Cliente = Awaited<ReturnType<typeof crearClienteServidor>>;
+type Cliente = Awaited<ReturnType<typeof crearClientePostulante>>;
 
 function normalizarDocumento(texto: string) {
   return texto.replace(/[\s.-]/g, "").toUpperCase();
@@ -162,7 +162,7 @@ export async function postularse(formData: FormData) {
   }
 
   // Se abre la sesión con la contraseña (el documento) y se guarda el postulante con su sesión.
-  const supabase = await crearClienteServidor();
+  const supabase = await crearClientePostulante();
   const { data: sesion, error: errorSesion } = await supabase.auth.signInWithPassword({ email: correo, password: documento });
   if (errorSesion || !sesion.user) {
     console.error("[postulacion] iniciar sesion", errorSesion);
@@ -221,7 +221,7 @@ export async function ingresar(formData: FormData) {
   if (errorCuenta) volver("general");
   if (!cuenta) return fallo();
 
-  const supabase = await crearClienteServidor();
+  const supabase = await crearClientePostulante();
   const { data: sesion, error } = await supabase.auth.signInWithPassword({ email: cuenta.correo, password: contrasena });
   if (error || !sesion.user) return fallo();
   await limpiarIntentos(claveId);
@@ -252,7 +252,7 @@ export async function responderPregunta(token: string, preguntaId: string, texto
   if (!/^[0-9a-f-]{36}$/i.test(preguntaId)) return { ok: false, mensaje: "Pregunta no válida." };
 
   const vacante = await vacantePorToken(token);
-  const supabase = await crearClienteServidor();
+  const supabase = await crearClientePostulante();
   const {
     data: { user },
   } = await supabase.auth.getUser();

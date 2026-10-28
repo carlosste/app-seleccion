@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { crearClientePostulante } from "@/lib/supabase/servidor";
 
 export type VacantePublica = {
   id: string;
@@ -16,7 +16,7 @@ export type VacantePublica = {
 export async function vacantePorToken(token: string): Promise<VacantePublica> {
   if (!/^[0-9a-f]{32}$/.test(token)) notFound();
 
-  const supabase = await crearClienteServidor();
+  const supabase = await crearClientePostulante();
   const { data } = await supabase.rpc("vacante_publica", { p_token: token }).maybeSingle<VacantePublica>();
   if (!data) notFound();
   return data;

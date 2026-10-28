@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { crearClientePostulante } from "@/lib/supabase/servidor";
 import { vacantePorToken } from "@/lib/vacante-publica";
 import { PreguntasVoz, type PreguntaPendiente } from "@/components/preguntas-voz";
 
@@ -14,7 +14,7 @@ export default async function Preguntas({ params }: { params: Promise<{ vacante:
   const vacante = await vacantePorToken(token);
   const terminado = `/postular/${token}/terminado`;
 
-  const supabase = await crearClienteServidor();
+  const supabase = await crearClientePostulante();
   const {
     data: { user },
   } = await supabase.auth.getUser();
