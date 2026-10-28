@@ -1,10 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { COOKIE_POSTULANTE, esZonaPostulante } from "@/lib/supabase/config";
 import { actualizarSesion, redirigirConCookies } from "@/lib/supabase/proxy";
 
 // Primera barrera (rápida, antes de renderizar). No es la única: cada layout de
 // /gestion vuelve a verificar en el servidor y RLS protege los datos en la base.
+// La empresa y el postulante tienen cookies de sesión separadas: cada zona solo mira la suya,
+// así en el mismo navegador una no manda a la otra ni la cierra.
 export async function proxy(request: NextRequest) {
   const ruta = request.nextUrl.pathname;
+
+  // Zona del postulante: solo se refresca su sesión. Nunca redirige al panel de empresa.
+  if (esZonaPostulante(ruta)) {
+    const { respuesta } = await actualizarSesion(request, COOKIE_POSTULANTE);
+    return respuesta();
+  }
+
   const { respuesta, autenticado, tipo } = await actualizarSesion(request);
   const ir = (destino: string, params?: Record<string, string>) => {
     const url = new URL(destino, request.url);
@@ -29,12 +39,6 @@ export async function proxy(request: NextRequest) {
 
   // 2. Empresa ya autenticada: no tiene sentido mostrarle ingreso o registro.
   if ((ruta === "/empresa/ingreso" || ruta === "/empresa/registro") && tipo === "empresa") {
-    return ir("/gestion");
-  }
-
-  // 3. Funciones de postulante: una cuenta de empresa no entra. La oferta pública
-  //    (/postular/[vacante]) sí la puede ver cualquiera.
-  if (/^\/postular\/[^/]+\/(ingreso|preguntas|terminado)/.test(ruta) && tipo === "empresa") {
     return ir("/gestion");
   }
 

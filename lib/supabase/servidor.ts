@@ -1,15 +1,16 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { configSupabase, endurecerCookie } from "./config";
+import { COOKIE_POSTULANTE, configSupabase, endurecerCookie } from "./config";
 
 // Cliente con la sesión del usuario (cookies httpOnly). Todo lo que lee pasa por RLS.
 // Crear uno nuevo por petición.
-export async function crearClienteServidor() {
+async function crearCliente(nombreCookie?: string) {
   const { url, clave } = configSupabase();
   const almacen = await cookies();
 
   return createServerClient(url, clave, {
+    ...(nombreCookie ? { cookieOptions: { name: nombreCookie } } : {}),
     cookies: {
       getAll() {
         return almacen.getAll();
@@ -24,4 +25,14 @@ export async function crearClienteServidor() {
       },
     },
   });
+}
+
+// Sesión de la empresa (panel de gestión).
+export function crearClienteServidor() {
+  return crearCliente();
+}
+
+// Sesión del postulante: cookie aparte (ver COOKIE_POSTULANTE).
+export function crearClientePostulante() {
+  return crearCliente(COOKIE_POSTULANTE);
 }

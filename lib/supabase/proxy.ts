@@ -5,12 +5,14 @@ import { configSupabase, endurecerCookie } from "./config";
 export type TipoCuenta = "empresa" | "postulante" | null;
 
 // Refresca la sesión (si el JWT venció, usa el refresh token y reescribe las cookies)
-// y devuelve el tipo de cuenta leído del JWT verificado.
-export async function actualizarSesion(request: NextRequest) {
+// y devuelve el tipo de cuenta leído del JWT verificado. nombreCookie elige cuál sesión:
+// la de la empresa (por defecto) o la del postulante (COOKIE_POSTULANTE).
+export async function actualizarSesion(request: NextRequest, nombreCookie?: string) {
   const { url, clave } = configSupabase();
   let respuesta = NextResponse.next({ request });
 
   const supabase = createServerClient(url, clave, {
+    ...(nombreCookie ? { cookieOptions: { name: nombreCookie } } : {}),
     cookies: {
       getAll() {
         return request.cookies.getAll();

@@ -8,6 +8,13 @@ export function configSupabase() {
   return { url, clave };
 }
 
+// El postulante tiene su propia cookie de sesión, separada de la de la empresa (que usa el
+// nombre por defecto de Supabase). Así, en el mismo navegador, entrar como postulante no
+// cierra el panel de la empresa ni al revés, y ninguna zona ve la sesión de la otra.
+export const COOKIE_POSTULANTE = "sb-postulante-auth-token";
+
+export const esZonaPostulante = (ruta: string) => ruta === "/postular" || ruta.startsWith("/postular/");
+
 // Las cookies de sesión solo las usa el servidor (no hay cliente de Supabase en el
 // navegador), así que se marcan httpOnly: un script inyectado no puede leer el token.
 export function endurecerCookie<T extends object>(opciones: T): T {
