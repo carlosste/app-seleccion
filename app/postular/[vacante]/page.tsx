@@ -5,8 +5,12 @@ import { enviarCodigo } from "../acciones";
 
 const MENSAJES: Record<string, string> = {
   datos: "Revisa tus datos. Nombre, correo, teléfono y documento son obligatorios, y debes aceptar el tratamiento de datos.",
-  documento: "Ya existe una cuenta con ese documento. Ingresa con el correo que usaste antes.",
+  documento: "Ya existe una cuenta con ese documento y otro correo. Escribe el correo que usaste la primera vez.",
+  "correo-documento": "Ese correo ya tiene una cuenta con otro documento. Revisa el número de documento.",
   correo: "No pudimos enviar el código. Revisa el correo e intenta de nuevo.",
+  espera: "Ya te enviamos un código hace poco. Espera un minuto antes de pedir otro.",
+  limite: "Pediste demasiados códigos. Revisa tu correo (también la carpeta de spam) o intenta en una hora.",
+  sesion: "Tu ingreso venció o no has entrado. Escribe tus datos para recibir un código nuevo.",
   general: "Algo salió mal. Intenta de nuevo.",
 };
 
@@ -26,7 +30,7 @@ export default async function Postulacion({
   return (
     <>
       <div className="top">
-        <EncabezadoEmpresa />
+        <EncabezadoEmpresa nombre={vacante.empresa_nombre} logoUrl={vacante.empresa_logo_url} />
       </div>
       <div className="contenido">
         <div className="campo" style={{ gap: 6 }}>
@@ -46,7 +50,16 @@ export default async function Postulacion({
 
           <div className="campo">
             <label htmlFor="nombre">Nombre completo</label>
-            <input id="nombre" name="nombre" className="inp" placeholder="Tu nombre" required minLength={3} />
+            <input
+              id="nombre"
+              name="nombre"
+              className="inp"
+              placeholder="Tu nombre"
+              required
+              minLength={3}
+              maxLength={120}
+              autoComplete="name"
+            />
           </div>
           <div className="campo">
             <label htmlFor="correo">Correo electrónico</label>
@@ -57,12 +70,24 @@ export default async function Postulacion({
               className="inp"
               placeholder="nombre@correo.com"
               required
+              maxLength={254}
+              autoComplete="email"
               defaultValue={correoGuardado}
             />
           </div>
           <div className="campo">
             <label htmlFor="telefono">Teléfono</label>
-            <input id="telefono" name="telefono" type="tel" className="inp" placeholder="300 000 0000" required minLength={7} />
+            <input
+              id="telefono"
+              name="telefono"
+              type="tel"
+              className="inp"
+              placeholder="300 000 0000"
+              required
+              minLength={7}
+              maxLength={20}
+              autoComplete="tel"
+            />
           </div>
           <div className="campo">
             <label htmlFor="pais">País del documento</label>

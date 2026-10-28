@@ -43,7 +43,8 @@ export default async function Terminado({ params }: { params: Promise<{ vacante:
         <div>
           <b style={{ fontSize: 16 }}>Si continúas, vuelve a ingresar</b>
           <p style={{ marginTop: 6, fontSize: 14, lineHeight: 1.5, color: "var(--tx2)" }}>
-            Entra con tu mismo código y contraseña para responder las siguientes preguntas o agendar tu entrevista.
+            Entra desde el enlace de esta vacante: te enviaremos un código nuevo a tu correo para responder las
+            siguientes preguntas o agendar tu entrevista.
           </p>
         </div>
       </div>

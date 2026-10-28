@@ -108,8 +108,8 @@ Nunca subir .env.local al repositorio.
 
 ## Correcciones de seguridad (2026-10-28)
 - Migración `20261028120000_correcciones_seguridad.sql` (fase 1 de la revisión
-  técnica). Probada en seco contra la base real con 28 pruebas de RLS.
-  **PENDIENTE aplicarla en Supabase.**
+  técnica). Probada en seco contra la base real con 28 pruebas de RLS y
+  aplicada en Supabase el 2026-10-28.
 - Qué cambia: la oferta pública sale de la función `vacante_publica(token)` y ya
   no de `v_vacantes_publicas` (se borra); nadie sin sesión lista vacantes ni
   etapas. El postulante solo escribe `postulante_id, vacante_id, cv_path,
@@ -117,8 +117,13 @@ Nunca subir .env.local al repositorio.
   Respuestas y consentimientos: solo ver y crear, sin editar ni borrar.
   Preguntas: solo las de etapas alcanzadas. `documento_disponible`: solo
   service role. Bucket `cvs`: 4 MB, solo PDF (Vercel corta a los 4,5 MB).
-- Código: `lib/vacante-publica.ts` usa la vista vieja mientras la función no
-  exista. Ese respaldo es temporal: se quita al aplicar la migración.
+- Advisors: los avisos de `vacante_publica` y `vacante_abierta` (anon) y de las
+  funciones auxiliares de RLS (authenticated) son intencionales.
+- Flujo del postulante (fase 2): si el documento ya tiene cuenta, se entra con el
+  correo de esa cuenta y se crea otra postulación. Límites con
+  `intentos_ingreso`: 3 códigos por hora por correo y 5 códigos fallidos → 15
+  min. El CV se valida (firma `%PDF-`, 4 MB) antes de usar el código. Un correo
+  de empresa no puede postularse.
 
 ## Pendientes
 - **Borrado y espacio (paréntesis, para cuando sea plan de pago).** Hoy la app
