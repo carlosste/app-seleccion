@@ -7,7 +7,7 @@ const fecha = (iso: string) =>
 // Análisis de la IA de UNA etapa: se calcula solo con las respuestas de esa etapa.
 export function EvaluacionEtapaVista({ evaluacion }: { evaluacion: EvaluacionEtapa }) {
   return (
-    <div className="tarjeta" style={{ background: "var(--fondo, #F6F7F9)", gap: 10 }}>
+    <div className="tarjeta" style={{ background: "var(--fondo)", border: "1px solid var(--primario-borde)", boxShadow: "none", gap: 10 }}>
       <div className="fila-puntaje" style={{ fontSize: 15, alignItems: "baseline" }}>
         <b>Análisis de la IA en esta etapa</b>
         <b style={{ fontSize: 20 }}>
