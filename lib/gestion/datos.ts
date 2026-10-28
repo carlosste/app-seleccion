@@ -2,7 +2,7 @@ import "server-only";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import type { Decision } from "@/lib/datos-prueba";
-import type { ResultadoCv, ResultadoRubrica } from "./tipos-evaluacion";
+import type { EvaluacionEtapa, ResultadoCv, ResultadoRubrica } from "./tipos-evaluacion";
 
 // Datos del panel de gestión. Cada función:
 // 1) exige una sesión de empresa (requerirEmpresa),
@@ -274,13 +274,7 @@ export async function obtenerPostulante(vacanteId: string, numero: string) {
     grupos,
     totalRespuestas: respuestas?.length ?? 0,
     cv: leerCv ? { ...(leerCv.resultado as ResultadoCv), fecha: leerCv.created_at } : null,
-    rubrica: rubrica
-      ? {
-          ...(rubrica.resultado as ResultadoRubrica),
-          ajuste: rubrica.ajuste_total == null ? null : Math.round(Number(rubrica.ajuste_total)),
-          fecha: rubrica.created_at,
-        }
-      : null,
+    rubrica: rubrica ? normalizarRubrica(rubrica.resultado, rubrica.ajuste_total, rubrica.created_at) : null,
     decisiones: (decisiones ?? []).map((d) => {
       const e = d.etapa_id ? etapaPorId.get(d.etapa_id) : undefined;
       return {
@@ -292,6 +286,36 @@ export async function obtenerPostulante(vacanteId: string, numero: string) {
         fecha: d.created_at,
       };
     }),
+  };
+}
+
+// Antes del 2026-10-28 la rúbrica daba un solo puntaje para todas las respuestas. Esas
+// evaluaciones se muestran como una sola sección hasta que se vuelvan a evaluar por etapa.
+function normalizarRubrica(resultado: unknown, ajusteTotal: number | null, fecha: string) {
+  const ajuste = ajusteTotal == null ? null : Math.round(Number(ajusteTotal));
+  const r = resultado as Partial<ResultadoRubrica> & {
+    criterios?: EvaluacionEtapa["criterios"];
+    fortalezas?: string;
+    profundizar?: string;
+  };
+  if (Array.isArray(r.etapas)) return { etapas: r.etapas, respuestasEvaluadas: r.respuestasEvaluadas ?? 0, ajuste, fecha, anterior: false };
+  return {
+    etapas: [
+      {
+        etapaId: "anterior",
+        nombre: "Todas las respuestas",
+        ajuste,
+        criterios: r.criterios ?? [],
+        fortalezas: r.fortalezas ?? "",
+        profundizar: r.profundizar ?? "",
+        respuestasEvaluadas: r.respuestasEvaluadas ?? 0,
+        fecha,
+      },
+    ],
+    respuestasEvaluadas: r.respuestasEvaluadas ?? 0,
+    ajuste,
+    fecha,
+    anterior: true,
   };
 }
 

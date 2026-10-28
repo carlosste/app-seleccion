@@ -31,7 +31,9 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
   if (!datos) notFound();
   const { vacante, cv, rubrica } = datos;
   const enProceso = datos.estado === "en_proceso";
-  const hayNuevo = !cv || datos.totalRespuestas !== (rubrica?.respuestasEvaluadas ?? 0);
+  // Una evaluación del formato anterior (sin etapas) también se puede rehacer por etapa.
+  const hayNuevo = !cv || Boolean(rubrica?.anterior) || datos.totalRespuestas !== (rubrica?.respuestasEvaluadas ?? 0);
+  const variasEtapas = (rubrica?.etapas.length ?? 0) > 1;
 
   return (
     <>
@@ -115,6 +117,7 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
               <h2 style={{ fontSize: 18 }}>Evaluación de la IA</h2>
               {rubrica?.ajuste != null && (
                 <span style={{ fontSize: 24, fontWeight: 700 }}>
+                  {variasEtapas && <span style={{ fontSize: 13, color: "var(--gris)", fontWeight: 500 }}>Total </span>}
                   {rubrica.ajuste}
                   <span style={{ fontSize: 14, color: "var(--gris)", fontWeight: 500 }}>/100</span>
                 </span>
@@ -124,33 +127,66 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
               <span className="texto-gris">Sin evaluar todavía.</span>
             ) : (
               <>
-                {rubrica.criterios.map((c) => (
-                  <div key={c.nombre}>
-                    <div className="fila-puntaje">
-                      <span>
-                        {c.nombre} <span className="texto-gris">({c.peso}%)</span>
-                      </span>
-                      <span className="num">{c.puntaje ?? "—"}</span>
+                {/* Comparativo de rondas: el total es el promedio de las etapas. */}
+                {variasEtapas && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {rubrica.etapas.map((e) => (
+                      <div key={e.etapaId}>
+                        <div className="fila-puntaje">
+                          <b>{e.nombre}</b>
+                          <span className="num">{e.ajuste ?? "—"}</span>
+                        </div>
+                        <Barra valor={e.ajuste ?? 0} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {rubrica.anterior && (
+                  <span className="texto-gris" style={{ fontSize: 12 }}>
+                    Evaluación hecha antes de separar por etapa. Usa el botón para verla ronda por ronda.
+                  </span>
+                )}
+                {rubrica.etapas.map((e) => (
+                  <div
+                    key={e.etapaId}
+                    style={{ display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid var(--linea)", paddingTop: 12 }}
+                  >
+                    <div className="fila-puntaje" style={{ fontSize: 14 }}>
+                      <b>{e.nombre}</b>
+                      {e.ajuste != null && <b>{e.ajuste}/100</b>}
                     </div>
-                    <Barra valor={c.puntaje ?? 0} fina />
-                    <div className="evidencia">{c.evidencia}</div>
+                    {e.criterios.map((c) => (
+                      <div key={c.nombre}>
+                        <div className="fila-puntaje">
+                          <span>
+                            {c.nombre} <span className="texto-gris">({c.peso}%)</span>
+                          </span>
+                          <span className="num">{c.puntaje ?? "—"}</span>
+                        </div>
+                        <Barra valor={c.puntaje ?? 0} fina />
+                        <div className="evidencia">{c.evidencia}</div>
+                      </div>
+                    ))}
+                    <div style={{ fontSize: 13, lineHeight: 1.5, display: "flex", flexDirection: "column", gap: 6 }}>
+                      {e.fortalezas && (
+                        <span>
+                          <b>Fortalezas:</b> {e.fortalezas}
+                        </span>
+                      )}
+                      {e.profundizar && (
+                        <span>
+                          <b>Para profundizar en la entrevista:</b> {e.profundizar}
+                        </span>
+                      )}
+                      <span className="texto-gris" style={{ fontSize: 12 }}>
+                        Con {e.respuestasEvaluadas} respuestas · {fecha(e.fecha)}
+                      </span>
+                    </div>
                   </div>
                 ))}
-                <div style={{ borderTop: "1px solid var(--linea)", paddingTop: 12, fontSize: 13, lineHeight: 1.5, display: "flex", flexDirection: "column", gap: 6 }}>
-                  {rubrica.fortalezas && (
-                    <span>
-                      <b>Fortalezas:</b> {rubrica.fortalezas}
-                    </span>
-                  )}
-                  {rubrica.profundizar && (
-                    <span>
-                      <b>Para profundizar en la entrevista:</b> {rubrica.profundizar}
-                    </span>
-                  )}
-                  <span className="texto-gris" style={{ fontSize: 12 }}>
-                    Con {rubrica.respuestasEvaluadas} respuestas · {fecha(rubrica.fecha)}. “—” es sin evidencia: no resta.
-                  </span>
-                </div>
+                <span className="texto-gris" style={{ fontSize: 12 }}>
+                  “—” es sin evidencia: no resta.
+                </span>
               </>
             )}
             <EvaluarIa

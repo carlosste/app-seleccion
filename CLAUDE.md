@@ -148,6 +148,13 @@ Nunca subir .env.local al repositorio.
   modelo que respondió de verdad (puede ser uno de respaldo).
 - `GEMINI_API_KEY` está en `.env.local` desde el 2026-10-28.
 
+## Evaluación por etapa (2026-10-28, decisión de Carlos)
+- `puntuar_rubrica` guarda un puntaje por cada etapa de preguntas (texto, voz…)
+  en `resultado.etapas`; `ajuste_total` es el promedio de las etapas. Solo se
+  llama a la IA por las etapas con respuestas nuevas. Las evaluaciones del
+  formato anterior (un solo puntaje) se muestran como una sección y se rehacen
+  por etapa al volver a evaluar.
+
 ## Vacantes: requisitos por cargo y eliminar (2026-10-28, decisión de Carlos)
 - Al crear una vacante, la IA propone de 4 a 6 requisitos propios del cargo
   (`proponerRequisitos` en `lib/gestion/requisitos-por-defecto.ts`); el código

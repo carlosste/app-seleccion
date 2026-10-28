@@ -7,7 +7,7 @@ import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { sembrarRubricaSiFalta } from "./acciones-configuracion";
 import { NOMBRE_ETAPA } from "./datos";
-import type { EstadoRequisito, ResultadoCv, ResultadoRubrica, VeredictoCv } from "./tipos-evaluacion";
+import type { EstadoRequisito, EvaluacionEtapa, ResultadoCv, ResultadoRubrica, VeredictoCv } from "./tipos-evaluacion";
 
 // "Evaluar con IA": gestión humana lo pide desde el detalle del postulante (así no se gastan
 // tokens en cada postulación que llega). Hace dos cosas:
@@ -123,7 +123,7 @@ export async function evaluarPostulacion(vacanteId: string, postulacionId: strin
         console.error("[ia] guardar puntuar_rubrica", error);
         return { ok: false, mensaje: "No pudimos guardar la evaluación de las respuestas." };
       }
-      hechos.push(`Respuestas puntuadas con la rúbrica (${r.resultado.respuestasEvaluadas}).`);
+      hechos.push(`Puntuadas con la rúbrica: ${r.etapasNuevas.join(", ")}.`);
     }
   } catch (error) {
     console.error("[ia] puntuarRespuestas", error);
@@ -219,8 +219,13 @@ async function analizarCv(
 
 type Puntuacion =
   | { tipo: "sin-respuestas" | "sin-cambios" | "sin-rubrica" }
-  | { tipo: "nueva"; resultado: ResultadoRubrica; ajuste: number | null; modelo: string };
+  | { tipo: "nueva"; resultado: ResultadoRubrica; ajuste: number | null; modelo: string; etapasNuevas: string[] };
 
+type Criterio = { nombre: string; descripcion: string | null; peso: number };
+type Numerada = { numero: number; pregunta: string; respuesta: string };
+
+// Puntúa cada etapa de preguntas por separado (texto, voz…), para comparar las rondas.
+// Solo llama a la IA por las etapas con respuestas nuevas: las demás conservan su puntaje.
 async function puntuarRespuestas(
   supabase: Cliente,
   vacante: { id: string; cargo: string; descripcion: string | null },
@@ -247,7 +252,9 @@ async function puntuarRespuestas(
     supabase.from("rubricas").select("id").eq("vacante_id", vacante.id).maybeSingle<{ id: string }>(),
   ]);
   if (!respuestas?.length) return { tipo: "sin-respuestas" };
-  if (anterior && anterior.respuestasEvaluadas === respuestas.length) return { tipo: "sin-cambios" };
+  // Una evaluación del formato anterior (un solo puntaje, sin etapas) se rehace completa.
+  const previa = Array.isArray(anterior?.etapas) ? anterior : undefined;
+  if (previa && previa.respuestasEvaluadas === respuestas.length) return { tipo: "sin-cambios" };
 
   const { data: criterios } = rubrica
     ? await supabase
@@ -255,43 +262,85 @@ async function puntuarRespuestas(
         .select("nombre, descripcion, peso")
         .eq("rubrica_id", rubrica.id)
         .order("created_at")
-        .returns<{ nombre: string; descripcion: string | null; peso: number }[]>()
-    : { data: [] };
+        .returns<Criterio[]>()
+    : { data: [] as Criterio[] };
   if (!criterios?.length) return { tipo: "sin-rubrica" };
 
   // Preguntas numeradas igual que en el detalle del postulante (etapa por etapa), para que
   // la evidencia "Pregunta N" coincida con lo que ve gestión humana.
-  const etapa = new Map((etapas ?? []).map((e) => [e.id, e]));
+  const etapasPreguntas = (etapas ?? []).filter((e) => e.tipo === "texto" || e.tipo === "voz").sort((a, b) => a.orden - b.orden);
   const respuestaDe = new Map(respuestas.map((r) => [r.pregunta_id, r]));
-  const ordenadas = (preguntas ?? [])
-    .filter((p) => ["texto", "voz"].includes(etapa.get(p.etapa_id)?.tipo ?? ""))
-    .sort((a, b) => etapa.get(a.etapa_id)!.orden - etapa.get(b.etapa_id)!.orden || a.orden - b.orden)
-    .map((p, i) => ({ numero: i + 1, p, r: respuestaDe.get(p.id) }))
-    .filter((x) => x.r);
+  let numero = 0;
+  const grupos = etapasPreguntas.map((e) => ({
+    etapa: e,
+    respondidas: (preguntas ?? [])
+      .filter((p) => p.etapa_id === e.id)
+      .sort((a, b) => a.orden - b.orden)
+      .map((p) => {
+        numero++;
+        const r = respuestaDe.get(p.id);
+        return r ? { numero, pregunta: p.texto, respuesta: (r.transcripcion ?? r.texto ?? "").trim() || "(vacía)" } : null;
+      })
+      .filter((x): x is Numerada => x !== null),
+  }));
 
+  const anteriores = new Map((previa?.etapas ?? []).map((e) => [e.etapaId, e]));
+  const resultado: EvaluacionEtapa[] = [];
+  const etapasNuevas: string[] = [];
+  let modeloUsado = "";
+  for (const { etapa, respondidas } of grupos) {
+    if (!respondidas.length) continue;
+    const nombre = etapa.nombre?.trim() || NOMBRE_ETAPA[etapa.tipo];
+    const conservada = anteriores.get(etapa.id);
+    if (conservada && conservada.respuestasEvaluadas === respondidas.length) {
+      resultado.push(conservada);
+      continue;
+    }
+    const { evaluacion, modelo } = await puntuarEtapa(vacante, criterios, cv, nombre, respondidas);
+    resultado.push({ ...evaluacion, etapaId: etapa.id, nombre });
+    etapasNuevas.push(nombre);
+    modeloUsado = modelo;
+  }
+
+  // Total: promedio de las etapas con puntaje (cada ronda pesa igual).
+  const conAjuste = resultado.filter((e) => e.ajuste != null);
+  const ajuste = conAjuste.length ? Math.round(conAjuste.reduce((s, e) => s + e.ajuste!, 0) / conAjuste.length) : null;
+
+  return {
+    tipo: "nueva",
+    modelo: modeloUsado,
+    ajuste,
+    etapasNuevas,
+    resultado: { etapas: resultado, respuestasEvaluadas: respuestas.length },
+  };
+}
+
+async function puntuarEtapa(
+  vacante: { cargo: string; descripcion: string | null },
+  criterios: Criterio[],
+  cv: ResultadoCv | undefined,
+  nombreEtapa: string,
+  respondidas: Numerada[],
+): Promise<{ evaluacion: Omit<EvaluacionEtapa, "etapaId" | "nombre">; modelo: string }> {
   const { datos: r, modelo } = await pedirJsonConModelo<{
     criterios?: { indice?: number; puntaje?: number | null; evidencia?: string }[];
     fortalezas?: string;
     profundizar?: string;
   }>(
-    "Eres asistente de selección de personal. Puntúa las respuestas de un postulante con la rúbrica del cargo. " +
+    "Eres asistente de selección de personal. Puntúa con la rúbrica del cargo las respuestas de un postulante en " +
+      "UNA etapa del proceso. " +
       'Para cada criterio, en el mismo orden: {"indice", "puntaje", "evidencia"}. puntaje es un entero de 0 a 100, ' +
-      'o null si las respuestas no dan evidencia para ese criterio (por ejemplo "rapidez de respuesta": no tienes ' +
-      'tiempos). evidencia cita la pregunta y lo que respondió, por ejemplo "Pregunta 2 · describe pasos ordenados". ' +
+      'o null si las respuestas de esta etapa no dan evidencia para ese criterio (por ejemplo "rapidez de respuesta": ' +
+      'no tienes tiempos). evidencia cita la pregunta y lo que respondió, por ejemplo "Pregunta 2 · describe pasos ' +
+      'ordenados". Una respuesta evasiva, fuera de tema o vacía baja el puntaje del criterio que debía mostrar. ' +
       "Evalúa solo el contenido de las respuestas: nunca la edad, el género, el origen, la forma de hablar ni rasgos " +
       "personales. No digas si es el mejor ni si debe pasar: eso lo decide una persona. " +
       '"fortalezas": una frase. "profundizar": una frase con lo que conviene preguntar en la entrevista. ' +
       'Devuelve {"criterios": [...], "fortalezas": "...", "profundizar": "..."}.',
-    `Cargo: ${vacante.cargo}\nDescripción: ${vacante.descripcion?.trim() || "(sin descripción)"}\n\n` +
+    `Cargo: ${vacante.cargo}\nDescripción: ${vacante.descripcion?.trim() || "(sin descripción)"}\nEtapa: ${nombreEtapa}\n\n` +
       `Rúbrica:\n${criterios.map((c, i) => `${i + 1}. ${c.nombre} (peso ${c.peso}%): ${c.descripcion ?? ""}`).join("\n")}\n\n` +
       (cv?.hojaDeVida.length ? `Hoja de vida (resumen): ${cv.hojaDeVida.map((d) => `${d.etiqueta}: ${d.valor}`).join("; ")}\n\n` : "") +
-      `Respuestas:\n${ordenadas
-        .map(({ numero, p, r }) => {
-          const e = etapa.get(p.etapa_id)!;
-          const nombre = e.nombre?.trim() || NOMBRE_ETAPA[e.tipo];
-          return `Pregunta ${numero} (${nombre}): ${p.texto}\nRespuesta: ${(r!.transcripcion ?? r!.texto ?? "").trim() || "(vacía)"}`;
-        })
-        .join("\n\n")}`,
+      `Respuestas de esta etapa:\n${respondidas.map((x) => `Pregunta ${x.numero}: ${x.pregunta}\nRespuesta: ${x.respuesta}`).join("\n\n")}`,
   );
 
   const dados = Array.isArray(r.criterios) ? r.criterios : [];
@@ -313,14 +362,14 @@ async function puntuarRespuestas(
   const ajuste = pesoTotal ? Math.round(conPuntaje.reduce((s, c) => s + c.puntaje! * c.peso, 0) / pesoTotal) : null;
 
   return {
-    tipo: "nueva",
     modelo,
-    ajuste,
-    resultado: {
+    evaluacion: {
+      ajuste,
       criterios: puntuados,
       fortalezas: texto(r.fortalezas, 400),
       profundizar: texto(r.profundizar, 400),
-      respuestasEvaluadas: respuestas.length,
+      respuestasEvaluadas: respondidas.length,
+      fecha: new Date().toISOString(),
     },
   };
 }
