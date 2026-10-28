@@ -13,6 +13,8 @@ const REINTENTABLES = [429, 500, 503, 504];
 
 // Archivo que acompaña los datos (por ejemplo el CV en PDF), en base64.
 export type Adjunto = { mimeType: string; data: string };
+// temperatura: 0.2 por defecto; 0 donde importa calificar a todos con el mismo criterio.
+export type Opciones = { temperatura?: number };
 
 const REGLAS =
   "Responde solo con JSON válido, en español. Nunca propongas requisitos ni preguntas sobre edad máxima, " +
@@ -59,6 +61,7 @@ export async function pedirJsonConModelo<T>(
   instruccion: string,
   datos: string,
   adjuntos: Adjunto[] = [],
+  opciones: Opciones = {},
 ): Promise<{ datos: T; modelo: string }> {
   const clave = process.env.GEMINI_API_KEY;
   if (!clave) throw new Error("Falta GEMINI_API_KEY en el servidor");
@@ -66,7 +69,7 @@ export async function pedirJsonConModelo<T>(
   const cuerpo = JSON.stringify({
     systemInstruction: { parts: [{ text: `${REGLAS}\n${instruccion}` }] },
     contents: [{ role: "user", parts: [...adjuntos.map((a) => ({ inlineData: a })), { text: datos }] }],
-    generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
+    generationConfig: { temperature: opciones.temperatura ?? 0.2, responseMimeType: "application/json" },
   });
   const limiteMs = adjuntos.length ? TIEMPO_LIMITE_ADJUNTOS_MS : TIEMPO_LIMITE_MS;
 

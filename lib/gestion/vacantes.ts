@@ -146,6 +146,18 @@ export async function publicarVacante(_previo: EstadoPublicar, fd: FormData): Pr
 
   const { empresa } = await requerirEmpresa();
   const supabase = await crearClienteServidor();
+
+  // Al publicar se bloquean las preguntas de la primera etapa: no puede salir vacía.
+  const { data: primera } = await supabase.rpc("primera_etapa_preguntas", { p_vacante: id });
+  if (!primera) return { estado: "error", mensaje: "Agrega una etapa de preguntas (texto o voz) antes de publicar." };
+  const { count } = await supabase.from("preguntas").select("id", { count: "exact", head: true }).eq("etapa_id", primera);
+  if (!count) {
+    return {
+      estado: "error",
+      mensaje: "La primera etapa de preguntas está vacía. Agrégale preguntas: al publicar quedan fijas para todos.",
+    };
+  }
+
   const { data, error } = await supabase
     .from("vacantes")
     .update({ estado: "abierta" })

@@ -7,7 +7,15 @@ import { esUuid } from "./datos";
 // Un id mal formado en la URL devuelve listas vacías (el layout responde 404), no un error 500.
 
 export type RequisitoVacante = { id: string; oferta: string; minimo: string };
-export type EtapaVacante = { id: string; tipo: "cv" | "texto" | "voz" | "entrevista"; orden: number; nombre: string | null };
+export type EtapaVacante = {
+  id: string;
+  tipo: "cv" | "texto" | "voz" | "entrevista";
+  orden: number;
+  nombre: string | null;
+  // Preguntas bloqueadas: primera etapa de una vacante publicada, o etapa a la que ya llegó alguien.
+  bloqueada: boolean;
+  llegaron: number;
+};
 export type PreguntaVacante = { id: string; etapaId: string; texto: string; enfoque: "cargo" | "social"; origen: "ia" | "manual" };
 export type CriterioVacante = { id: string; nombre: string; descripcion: string; peso: number };
 
@@ -45,9 +53,19 @@ export async function listarEtapas(vacanteId: string): Promise<EtapaVacante[]> {
     .select("id, tipo, orden, nombre")
     .eq("vacante_id", vacanteId)
     .order("orden")
-    .returns<EtapaVacante[]>();
+    .returns<Omit<EtapaVacante, "bloqueada" | "llegaron">[]>();
   if (error) throw new Error(`No se pudieron leer las etapas: ${error.message}`);
-  return data;
+
+  // Las mismas funciones que usa el trigger de la base, para que la pantalla diga lo mismo.
+  return Promise.all(
+    data.map(async (e) => {
+      const [{ data: bloqueada }, { data: llegaron }] = await Promise.all([
+        supabase.rpc("etapa_bloqueada", { p_etapa: e.id }),
+        supabase.rpc("postulantes_en_etapa", { p_etapa: e.id }),
+      ]);
+      return { ...e, bloqueada: Boolean(bloqueada), llegaron: Number(llegaron ?? 0) };
+    }),
+  );
 }
 
 export async function listarCriterios(vacanteId: string): Promise<CriterioVacante[]> {

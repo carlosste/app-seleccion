@@ -13,6 +13,11 @@ export type ResultadoCv = {
 
 export type CriterioPuntuado = { nombre: string; peso: number; puntaje: number | null; evidencia: string };
 
+// Sube cuando cambia cómo se califica (prompt, escala, temperatura). Una etapa evaluada con
+// otra versión se vuelve a calificar, para que todos queden medidos con el mismo criterio.
+// 2 (2026-10-28): solo respuestas de la etapa, escala fija y temperatura 0.
+export const VERSION_PUNTAJE = 2;
+
 // Puntaje de una etapa de preguntas (texto o voz) con la rúbrica. puntaje null = sin evidencia.
 export type EvaluacionEtapa = {
   etapaId: string;
@@ -23,6 +28,7 @@ export type EvaluacionEtapa = {
   profundizar: string;
   respuestasEvaluadas: number;
   fecha: string;
+  version?: number;
 };
 
 // Tarea puntuar_rubrica: una evaluación por etapa (desde el 2026-10-28), así se compara cómo
