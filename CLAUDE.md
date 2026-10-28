@@ -8,7 +8,9 @@ Proyecto académico (Ingeniería de Sistemas, UCC Cali), pensado para escalar.
 ## Stack
 - Next.js (App Router) + React + TypeScript + Tailwind
 - Supabase: Postgres, Auth, Storage (CVs y audios en buckets privados), RLS
-- Gemini API (modelo: gemini-3.1-flash-lite), solo desde el servidor
+- Gemini API, solo desde el servidor. Modelo principal gemini-3.1-flash-lite;
+  si está saturado (503) reintenta y pasa a gemini-3.5-flash-lite y luego a
+  gemini-2.5-flash (todos del plan gratuito). La lista está en lib/ia/gemini.ts.
 - Resend: en pausa hasta tener dominio propio (ver Decisiones de datos)
 - GitHub + Vercel (vistas previas por rama, producción en main)
 
