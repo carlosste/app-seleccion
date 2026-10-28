@@ -11,10 +11,23 @@ export type ResultadoCv = {
   veredicto: VeredictoCv;
 };
 
-// Tarea puntuar_rubrica: puntaje por criterio con evidencia. puntaje null = sin evidencia.
-export type ResultadoRubrica = {
-  criterios: { nombre: string; peso: number; puntaje: number | null; evidencia: string }[];
+export type CriterioPuntuado = { nombre: string; peso: number; puntaje: number | null; evidencia: string };
+
+// Puntaje de una etapa de preguntas (texto o voz) con la rúbrica. puntaje null = sin evidencia.
+export type EvaluacionEtapa = {
+  etapaId: string;
+  nombre: string;
+  ajuste: number | null;
+  criterios: CriterioPuntuado[];
   fortalezas: string;
   profundizar: string;
+  respuestasEvaluadas: number;
+  fecha: string;
+};
+
+// Tarea puntuar_rubrica: una evaluación por etapa (desde el 2026-10-28), así se compara cómo
+// le fue en cada ronda. El total (ajuste_total de la fila) es el promedio de las etapas.
+export type ResultadoRubrica = {
+  etapas: EvaluacionEtapa[];
   respuestasEvaluadas: number;
 };
