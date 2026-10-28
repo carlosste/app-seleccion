@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { CRITERIOS_POR_DEFECTO } from "./criterios-por-defecto";
+import { MENSAJE_CON_POSTULACIONES, tienePostulaciones } from "./postulaciones";
 import { REQUISITOS_POR_DEFECTO } from "./requisitos-por-defecto";
 import { type Peso, repartir } from "./repartir";
 
@@ -16,9 +17,11 @@ type DatosRequisito = { oferta: string; minimo: string };
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const TIPOS_ETAPA = ["cv", "texto", "voz", "entrevista"];
+const MAXIMO_CRITERIOS = 20;
 
 const FALLO = { ok: false as const, mensaje: "No pudimos guardar el cambio. Intenta de nuevo." };
 const NO_ENCONTRADA = { ok: false as const, mensaje: "Vacante no encontrada." };
+const CON_POSTULACIONES = { ok: false as const, mensaje: MENSAJE_CON_POSTULACIONES };
 
 async function clienteDeVacante(vacanteId: string): Promise<Cliente | null> {
   if (!UUID.test(vacanteId)) return null;
@@ -194,6 +197,7 @@ export async function renombrarEtapa(id: string, vacanteId: string, nombre: stri
 export async function moverEtapa(id: string, vacanteId: string, direccion: "subir" | "bajar"): Promise<Resultado> {
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return NO_ENCONTRADA;
+  if (await tienePostulaciones(supabase, vacanteId)) return CON_POSTULACIONES;
 
   const { data: etapas } = await supabase
     .from("vacante_etapas")
@@ -229,7 +233,8 @@ export async function moverEtapa(id: string, vacanteId: string, direccion: "subi
 export async function quitarEtapa(id: string, vacanteId: string): Promise<Resultado> {
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return NO_ENCONTRADA;
-  const { error } = await supabase.from("vacante_etapas").delete().eq("id", id).eq("vacante_id", vacanteId);
+  if (await tienePostulaciones(supabase, vacanteId)) return CON_POSTULACIONES;
+  const { error }= await supabase.from("vacante_etapas").delete().eq("id", id).eq("vacante_id", vacanteId);
   if (error) {
     console.error("[etapas] delete", error);
     return FALLO;
@@ -239,12 +244,21 @@ export async function quitarEtapa(id: string, vacanteId: string): Promise<Result
 }
 
 // ---------------------------------------------------------------------------
-// Rúbrica: criterios sin límite de cantidad. Los pesos (1 a 100) siempre suman 100.
+// Rúbrica: hasta 20 criterios (con más, algún peso quedaría en 0). Los pesos (1 a 100)
+// siempre suman 100.
 // ---------------------------------------------------------------------------
-async function aplicarPesos(supabase: Cliente, pesos: Peso[]) {
-  await Promise.all(
-    pesos.map(({ id, peso }) => supabase.from("criterios").update({ peso }).eq("id", id)),
+async function aplicarPesos(supabase: Cliente, rubricaId: string, pesos: Peso[]): Promise<boolean> {
+  const resultados = await Promise.all(
+    pesos.map(({ id, peso }) => supabase.from("criterios").update({ peso }).eq("id", id).eq("rubrica_id", rubricaId)),
   );
+  const fallo = resultados.find((r) => r.error);
+  if (fallo) console.error("[rubrica] pesos", fallo.error);
+  return !fallo;
+}
+
+async function rubricaDeVacante(supabase: Cliente, vacanteId: string): Promise<string | null> {
+  const { data } = await supabase.from("rubricas").select("id").eq("vacante_id", vacanteId).maybeSingle<{ id: string }>();
+  return data?.id ?? null;
 }
 
 // Crea la rúbrica con los criterios por defecto si la vacante aún no tiene una.
@@ -284,14 +298,27 @@ export async function agregarCriterio(vacanteId: string, nombre: string, descrip
   if (!supabase) return NO_ENCONTRADA;
 
   await sembrarRubricaSiFalta(vacanteId);
-  const { data: rubrica } = await supabase.from("rubricas").select("id").eq("vacante_id", vacanteId).maybeSingle<{ id: string }>();
-  if (!rubrica) return FALLO;
+  const rubricaId = await rubricaDeVacante(supabase, vacanteId);
+  if (!rubricaId) return FALLO;
 
-  const { data: existentes } = await supabase.from("criterios").select("id, peso").eq("rubrica_id", rubrica.id);
-  const n = (existentes?.length ?? 0) + 1;
+  const { data: existentes, error: errorExistentes } = await supabase
+    .from("criterios")
+    .select("id, peso")
+    .eq("rubrica_id", rubricaId)
+    .returns<Peso[]>();
+  if (errorExistentes || !existentes) return FALLO;
+  if (existentes.length >= MAXIMO_CRITERIOS) {
+    return { ok: false, mensaje: `La rúbrica admite hasta ${MAXIMO_CRITERIOS} criterios.` };
+  }
+
   const { data: nuevo, error: errorCriterio } = await supabase
     .from("criterios")
-    .insert({ rubrica_id: rubrica.id, nombre: nombre.trim(), descripcion: descripcion.trim() || null, peso: Math.floor(100 / n) })
+    .insert({
+      rubrica_id: rubricaId,
+      nombre: nombre.trim(),
+      descripcion: descripcion.trim() || null,
+      peso: Math.floor(100 / (existentes.length + 1)),
+    })
     .select("id, peso")
     .single<Peso>();
   if (errorCriterio || !nuevo) {
@@ -299,9 +326,9 @@ export async function agregarCriterio(vacanteId: string, nombre: string, descrip
     return FALLO;
   }
 
-  await aplicarPesos(supabase, repartir([...(existentes ?? []), nuevo], nuevo));
+  const ok = await aplicarPesos(supabase, rubricaId, repartir([...existentes, nuevo], nuevo));
   refrescar(vacanteId);
-  return { ok: true };
+  return ok ? { ok: true } : FALLO;
 }
 
 export async function guardarCriterio(id: string, vacanteId: string, nombre: string, descripcion: string): Promise<Resultado> {
@@ -309,15 +336,21 @@ export async function guardarCriterio(id: string, vacanteId: string, nombre: str
   if (error) return { ok: false, mensaje: error };
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return NO_ENCONTRADA;
+  const rubricaId = await rubricaDeVacante(supabase, vacanteId);
+  if (!rubricaId) return NO_ENCONTRADA;
 
-  const { error: errorUpdate } = await supabase
+  // El criterio debe ser de la rúbrica de esta vacante, no de otra de la misma empresa.
+  const { data, error: errorUpdate } = await supabase
     .from("criterios")
     .update({ nombre: nombre.trim(), descripcion: descripcion.trim() || null })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("rubrica_id", rubricaId)
+    .select("id");
   if (errorUpdate) {
     console.error("[rubrica] update", errorUpdate);
     return FALLO;
   }
+  if (!data?.length) return { ok: false, mensaje: "Criterio no encontrado." };
   refrescar(vacanteId);
   return { ok: true };
 }
@@ -327,41 +360,33 @@ export async function cambiarPesoCriterio(id: string, vacanteId: string, peso: n
   if (!Number.isInteger(peso) || peso < 1 || peso > 100) return { ok: false, mensaje: "El peso va de 1 a 100." };
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return NO_ENCONTRADA;
+  const rubricaId = await rubricaDeVacante(supabase, vacanteId);
+  if (!rubricaId) return NO_ENCONTRADA;
 
-  const { data: criterio } = await supabase
-    .from("criterios")
-    .select("rubrica_id")
-    .eq("id", id)
-    .maybeSingle<{ rubrica_id: string }>();
-  if (!criterio) return NO_ENCONTRADA;
-
-  const { data: todos } = await supabase.from("criterios").select("id, peso").eq("rubrica_id", criterio.rubrica_id);
+  const { data: todos } = await supabase.from("criterios").select("id, peso").eq("rubrica_id", rubricaId).returns<Peso[]>();
   if (!todos) return FALLO;
+  if (!todos.some((c) => c.id === id)) return { ok: false, mensaje: "Criterio no encontrado." };
 
-  await aplicarPesos(supabase, repartir(todos, { id, peso }));
+  const ok = await aplicarPesos(supabase, rubricaId, repartir(todos, { id, peso }));
   refrescar(vacanteId);
-  return { ok: true };
+  return ok ? { ok: true } : FALLO;
 }
 
 export async function quitarCriterio(id: string, vacanteId: string): Promise<Resultado> {
   const supabase = await clienteDeVacante(vacanteId);
   if (!supabase) return NO_ENCONTRADA;
+  const rubricaId = await rubricaDeVacante(supabase, vacanteId);
+  if (!rubricaId) return NO_ENCONTRADA;
 
-  const { data: criterio } = await supabase
-    .from("criterios")
-    .select("rubrica_id")
-    .eq("id", id)
-    .maybeSingle<{ rubrica_id: string }>();
-  if (!criterio) return NO_ENCONTRADA;
-
-  const { error } = await supabase.from("criterios").delete().eq("id", id);
+  const { data, error } = await supabase.from("criterios").delete().eq("id", id).eq("rubrica_id", rubricaId).select("id");
   if (error) {
     console.error("[rubrica] delete", error);
     return FALLO;
   }
+  if (!data?.length) return { ok: false, mensaje: "Criterio no encontrado." };
 
-  const { data: restantes } = await supabase.from("criterios").select("id, peso").eq("rubrica_id", criterio.rubrica_id);
-  if (restantes?.length) await aplicarPesos(supabase, repartir(restantes));
+  const { data: restantes } = await supabase.from("criterios").select("id, peso").eq("rubrica_id", rubricaId).returns<Peso[]>();
+  const ok = restantes?.length ? await aplicarPesos(supabase, rubricaId, repartir(restantes)) : true;
   refrescar(vacanteId);
-  return { ok: true };
+  return ok ? { ok: true } : FALLO;
 }

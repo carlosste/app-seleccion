@@ -1,8 +1,10 @@
 import "server-only";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { esUuid } from "./datos";
 
 // Lecturas de requisitos, etapas y rúbrica de una vacante. RLS limita a la empresa de la sesión.
+// Un id mal formado en la URL devuelve listas vacías (el layout responde 404), no un error 500.
 
 export type RequisitoVacante = { id: string; oferta: string; minimo: string };
 export type EtapaVacante = { id: string; tipo: "cv" | "texto" | "voz" | "entrevista"; orden: number; nombre: string | null };
@@ -10,6 +12,7 @@ export type PreguntaVacante = { id: string; etapaId: string; texto: string; enfo
 export type CriterioVacante = { id: string; nombre: string; descripcion: string; peso: number };
 
 export async function listarRequisitos(vacanteId: string): Promise<RequisitoVacante[]> {
+  if (!esUuid(vacanteId)) return [];
   await requerirEmpresa();
   const supabase = await crearClienteServidor();
   const { data, error } = await supabase
@@ -34,6 +37,7 @@ export async function listarRequisitos(vacanteId: string): Promise<RequisitoVaca
 }
 
 export async function listarEtapas(vacanteId: string): Promise<EtapaVacante[]> {
+  if (!esUuid(vacanteId)) return [];
   await requerirEmpresa();
   const supabase = await crearClienteServidor();
   const { data, error } = await supabase
@@ -47,6 +51,7 @@ export async function listarEtapas(vacanteId: string): Promise<EtapaVacante[]> {
 }
 
 export async function listarCriterios(vacanteId: string): Promise<CriterioVacante[]> {
+  if (!esUuid(vacanteId)) return [];
   await requerirEmpresa();
   const supabase = await crearClienteServidor();
   const { data: rubrica } = await supabase
@@ -67,6 +72,7 @@ export async function listarCriterios(vacanteId: string): Promise<CriterioVacant
 }
 
 export async function listarPreguntas(vacanteId: string): Promise<PreguntaVacante[]> {
+  if (!esUuid(vacanteId)) return [];
   await requerirEmpresa();
   const supabase = await crearClienteServidor();
   const { data, error } = await supabase

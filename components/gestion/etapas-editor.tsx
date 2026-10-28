@@ -139,11 +139,14 @@ function FilaEtapa({
         <input
           className="inp"
           value={nombre}
+          maxLength={80}
           placeholder={titulo(etapa.tipo)}
           aria-label={`Nombre de la etapa ${posicion}`}
           disabled={deshabilitado}
           onChange={(e) => setNombre(e.target.value)}
-          onBlur={() => onRenombrar(nombre)}
+          onBlur={() => {
+            if (nombre.trim() !== (etapa.nombre ?? "")) onRenombrar(nombre);
+          }}
         />
         <span className="texto-gris" style={{ fontSize: 12 }}>
           {titulo(etapa.tipo)}
@@ -156,7 +159,19 @@ function FilaEtapa({
         <button type="button" className="btn btn-sec btn-chico" disabled={deshabilitado || esUltima} onClick={() => onMover("bajar")} aria-label="Bajar etapa">
           ↓
         </button>
-        <button type="button" className="btn-enlace" disabled={deshabilitado} onClick={onQuitar}>
+        <button
+          type="button"
+          className="btn-enlace"
+          disabled={deshabilitado}
+          aria-label={`Quitar la etapa ${posicion}`}
+          onClick={() => {
+            const aviso =
+              preguntas.length > 0
+                ? `¿Quitar la etapa ${posicion} y sus ${preguntas.length} preguntas? No se puede deshacer.`
+                : `¿Quitar la etapa ${posicion}? No se puede deshacer.`;
+            if (window.confirm(aviso)) onQuitar();
+          }}
+        >
           Quitar
         </button>
       </div>
@@ -295,7 +310,14 @@ function FilaPregunta({
           </option>
         ))}
       </select>
-      <button type="button" className="btn-enlace" disabled={deshabilitado} onClick={onQuitar} style={{ paddingTop: 10 }}>
+      <button
+        type="button"
+        className="btn-enlace"
+        disabled={deshabilitado}
+        aria-label={`Quitar la pregunta ${numero}`}
+        onClick={onQuitar}
+        style={{ paddingTop: 10 }}
+      >
         Quitar
       </button>
     </div>

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { pedirJson } from "@/lib/ia/gemini";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { MENSAJE_CON_POSTULACIONES, tienePostulaciones } from "./postulaciones";
 
 // Preguntas por etapa. La IA las propone según el cargo, la descripción y la rúbrica,
 // o de enfoque social (situaciones cotidianas). La empresa puede editarlas, quitarlas
@@ -61,6 +62,9 @@ export async function generarPreguntas(vacanteId: string, etapaId: string, modo:
   if (!acceso) return { ok: false, mensaje: "Vacante no encontrada." };
   const { supabase, vacante } = acceso;
   if (modo !== "cargo" && modo !== "social" && modo !== "mixta") return { ok: false, mensaje: "Enfoque no válido." };
+  // Regenerar borra las preguntas de la IA y, en cascada, sus respuestas. Se revisa antes
+  // de llamar a Gemini para no gastar tokens.
+  if (await tienePostulaciones(supabase, vacanteId)) return { ok: false, mensaje: MENSAJE_CON_POSTULACIONES };
 
   const { data: etapas } = await supabase
     .from("vacante_etapas")
@@ -213,6 +217,7 @@ export async function guardarPregunta(id: string, vacanteId: string, texto: stri
 export async function quitarPregunta(id: string, vacanteId: string): Promise<Resultado> {
   const acceso = await clienteDeVacante(vacanteId);
   if (!acceso) return { ok: false, mensaje: "Vacante no encontrada." };
+  if (await tienePostulaciones(acceso.supabase, vacanteId)) return { ok: false, mensaje: MENSAJE_CON_POSTULACIONES };
 
   const { error } = await acceso.supabase.from("preguntas").delete().eq("id", id).eq("vacante_id", vacanteId);
   if (error) {

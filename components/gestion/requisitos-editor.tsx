@@ -89,7 +89,11 @@ function FilaRequisito({
 }) {
   const [oferta, setOferta] = useState(requisito.oferta);
   const [minimo, setMinimo] = useState(requisito.minimo);
-  const datos = { oferta, minimo };
+
+  // Solo se guarda (y se recarga) si algo cambió.
+  function guardar() {
+    if (oferta.trim() !== requisito.oferta || minimo.trim() !== requisito.minimo) onGuardar({ oferta, minimo });
+  }
 
   return (
     <tr>
@@ -97,22 +101,29 @@ function FilaRequisito({
         <input
           className="inp"
           value={oferta}
+          maxLength={300}
           aria-label="Lo que pide la oferta"
           onChange={(e) => setOferta(e.target.value)}
-          onBlur={() => onGuardar(datos)}
+          onBlur={guardar}
         />
       </td>
       <td>
         <input
           className="inp inp-resaltado transparente"
           value={minimo}
+          maxLength={300}
           aria-label="Mínimo aceptable"
           onChange={(e) => setMinimo(e.target.value)}
-          onBlur={() => onGuardar(datos)}
+          onBlur={guardar}
         />
       </td>
       <td>
-        <button type="button" className="btn-enlace" onClick={onQuitar}>
+        <button
+          type="button"
+          className="btn-enlace"
+          aria-label={`Quitar requisito ${requisito.oferta || "sin nombre"}`}
+          onClick={onQuitar}
+        >
           Quitar
         </button>
       </td>

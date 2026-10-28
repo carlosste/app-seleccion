@@ -8,7 +8,7 @@ import type { CriterioVacante } from "@/lib/gestion/configuracion";
 type Resultado = { ok: boolean; mensaje?: string };
 
 // Rúbrica editable. Cambiar un peso reparte la diferencia entre los demás criterios
-// para que el total siga en 100. Sin límite de criterios.
+// para que el total siga en 100. Hasta 20 criterios.
 export function RubricaEditor({ vacanteId, criterios }: { vacanteId: string; criterios: CriterioVacante[] }) {
   const router = useRouter();
   const [pendiente, empezar] = useTransition();
@@ -75,9 +75,18 @@ function FilaCriterio({
   // Si otro cambio reparte los pesos, el campo muestra el valor nuevo.
   useEffect(() => setPeso(String(criterio.peso)), [criterio.peso]);
 
+  // Un peso inválido no se envía: el campo vuelve al valor guardado.
   function confirmarPeso() {
     const valor = Number(peso);
+    if (!Number.isInteger(valor) || valor < 1 || valor > 100) {
+      setPeso(String(criterio.peso));
+      return;
+    }
     if (valor !== criterio.peso) onPeso(valor);
+  }
+
+  function guardarTexto() {
+    if (nombre.trim() !== criterio.nombre || descripcion.trim() !== criterio.descripcion) onGuardar(nombre, descripcion);
   }
 
   return (
@@ -86,19 +95,21 @@ function FilaCriterio({
         <input
           className="inp"
           value={nombre}
+          maxLength={80}
           aria-label="Nombre del criterio"
           disabled={deshabilitado}
           onChange={(e) => setNombre(e.target.value)}
-          onBlur={() => onGuardar(nombre, descripcion)}
+          onBlur={guardarTexto}
         />
         <input
           className="inp"
           value={descripcion}
-          aria-label="Descripción del criterio"
+          maxLength={300}
+          aria-label={`Descripción de ${criterio.nombre}`}
           placeholder="Qué evalúa este criterio"
           disabled={deshabilitado}
           onChange={(e) => setDescripcion(e.target.value)}
-          onBlur={() => onGuardar(nombre, descripcion)}
+          onBlur={guardarTexto}
         />
       </div>
       <label className="flex">
@@ -116,7 +127,13 @@ function FilaCriterio({
         />
         %
       </label>
-      <button type="button" className="btn-enlace" disabled={deshabilitado} onClick={onQuitar}>
+      <button
+        type="button"
+        className="btn-enlace"
+        disabled={deshabilitado}
+        aria-label={`Quitar el criterio ${criterio.nombre}`}
+        onClick={onQuitar}
+      >
         Quitar
       </button>
     </div>

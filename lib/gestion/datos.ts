@@ -9,7 +9,7 @@ import type { Decision } from "@/lib/datos-prueba";
 // 3) además filtra por empresa_id de forma explícita (defensa en profundidad).
 
 type TipoEtapa = "cv" | "texto" | "voz" | "entrevista";
-type Etapa = { id: string; tipo: TipoEtapa; orden: number };
+type Etapa = { id: string; tipo: TipoEtapa; orden: number; nombre?: string | null };
 
 export const NOMBRE_ETAPA: Record<TipoEtapa, string> = {
   cv: "Revisión de CV",
@@ -113,7 +113,7 @@ export async function listarPostulantes(vacanteId: string): Promise<PostulanteFi
       .select("id, numero_anonimo, etapa_actual_id")
       .eq("vacante_id", vacante.id)
       .returns<{ id: string; numero_anonimo: number; etapa_actual_id: string | null }[]>(),
-    supabase.from("vacante_etapas").select("id, tipo, orden").eq("vacante_id", vacante.id).returns<Etapa[]>(),
+    supabase.from("vacante_etapas").select("id, tipo, orden, nombre").eq("vacante_id", vacante.id).returns<Etapa[]>(),
   ]);
   if (!filas?.length) return [];
 
@@ -133,7 +133,8 @@ export async function listarPostulantes(vacanteId: string): Promise<PostulanteFi
       .returns<{ postulacion_id: string; resultado: "pasa" | "no_pasa" }[]>(),
   ]);
 
-  const nombreEtapa = new Map((etapas ?? []).map((e) => [e.id, NOMBRE_ETAPA[e.tipo]]));
+  // El nombre que le puso la empresa; si no tiene, el del tipo de etapa.
+  const nombreEtapa = new Map((etapas ?? []).map((e) => [e.id, e.nombre?.trim() || NOMBRE_ETAPA[e.tipo]]));
   const ajuste = new Map((evaluaciones ?? []).map((e) => [e.postulacion_id, e.ajuste_total]));
   const ultimaDecision = new Map<string, "pasa" | "no_pasa">();
   for (const d of decisiones ?? []) if (!ultimaDecision.has(d.postulacion_id)) ultimaDecision.set(d.postulacion_id, d.resultado);
