@@ -214,23 +214,8 @@ Todas las instrucciones llevan una regla fija que prohíbe criterios de edad má
 
 ---
 
-## Correrla en local
+## ¿Hay que instalar algo?
 
-Requisitos: Node.js 20 o superior.
+No. La app está publicada en <https://app-seleccion-mu.vercel.app>, con la base de datos y la IA ya conectadas. Para revisarla basta con entrar con las cuentas de prueba de la sección "Cómo probarla".
 
-1. Copiar `.env.example` como `.env.local` y llenar las claves de Supabase y Gemini.
-2. Aplicar las migraciones de `supabase/migrations/` en orden.
-3. Instalar y arrancar:
-
-   ```bash
-   npm install
-   npm run dev
-   ```
-
-4. Abrir <http://localhost:3000>.
-
-Para cargar postulantes de prueba en una vacante:
-
-```bash
-node --env-file=.env.local scripts/seed-postulantes.mjs <id de la vacante> auxiliar-enfermeria
-```
+Correrla en otra computadora no es necesario y sería más largo: además del código, hace falta crear un proyecto propio en Supabase con toda la base de datos y sacar una clave de Gemini, porque las claves del proyecto no se suben al repositorio por seguridad.
