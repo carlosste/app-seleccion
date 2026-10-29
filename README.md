@@ -45,7 +45,7 @@ Los postulantes aparecen sin evaluar: el análisis con IA se pide con un botón 
    - Puntaje total, que promedia las etapas.
    - **Ver CV** y **Descargar CV**, en cualquier etapa.
    - **Evaluar con IA** para analizar solo a esa persona.
-   - **Pasa** / **No pasa**, con historial de decisiones. Al pasar a la entrevista se revela el nombre.
+   - **Pasa** / **No pasa**, con historial de decisiones.
 3. En la vacante:
    - **Requisitos**: los propone la IA según el cargo y se pueden editar.
    - **Descripción** pública: se puede redactar con IA y editar.
@@ -57,7 +57,7 @@ Los postulantes aparecen sin evaluar: el análisis con IA se pide con un botón 
 - **Postularse como alguien nuevo:** abrir el link público de la vacante, <https://app-seleccion-mu.vercel.app/postular/96a13e185f0646abbe4947108ef1cbaa>, llenar los datos, subir una hoja de vida en PDF y responder las preguntas.
 - **Entrar como un postulante ya cargado:** en ese mismo link, "¿Ya te postulaste? Ingresa con tu ID", con ID y contraseña iguales al documento: `MEDPRUEBA01` a `MEDPRUEBA12`. Por ejemplo, `MEDPRUEBA01` / `MEDPRUEBA01`.
 
-Conviene usar una ventana de incógnito o la sesión ya separada: la sesión del postulante y la de la empresa no se mezclan, así que se pueden tener las dos abiertas en el mismo navegador.
+No hace falta cerrar la sesión de la empresa para entrar como postulante: las dos sesiones están separadas (ver "Dos sesiones separadas" más abajo).
 
 ---
 
@@ -65,13 +65,13 @@ Conviene usar una ventana de incógnito o la sesión ya separada: la sesión del
 
 ### Lado de la empresa
 
-1. **Registro e ingreso.** La empresa crea su cuenta y entra a su panel. Cada empresa solo ve sus propias vacantes y postulantes.
+1. **Registro e ingreso.** La empresa crea su cuenta y entra a su panel.
 2. **Crear la vacante.** Se escribe el cargo y la IA propone los requisitos mínimos de ese cargo: formación, experiencia, herramientas y edad mínima. La empresa los ajusta. Los requisitos nunca se muestran al postulante.
 3. **Descripción pública.** Es lo único que ve el postulante de la empresa. Se puede redactar con IA y editar.
 4. **Etapas.** Se arma el proceso, por ejemplo: preguntas por texto → preguntas por voz → entrevista. Cada etapa tiene sus preguntas, generadas con IA o escritas a mano.
 5. **Publicar.** Al publicar se bloquean las preguntas de la primera etapa para que todos respondan lo mismo. Las demás etapas se bloquean cuando alguien llega a ellas.
 6. **Compartir el link.** La vacante tiene un link público para enviar a los postulantes.
-7. **Revisar postulantes.** La lista es anónima ("Candidato #001"). La IA:
+7. **Revisar postulantes.** La IA:
    - compara la hoja de vida con los requisitos mínimos y descarta solo cuando la persona claramente no los cumple; si falta un dato, la deja "por revisar";
    - puntúa las respuestas de cada etapa con una escala fija y cita qué la llevó a ese puntaje.
 8. **Decidir.** Una persona de gestión humana marca **Pasa** o **No pasa**. Quien pasa avanza a la siguiente etapa; en la última queda seleccionado.
@@ -91,32 +91,38 @@ Conviene usar una ventana de incógnito o la sesión ya separada: la sesión del
 - La IA **sí**: lee la hoja de vida, aplica requisitos mínimos, puntúa con la rúbrica citando evidencia y ordena por ajuste al cargo.
 - La IA **no**: elige "al mejor", toma la decisión final, descarta en las etapas de preguntas ni evalúa edad, género, acento, tono de voz o rasgos personales.
 - Solo se filtra por edad mínima (mayor de 18). Nunca por edad máxima, género o estado civil.
-- Las etapas son a ciegas. El nombre se revela en la entrevista.
-
-## Limitaciones de esta entrega
-
-- Las preguntas de las etapas "por voz" se responden por texto por ahora. La grabación de audio queda para la siguiente versión.
-- Los postulantes de prueba son ficticios.
 
 ---
 
 ## Cómo funciona por dentro
 
 ```text
-Navegador (empresa o postulante)
-        │
-        ▼
-Next.js en Vercel ──► Gemini API   (solo desde el servidor)
-        │
-        ▼
-Supabase: Postgres + autenticación + almacenamiento de hojas de vida
+   Empresa (gestión humana)            Postulante
+              │                             │
+              └──────────────┬──────────────┘
+                             ▼
+              App Next.js publicada en Vercel
+              (las páginas y la lógica del servidor)
+                 │                         │
+                 ▼                         ▼
+   Supabase                         Gemini API
+   · base de datos                  · propone requisitos
+   · cuentas de usuario             · genera preguntas
+   · PDF de las hojas de vida       · revisa la hoja de vida
+                                    · puntúa las respuestas
 ```
 
-- **El navegador nunca habla con la IA.** Todas las llamadas a Gemini salen del servidor (acciones de servidor de Next.js), así la clave de la API no queda expuesta.
-- **Cada empresa ve solo lo suyo.** Las tablas de Supabase tienen seguridad por filas (RLS): aunque alguien manipule una petición, la base de datos no le devuelve vacantes ni postulantes de otra empresa. Las reglas del proceso también viven en la base, en funciones de Postgres: mover a alguien de etapa, descartar por requisitos, bloquear preguntas y eliminar vacantes solo si no tienen postulantes.
-- **Dos sesiones separadas.** La empresa y el postulante usan cookies distintas, así que pueden estar abiertas a la vez en el mismo navegador sin pisarse.
-- **Revisión a ciegas.** En el panel cada postulante es un número ("Candidato #007"). El nombre solo aparece cuando la persona llega a la entrevista. La IA tampoco recibe datos personales: se le pide que no copie nombre, documento, correo ni teléfono.
-- **Hojas de vida privadas.** Los PDF se guardan en un almacenamiento privado de Supabase. Solo una cuenta de empresa con sesión puede verlos, a través de una ruta del servidor que además deja registro de quién vio o descargó cada uno.
+- **El navegador nunca habla con la IA.** Todas las llamadas a Gemini salen del servidor, así la clave de la API no queda expuesta.
+
+### Dos sesiones separadas
+
+| | Sesión de empresa | Sesión de postulante |
+|---|---|---|
+| Quién | Gestión humana | La persona que se postula |
+| Cómo entra | Correo y contraseña en `/empresa/ingreso` | Número de documento como ID y como contraseña, desde el link de la vacante |
+| Qué páginas usa | El panel, `/gestion` | Solo las de `/postular` |
+
+Cada sesión se guarda en una cookie distinta. Por eso se pueden tener las dos abiertas en el mismo navegador sin que una cierre o reemplace a la otra, y un postulante nunca termina en el panel de la empresa.
 
 ## Cómo está implementada la IA
 
@@ -130,14 +136,46 @@ La IA está en `lib/ia/gemini.ts` y se usa en cinco puntos:
 | Hoja de vida | Lee el PDF y compara cada requisito con el mínimo pedido | Descarta sola **solo** si claramente no cumple |
 | Respuestas | Puntúa cada etapa con la rúbrica y cita la evidencia | Una persona decide si pasa |
 
-Detalles de la implementación:
+### Respuestas en JSON
 
-- **Respuestas en JSON.** Se le pide a Gemini que responda solo en JSON, con una forma fija, y el servidor lo valida antes de guardarlo. Así la app nunca muestra texto suelto inventado por el modelo.
-- **Hoja de vida.** El PDF se envía a Gemini junto con los requisitos. Para cada uno, la IA responde "cumple", "no cumple" o "no se sabe", con una frase de evidencia. Si falta un dato, nunca se supone que no cumple: la persona queda "por revisar" y decide gestión humana.
-- **Puntaje con la misma vara para todos.** Las respuestas se califican de 0 a 100 por criterio, con una escala escrita en la instrucción (90-100 completa y con ejemplos; 70-89 correcta pero general; 50-69 incompleta; menos de 50 evasiva o sin contenido) y temperatura 0, para que dos respuestas iguales reciban el mismo puntaje. Cada etapa se califica por separado y el total es el promedio de las etapas.
-- **Se evalúa a pedido.** La IA no corre sola con cada postulación: se activa con "Evaluar con IA" o "Analizar todos". Si una etapa ya se evaluó y no tiene respuestas nuevas, no se vuelve a llamar a la IA. Esto ahorra consultas.
-- **Tolerancia a fallas.** Si un modelo de Gemini está saturado, la app reintenta y pasa a otro modelo (`gemini-3.1-flash-lite` → `gemini-3.5-flash-lite` → `gemini-2.5-flash`). Cada llamada tiene tiempo límite, para dar un mensaje claro en lugar de quedarse colgada.
-- **Límites éticos en el código.** Todas las instrucciones llevan una regla fija que prohíbe criterios de edad máxima, género, estado civil, acento, tono de voz o rasgos personales. Además, los requisitos que propone la IA pasan por un filtro que elimina los que mencionen salud, apariencia, religión u otros datos sensibles, y siempre se agrega "Mayor de 18 años".
+La IA no responde con un texto libre: responde con datos de forma fija, por ejemplo `{"puntaje": 85, "evidencia": "Pregunta 2 · describe pasos ordenados"}`. Así la app puede guardar y mostrar puntajes y veredictos sin tener que interpretar un párrafo, y el servidor revisa que cada dato sea válido antes de guardarlo.
+
+### Revisión de la hoja de vida
+
+El PDF se envía a Gemini junto con los requisitos mínimos. Para cada requisito, la IA responde "cumple", "no cumple" o "no se sabe", con una frase de evidencia. Si falta un dato, nunca se supone que no cumple: la persona queda "por revisar" y decide gestión humana.
+
+### Escala de puntaje
+
+1. Cada vacante tiene una **rúbrica**: una lista de criterios (por ejemplo, conocimiento técnico o comunicación clara), cada uno con un peso en porcentaje. Se edita en la pestaña Rúbrica.
+2. La IA califica cada criterio de **0 a 100**, siempre con las mismas bandas:
+
+   | Puntaje | Qué significa |
+   |---|---|
+   | 90 a 100 | Respuesta completa, correcta y con ejemplos concretos |
+   | 70 a 89 | Correcta, pero general o con algún vacío |
+   | 50 a 69 | Incompleta o superficial |
+   | Menos de 50 | Incorrecta, evasiva o sin contenido |
+
+3. Si las respuestas no dan evidencia para un criterio, ese criterio no se califica, para que la falta de un dato no reste.
+4. El puntaje de la etapa lo calcula la app, no la IA: es el promedio de los criterios según sus pesos.
+5. El puntaje total es el promedio de las etapas.
+6. Se califica con temperatura 0, que hace que el modelo responda de la forma más estable posible: dos respuestas iguales reciben el mismo puntaje.
+
+### Por qué se evalúa con un botón
+
+La IA no corre sola cada vez que llega una postulación: se activa con "Evaluar con IA" o con "Analizar todos".
+
+- Cada llamada a Gemini gasta cuota de la API.
+- No tiene sentido analizar a alguien que todavía no termina de responder.
+- Si una etapa ya se evaluó y no tiene respuestas nuevas, no se vuelve a llamar a la IA: se conserva el resultado anterior.
+
+### Si Gemini está saturado
+
+La app intenta primero con `gemini-3.1-flash-lite`. Si Google responde que está saturado o tarda demasiado, reintenta y pasa a `gemini-3.5-flash-lite` y, como último recurso, a `gemini-2.5-flash`. Los tres son modelos de Gemini con la misma clave. Cada llamada tiene tiempo límite, para dar un mensaje claro en lugar de quedarse colgada.
+
+### Límites éticos en el código
+
+Todas las instrucciones llevan una regla fija que prohíbe criterios de edad máxima, género, estado civil, acento, tono de voz o rasgos personales. Además, los requisitos que propone la IA pasan por un filtro que elimina los que mencionen salud, apariencia, religión u otros datos sensibles, y siempre se agrega "Mayor de 18 años".
 
 ## Por qué estas herramientas
 
@@ -148,7 +186,9 @@ Detalles de la implementación:
 
 **Supabase**
 - Reúne en un solo servicio lo que la app necesita: base de datos Postgres, cuentas de usuario y almacenamiento de archivos para las hojas de vida.
-- Al ser Postgres, las reglas de seguridad (RLS) y las del proceso de selección quedan en la base de datos y no dependen solo del código de la página.
+- Al ser Postgres, las reglas quedan en la propia base de datos y no dependen solo del código de la página:
+  - **Seguridad por filas (RLS):** cada empresa solo puede leer sus propias vacantes y postulantes. Aunque alguien cambie la dirección o manipule una petición, la base de datos no le devuelve datos de otra empresa.
+  - **Reglas del proceso:** mover a alguien de etapa, descartar por requisitos, bloquear preguntas y eliminar vacantes solo si no tienen postulantes.
 - Tiene plan gratuito.
 
 **Gemini API**
@@ -160,6 +200,19 @@ Detalles de la implementación:
 **Next.js 16 + TypeScript**
 - Página y servidor en un solo proyecto: las llamadas a Supabase con permisos especiales y a Gemini quedan del lado del servidor sin montar una API aparte.
 - TypeScript detecta errores de tipos antes de desplegar.
+
+## Mejoras a futuro
+
+1. **Grabación de voz real con transcripción.** Hoy las preguntas de las etapas "por voz" se responden por texto.
+2. **Ingreso más seguro para el postulante**, con un código por correo o una contraseña propia. Hoy el ID y la contraseña son su número de documento.
+3. **Correos al postulante** para confirmar la postulación y avisarle cuando pasa de etapa. Hoy tiene que volver a entrar para saberlo.
+4. **Tope de uso de la IA por empresa**, con registro de cuántos tokens gasta cada una.
+5. **Borrado automático de hojas de vida y audios** después de un plazo que defina cada empresa. El plan gratis de Supabase tiene 1 GB de almacenamiento.
+6. **Pantalla para ver y reabrir vacantes cerradas.**
+7. **Rol de entrevistador** con permisos distintos a los de gestión humana.
+8. **Otro proveedor de IA de respaldo** por si Gemini falla del todo.
+
+---
 
 ## Correrla en local
 
