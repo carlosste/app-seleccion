@@ -10,7 +10,8 @@
 // vacante para la que se escribió el conjunto.
 //
 // Uso: node --env-file=.env.local scripts/seed-postulantes.mjs <id de la vacante> <conjunto>
-//   conjuntos: auxiliar-enfermeria (MedicGO), analista-datos (softsol)
+//   conjuntos: auxiliar-enfermeria (MedicGO), analista-datos (softsol), analista-datos-masivo
+//   (100 perfiles generados para softsol; la empresa necesita tope de postulantes suficiente)
 // Se puede correr dos veces: si la persona o su postulación ya existen, no se duplican.
 // Ingreso de cada postulante (modo pruebas): ID = contraseña = su campo "documento".
 import { createClient } from "@supabase/supabase-js";
@@ -19,7 +20,7 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const claveServicio = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const vacanteId = process.argv[2];
 const conjunto = process.argv[3] ?? "";
-const CONJUNTOS = ["auxiliar-enfermeria", "analista-datos"];
+const CONJUNTOS = ["auxiliar-enfermeria", "analista-datos", "analista-datos-masivo"];
 
 if (!url || !claveServicio) {
   console.error("Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en .env.local.");
@@ -127,7 +128,7 @@ for (const [i, p] of PERSONAS.entries()) {
   // a las postulaciones que ya existían. Lleva fecha de nacimiento (adultos) para la edad
   // mínima y datos de contacto, que la IA no debe copiar a la hoja de vida.
   const ruta = `${usuario.id}/${vacante.id}.pdf`;
-  const nacimiento = `Fecha de nacimiento: ${String(3 + i).padStart(2, "0")}/${String((i % 12) + 1).padStart(2, "0")}/${1988 + i}`;
+  const nacimiento = `Fecha de nacimiento: ${String((i % 25) + 3).padStart(2, "0")}/${String((i % 12) + 1).padStart(2, "0")}/${1988 + (i % 12)}`;
   const cv = crearPdf([`HOJA DE VIDA - ${p.nombre}`, `Correo: ${correo}  Teléfono: ${telefono}`, nacimiento, "", ...p.cv]);
   const { error: errorCv } = await db.storage.from("cvs").upload(ruta, cv, { contentType: "application/pdf", upsert: true });
   salir(errorCv, `subir CV de ${p.nombre}`);
@@ -162,7 +163,7 @@ for (const [i, p] of PERSONAS.entries()) {
     pregunta_id: preguntas[j].id,
     modalidad: "texto",
     texto,
-    respondida_at: new Date(Date.now() - (48 - i * 3) * 3_600_000 + j * 180_000).toISOString(),
+    respondida_at: new Date(Date.now() - (i < 16 ? 48 - i * 3 : 1 + ((i * 7) % 160)) * 3_600_000 + j * 180_000).toISOString(),
   }));
   if (filas.length) salir((await db.from("respuestas").insert(filas)).error, `respuestas de ${p.nombre}`);
 
