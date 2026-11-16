@@ -12,6 +12,21 @@ probarlos en la vista previa de Vercel antes de unirlos a `main`.
 | 3 | Privacidad y tratamiento de datos | `seguridad-privacidad` | No |
 | 4 | Cabeceras de seguridad HTTP | `seguridad-cabeceras` | No |
 | 5 | Borrado de datos y archivos huérfanos | `mantenimiento-borrado` | No |
+| 6 | Modelos de IA gratuitos: aviso y paso a modelos de pago | `mantenimiento-borrado` | No |
+
+> **⚠ Limitación importante: hoy la IA usa modelos gratuitos de Gemini.**
+> Los modelos actuales (`gemini-3.1-flash-lite` y sus respaldos) se usan con una clave del
+> **plan gratuito** de la API de Gemini. En ese plan, según los términos de Google vigentes al
+> 16 de noviembre de 2026, el contenido enviado (hojas de vida y respuestas) **puede usarse
+> para mejorar los productos de Google, con revisión humana**, y los términos piden no enviar
+> datos personales. Para datos de personas reales eso es una brecha de privacidad.
+>
+> Por eso los modelos gratuitos se usan **solo para desarrollar la app y comprobar que
+> funciona, con datos ficticios**. No es la versión final: antes de usar datos reales, la app
+> debe pasar a **modelos de pago** (una clave de un proyecto con facturación activa, y modelos
+> más capaces para analizar a los postulantes). En el plan de pago Google no usa el contenido
+> para mejorar sus productos y solo lo conserva un tiempo limitado para detectar abusos. Ver
+> la sección 6.
 
 Quedaron fuera, por decisión del equipo, el tope diario de uso de la IA por empresa y la
 aprobación manual de empresas nuevas: tienen sentido cuando la app pase de pruebas a uso real.
@@ -210,6 +225,42 @@ No se agregó ningún borrado automático: la retención por plazo queda para la
 
 ---
 
+## 6. Modelos de IA gratuitos: solo para desarrollo
+
+**Riesgo.** Los datos de los postulantes (hoja de vida, respuestas, experiencia, formación) son
+datos personales. Con el plan gratuito de la API de Gemini, Google puede usar lo que se le envía
+para mejorar sus productos, con revisión humana. Que un tercero use así esos datos no es
+compatible con lo que la app promete en su política de tratamiento, ni con la Ley 1581, que
+exige usar los datos solo para la finalidad autorizada.
+
+**Decisión.** Mientras la app esté en desarrollo se siguen usando los modelos gratuitos, **solo
+con datos ficticios**, para comprobar que el flujo funciona. La versión final usará **modelos
+de pago**, con dos ventajas:
+
+- **Privacidad:** en los servicios de pago Google no usa el contenido para mejorar sus productos.
+- **Calidad:** modelos más sofisticados para leer hojas de vida y analizar las respuestas de los
+  participantes con más precisión.
+
+**Qué se implementó para que la limitación sea visible y no se olvide:**
+
+- Un interruptor, `GEMINI_PLAN_PAGO` (variable de entorno, `false` por defecto; ver
+  `lib/legal/tratamiento-datos.ts`). Solo se pone en `true` cuando la clave pertenece a un
+  proyecto con facturación activa.
+- Mientras esté en `false`, la app muestra un aviso de **"Modo de pruebas: usa solo datos
+  ficticios"** en el formulario del postulante y en todo el panel de la empresa
+  (`components/aviso-modo-pruebas.tsx`), y la página `/privacidad` lo explica.
+- Al encenderlo, el aviso desaparece y `/privacidad` describe las condiciones del plan de pago.
+
+**Para pasar a producción:**
+
+1. Crear la clave en un proyecto de Google Cloud con facturación activa.
+2. Elegir los modelos de pago y actualizar la lista `MODELOS` en `lib/ia/gemini.ts`.
+3. Volver a correr `scripts/pruebas-inyeccion.mjs` con los modelos nuevos.
+4. Cambiar `GEMINI_API_KEY` y poner `GEMINI_PLAN_PAGO=true` en Vercel, y volver a desplegar.
+5. Revisar que `/privacidad` describa bien los términos vigentes del plan contratado.
+
+---
+
 ## Lo que ya estaba bien y se mantuvo
 
 - Las claves secretas (Supabase con permisos totales y Gemini) solo se usan en el servidor.
@@ -222,6 +273,8 @@ No se agregó ningún borrado automático: la retención por plazo queda para la
 
 ## Pendientes conocidos
 
+- **Pasar de los modelos gratuitos de Gemini a modelos de pago** antes de usar datos de
+  personas reales (sección 6). Es el pendiente más importante para la privacidad.
 - El ingreso del postulante con su número de documento como ID y contraseña es un modo de
   pruebas. Se reemplazará por un ingreso con correo y una clave segura cuando haya proveedor
   de correo.

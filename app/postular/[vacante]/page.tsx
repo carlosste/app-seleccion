@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AvisoModoPruebas } from "@/components/aviso-modo-pruebas";
 import { EncabezadoEmpresa } from "@/components/encabezado-empresa";
 import { CASILLA_DATOS, CASILLA_GRABACION } from "@/lib/legal/tratamiento-datos";
 import { vacantePorToken } from "@/lib/vacante-publica";
@@ -43,6 +44,8 @@ export default async function Postulacion({
           <h1 className="titulo-vacante">{vacante.cargo}</h1>
           {vacante.descripcion && <p className="texto-gris">{vacante.descripcion}</p>}
         </div>
+
+        <AvisoModoPruebas para="postulante" />
 
         {error && MENSAJES[error] && (
           <div className="nota nota-na" role="alert">

@@ -39,10 +39,28 @@ export const CONSERVACION =
   "Durante el proceso de selección y el tiempo adicional que la empresa necesite para atender " +
   "reclamos o cumplir obligaciones legales. Después se suprimen, salvo que la ley exija conservarlos.";
 
+// LIMITACIÓN CONOCIDA (2026-11-16, decisión de Carlos): hoy la IA corre con modelos del plan
+// GRATUITO de Gemini. En ese plan Google puede usar lo enviado para mejorar sus productos, con
+// revisión humana, y sus términos piden no enviar datos personales. Sirve solo para desarrollar y
+// probar la app. Antes de usar datos de personas reales hay que pasar a modelos de pago (clave
+// de un proyecto con facturación activa), donde Google no usa el contenido para entrenar.
+// IA_PLAN_PAGO se enciende con la variable de entorno GEMINI_PLAN_PAGO=true SOLO cuando la clave
+// sea de un proyecto con facturación activa; requiere volver a desplegar. Mientras esté apagada,
+// la app muestra el aviso de modo de pruebas al postulante y a la empresa.
+export const IA_PLAN_PAGO = process.env.GEMINI_PLAN_PAGO === "true";
+
 export const MODO_PRUEBAS =
   "Esta plataforma está en modo de pruebas. Por ahora el análisis con IA usa el plan gratuito de la " +
   "API de Gemini, en el que Google puede usar el contenido enviado para mejorar sus productos, con " +
   "revisión humana. Por eso, mientras dure este modo, solo deben usarse datos ficticios de prueba.";
+
+// Texto que reemplaza a MODO_PRUEBAS en /privacidad cuando IA_PLAN_PAGO está encendido.
+// Términos de Gemini (servicios de pago, vigentes al 2026-11-16): no se usa el contenido para
+// mejorar productos; se guarda un tiempo limitado solo para detectar abusos y cumplir la ley.
+export const PLAN_PAGO =
+  "El análisis con IA usa la API de Gemini con facturación activa: Google no usa el contenido " +
+  "enviado para mejorar sus productos y solo lo conserva por un tiempo limitado para detectar " +
+  "abusos y cumplir obligaciones legales.";
 
 // Texto corto de cada casilla del formulario. Debe coincidir con lo que dice /privacidad.
 export const CASILLA_DATOS =

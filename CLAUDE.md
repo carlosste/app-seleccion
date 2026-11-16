@@ -259,6 +259,12 @@ Si cambia algo de seguridad, actualizar también ese documento.
   se definirá más adelante).
 
 ## Privacidad (2026-11-16, decisiones de Carlos)
+- **Modelos gratuitos = solo desarrollo (Carlos, 2026-11-16).** Los modelos gratuitos de
+  Gemini son una brecha de privacidad para datos reales; se usan solo para desarrollar y
+  ver que la app funciona. La versión final usará modelos de pago (privacidad y análisis
+  más sofisticado). Interruptor `GEMINI_PLAN_PAGO` (env, `false` por defecto): mientras
+  esté apagado, `AvisoModoPruebas` avisa en el formulario y en el panel. Pasos para el
+  cambio: `docs/seguridad.md`, sección 6.
 - **Solo datos ficticios mientras se use el plan gratuito de Gemini.** En ese plan Google
   puede usar lo enviado para mejorar sus productos, con revisión humana, y sus términos
   piden no enviar datos personales (verificado el 2026-11-16). Antes de recibir hojas de

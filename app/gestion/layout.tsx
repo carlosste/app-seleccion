@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { AvisoModoPruebas } from "@/components/aviso-modo-pruebas";
 import { NavGestion, NavGestionEsqueleto } from "@/components/nav-gestion";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 
@@ -11,6 +12,7 @@ export default function LayoutGestion({ children }: { children: React.ReactNode 
         <NavGestion />
       </Suspense>
       <div className="main">
+        <AvisoModoPruebas para="empresa" />
         <Suspense fallback={<p className="texto-gris">Cargando…</p>}>
           <Protegido>{children}</Protegido>
         </Suspense>

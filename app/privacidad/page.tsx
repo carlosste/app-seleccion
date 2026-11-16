@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
-import { CONSERVACION, MODO_PRUEBAS, OPERADOR, VERSION_TEXTO, VIGENTE_DESDE } from "@/lib/legal/tratamiento-datos";
+import {
+  CONSERVACION,
+  IA_PLAN_PAGO,
+  MODO_PRUEBAS,
+  OPERADOR,
+  PLAN_PAGO,
+  VERSION_TEXTO,
+  VIGENTE_DESDE,
+} from "@/lib/legal/tratamiento-datos";
 
 export const metadata: Metadata = { title: "Política de tratamiento de datos · Selección de personal" };
 
@@ -20,8 +28,8 @@ export default function Privacidad() {
           </span>
         </div>
 
-        <div className="nota nota-na" role="note">
-          {MODO_PRUEBAS}
+        <div className={IA_PLAN_PAGO ? "nota nota-az" : "nota nota-na"} role="note">
+          {IA_PLAN_PAGO ? PLAN_PAGO : MODO_PRUEBAS}
         </div>
 
         <section>

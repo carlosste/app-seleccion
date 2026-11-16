@@ -196,12 +196,15 @@ Todas las instrucciones llevan una regla fija que prohíbe criterios de edad má
 - Puede responder en JSON estricto, que es lo que necesita la app para guardar puntajes y veredictos.
 - Funciona bien en español.
 - Su plan gratuito permite hacer todas las pruebas del proyecto. Los modelos "flash-lite" son rápidos, lo que importa al analizar a muchos postulantes seguidos.
+- **Solo para desarrollo:** en el plan gratuito Google puede usar lo enviado para mejorar sus productos. Con datos reales se usarán modelos de pago (ver la sección "Seguridad").
 
 **Next.js 16 + TypeScript**
 - Página y servidor en un solo proyecto: las llamadas a Supabase con permisos especiales y a Gemini quedan del lado del servidor sin montar una API aparte.
 - TypeScript detecta errores de tipos antes de desplegar.
 
 ## Seguridad
+
+> **⚠ Importante: la IA usa hoy modelos gratuitos de Gemini, solo para desarrollo.** En el plan gratuito, Google puede usar lo que se le envía para mejorar sus productos, con revisión humana. Por eso esta versión se prueba **solo con datos ficticios**, y la app lo avisa en pantalla. La versión final usará **modelos de pago**, en los que Google no usa los datos de los postulantes, y modelos más capaces para el análisis. Detalle en la sección 6 de [docs/seguridad.md](docs/seguridad.md).
 
 En noviembre de 2026 hicimos una revisión de seguridad y aplicamos correcciones en cinco frentes. El detalle (riesgo, solución, archivos y pruebas) está en [docs/seguridad.md](docs/seguridad.md). En resumen:
 
@@ -210,9 +213,11 @@ En noviembre de 2026 hicimos una revisión de seguridad y aplicamos correcciones
 3. **Privacidad (Ley 1581 de 2012).** Consentimiento en dos casillas, aviso del uso de IA y de proveedores fuera de Colombia, página [`/privacidad`](https://app-seleccion-mu.vercel.app/privacidad) con la política de tratamiento, y registros del servidor sin datos personales. Mientras se use el plan gratuito de Gemini, solo se usan datos ficticios.
 4. **Cabeceras HTTP de seguridad** y una política de contenido (CSP) en modo de observación.
 5. **Borrado de datos:** guion para encontrar hojas de vida huérfanas y procedimiento para atender pedidos de borrado.
+6. **Modelos gratuitos marcados como limitación:** aviso de "modo de pruebas" en la app e interruptor `GEMINI_PLAN_PAGO` para pasar a modelos de pago.
 
 ## Mejoras a futuro
 
+1. **Pasar a modelos de IA de pago antes de usar datos reales.** Los modelos gratuitos de Gemini sirven solo para desarrollar: Google puede usar lo enviado para mejorar sus productos. Con una clave de pago no lo hace, y se pueden usar modelos más sofisticados para analizar a los postulantes.
 1. **Grabación de voz real con transcripción.** Hoy las preguntas de las etapas "por voz" se responden por texto.
 2. **Ingreso más seguro para el postulante**, con un código por correo o una contraseña propia. Hoy el ID y la contraseña son su número de documento.
 3. **Correos al postulante** para confirmar la postulación y avisarle cuando pasa de etapa. Hoy tiene que volver a entrar para saberlo.
