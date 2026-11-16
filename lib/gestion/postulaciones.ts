@@ -1,5 +1,6 @@
 import "server-only";
 import type { crearClienteServidor } from "@/lib/supabase/servidor";
+import { registrarError } from "@/lib/registro";
 
 type Cliente = Awaited<ReturnType<typeof crearClienteServidor>>;
 
@@ -13,6 +14,6 @@ export async function tienePostulaciones(supabase: Cliente, vacanteId: string): 
     .from("postulaciones")
     .select("id", { count: "exact", head: true })
     .eq("vacante_id", vacanteId);
-  if (error) console.error("[postulaciones] contar", error);
+  if (error) registrarError("[postulaciones] contar", error);
   return error ? true : (count ?? 0) > 0;
 }

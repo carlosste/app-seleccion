@@ -7,6 +7,7 @@ import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { sembrarRequisitosPorDefecto, sembrarRubricaSiFalta } from "./acciones-configuracion";
 import type { EstadoPublicar, EstadoVacante } from "./estados";
 import { type RequisitoPropuesto, proponerRequisitos } from "./requisitos-por-defecto";
+import { registrarError } from "@/lib/registro";
 
 // Etapas por defecto de toda vacante nueva. La revisión del CV es automática y no es una etapa.
 const ETAPAS_POR_DEFECTO = ["texto", "voz", "entrevista"] as const;
@@ -31,7 +32,7 @@ export async function crearVacante(_previo: EstadoVacante, fd: FormData): Promis
   try {
     requisitos = await proponerRequisitos(cargo, descripcion);
   } catch (errorIa) {
-    console.error("[ia] proponerRequisitos", errorIa);
+    registrarError("[ia] proponerRequisitos", errorIa);
   }
 
   const { data: vacante, error } = await supabase
@@ -47,7 +48,7 @@ export async function crearVacante(_previo: EstadoVacante, fd: FormData): Promis
     .single();
 
   if (error || !vacante) {
-    console.error("[vacante] insert", error);
+    registrarError("[vacante] insert", error);
     return { estado: "error", mensaje: "No pudimos crear la vacante. Intenta de nuevo en unos minutos." };
   }
 
@@ -55,7 +56,7 @@ export async function crearVacante(_previo: EstadoVacante, fd: FormData): Promis
     ETAPAS_POR_DEFECTO.map((tipo, i) => ({ vacante_id: vacante.id, tipo, orden: i + 1 })),
   );
   if (errorEtapas) {
-    console.error("[vacante] etapas", errorEtapas);
+    registrarError("[vacante] etapas", errorEtapas);
     return {
       estado: "error",
       mensaje: "La vacante se creó, pero no pudimos agregar sus etapas. Revísala desde la lista de vacantes.",
@@ -86,7 +87,7 @@ export async function guardarDescripcion(vacanteId: string, texto: string): Prom
     .select("id")
     .maybeSingle();
   if (error || !data) {
-    console.error("[vacante] descripcion", error);
+    registrarError("[vacante] descripcion", error);
     return { ok: false, mensaje: "No pudimos guardar la descripción. Intenta de nuevo." };
   }
 
@@ -107,7 +108,7 @@ export async function eliminarVacante(vacanteId: string): Promise<Resultado> {
   const supabase = await crearClienteServidor();
   const { error } = await supabase.rpc("eliminar_vacante", { p_vacante: vacanteId });
   if (error) {
-    console.error("[vacante] eliminar", error);
+    registrarError("[vacante] eliminar", error);
     const conocido = ["42501", "P0001", "P0002"].includes(error.code ?? "");
     return { ok: false, mensaje: conocido ? error.message : "No pudimos eliminar la vacante. Intenta de nuevo." };
   }
@@ -131,7 +132,7 @@ export async function cerrarVacante(vacanteId: string): Promise<Resultado> {
     .select("id")
     .maybeSingle();
   if (error || !data) {
-    console.error("[vacante] cerrar", error);
+    registrarError("[vacante] cerrar", error);
     return { ok: false, mensaje: "No pudimos cerrar la vacante. Intenta de nuevo." };
   }
   revalidatePath("/gestion");
@@ -167,7 +168,7 @@ export async function publicarVacante(_previo: EstadoPublicar, fd: FormData): Pr
     .maybeSingle();
 
   if (error || !data) {
-    console.error("[vacante] publicar", error);
+    registrarError("[vacante] publicar", error);
     return { estado: "error", mensaje: "No pudimos publicar la vacante. Intenta de nuevo." };
   }
 

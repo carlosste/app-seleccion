@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { EncabezadoEmpresa } from "@/components/encabezado-empresa";
+import { CASILLA_DATOS, CASILLA_GRABACION } from "@/lib/legal/tratamiento-datos";
 import { vacantePorToken } from "@/lib/vacante-publica";
 import { postularse } from "../acciones";
 
 const MENSAJES: Record<string, string> = {
   datos:
-    "Revisa tus datos. Nombre, correo, teléfono y documento (de 6 a 20 letras o números) son obligatorios, y debes aceptar el tratamiento de datos.",
+    "Revisa tus datos. Nombre, correo, teléfono y documento (de 6 a 20 letras o números) son obligatorios, y debes marcar las dos autorizaciones.",
   cv: "Sube tu hoja de vida en PDF (un PDF real, no otro archivo renombrado), de máximo 4 MB.",
   documento: "Ya existe una cuenta con ese documento y otro correo. Escribe el correo que usaste la primera vez.",
   "correo-documento": "Ese correo ya tiene una cuenta con otro documento. Revisa el número de documento.",
@@ -114,10 +115,28 @@ export default async function Postulacion({
             <input id="cv" name="cv" type="file" accept="application/pdf" className="inp" required />
           </div>
 
+          <div className="nota nota-az" style={{ fontSize: 12, lineHeight: 1.5, flexDirection: "column", gap: 4 }}>
+            <span>
+              <b>Tus datos.</b> Responsable: <b>{vacante.empresa_nombre}</b>. Se usan solo para este proceso de selección. Una
+              IA de un proveedor externo (Google) analiza tu hoja de vida y tus respuestas; la decisión de cada etapa la toma
+              una persona, salvo el descarte por no cumplir un requisito mínimo. Puedes conocer, corregir o pedir que se
+              borren tus datos.
+            </span>
+            <Link href="/privacidad" target="_blank" style={{ fontWeight: 600 }}>
+              Lee la política de tratamiento de datos
+            </Link>
+          </div>
+
           <div className="flex" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
-            <input id="acepto" name="acepto" type="checkbox" required style={{ width: 20, height: 20, marginTop: 2 }} />
-            <label htmlFor="acepto" style={{ fontSize: 12, lineHeight: 1.45, color: "var(--tx2)" }}>
-              Acepto el tratamiento de mis datos y la grabación de mis respuestas (Ley 1581 de 2012).
+            <input id="acepto_datos" name="acepto_datos" type="checkbox" required style={{ width: 20, height: 20, marginTop: 2, flexShrink: 0 }} />
+            <label htmlFor="acepto_datos" style={{ fontSize: 12, lineHeight: 1.45, color: "var(--tx2)" }}>
+              {CASILLA_DATOS}
+            </label>
+          </div>
+          <div className="flex" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
+            <input id="acepto_grabacion" name="acepto_grabacion" type="checkbox" required style={{ width: 20, height: 20, marginTop: 2, flexShrink: 0 }} />
+            <label htmlFor="acepto_grabacion" style={{ fontSize: 12, lineHeight: 1.45, color: "var(--tx2)" }}>
+              {CASILLA_GRABACION}
             </label>
           </div>
 

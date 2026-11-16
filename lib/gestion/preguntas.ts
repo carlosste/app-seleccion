@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { delimitar, pedirJson } from "@/lib/ia/gemini";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { registrarError } from "@/lib/registro";
 
 // Preguntas por etapa. La IA las propone según el cargo, la descripción y la rúbrica,
 // o de enfoque social (situaciones cotidianas). La empresa puede editarlas, quitarlas
@@ -56,7 +57,7 @@ type Cliente = Awaited<ReturnType<typeof crearClienteServidor>>;
 async function motivoBloqueo(supabase: Cliente, etapaId: string): Promise<string | null> {
   const { data: bloqueada, error } = await supabase.rpc("etapa_bloqueada", { p_etapa: etapaId });
   if (error) {
-    console.error("[preguntas] etapa_bloqueada", error);
+    registrarError("[preguntas] etapa_bloqueada", error);
     return "No pudimos comprobar si la etapa está bloqueada. Intenta de nuevo.";
   }
   if (!bloqueada) return null;
@@ -153,7 +154,7 @@ export async function generarPreguntas(vacanteId: string, etapaId: string, modo:
       .filter((p): p is { texto: string; enfoque: Enfoque } => p.texto !== null)
       .slice(0, 10);
   } catch (error) {
-    console.error("[ia] generarPreguntas", error);
+    registrarError("[ia] generarPreguntas", error);
     return { ok: false, mensaje: "No pudimos generar las preguntas con IA. Intenta de nuevo en unos minutos." };
   }
   if (generadas.length === 0) return { ok: false, mensaje: "La IA no devolvió preguntas. Intenta de nuevo." };
@@ -161,7 +162,7 @@ export async function generarPreguntas(vacanteId: string, etapaId: string, modo:
   // Se reemplazan solo las de la IA; las escritas a mano se conservan.
   const { error: errorBorrar } = await supabase.from("preguntas").delete().eq("etapa_id", etapa.id).eq("origen", "ia");
   if (errorBorrar) {
-    console.error("[preguntas] borrar anteriores", errorBorrar);
+    registrarError("[preguntas] borrar anteriores", errorBorrar);
     return { ok: false, mensaje: "No pudimos reemplazar las preguntas anteriores." };
   }
 
@@ -185,7 +186,7 @@ export async function generarPreguntas(vacanteId: string, etapaId: string, modo:
     })),
   );
   if (error) {
-    console.error("[preguntas] insert", error);
+    registrarError("[preguntas] insert", error);
     return { ok: false, mensaje: "No pudimos guardar las preguntas." };
   }
 
@@ -234,7 +235,7 @@ export async function agregarPreguntaManual(
     origen: "manual",
   });
   if (error) {
-    console.error("[preguntas] manual", error);
+    registrarError("[preguntas] manual", error);
     return { ok: false, mensaje: "No pudimos guardar la pregunta." };
   }
   revalidatePath(`/gestion/${vacanteId}`, "layout");
@@ -259,7 +260,7 @@ export async function guardarPregunta(id: string, vacanteId: string, texto: stri
     .eq("id", id)
     .eq("vacante_id", vacanteId);
   if (error) {
-    console.error("[preguntas] update", error);
+    registrarError("[preguntas] update", error);
     return { ok: false, mensaje: "No pudimos guardar la pregunta." };
   }
   revalidatePath(`/gestion/${vacanteId}`, "layout");
@@ -276,7 +277,7 @@ export async function quitarPregunta(id: string, vacanteId: string): Promise<Res
 
   const { error } = await acceso.supabase.from("preguntas").delete().eq("id", id).eq("vacante_id", vacanteId);
   if (error) {
-    console.error("[preguntas] delete", error);
+    registrarError("[preguntas] delete", error);
     return { ok: false, mensaje: "No pudimos quitar la pregunta." };
   }
   revalidatePath(`/gestion/${vacanteId}`, "layout");

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
+import { registrarError } from "@/lib/registro";
 
 type Resultado = { ok: true; mensaje: string } | { ok: false; mensaje: string };
 
@@ -38,7 +39,7 @@ export async function decidir(
     p_motivo: motivo.trim() || null,
   });
   if (error) {
-    console.error("[decision]", error);
+    registrarError("[decision]", error);
     // Mensajes propios de la función (rol, postulación ajena o ya decidida).
     const conocido = ["42501", "P0001", "P0002"].includes(error.code ?? "");
     return { ok: false, mensaje: conocido ? error.message : "No pudimos guardar la decisión. Intenta de nuevo." };

@@ -2,6 +2,7 @@
 
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { delimitar, pedirJson } from "@/lib/ia/gemini";
+import { registrarError } from "@/lib/registro";
 
 // Borrador de la descripción pública. No guarda nada: la empresa lo revisa, lo ajusta y lo guarda.
 // No recibe los requisitos mínimos, así que no puede filtrarlos a la oferta.
@@ -29,7 +30,7 @@ export async function redactarDescripcion(cargo: string, borrador: string): Prom
     if (!texto) return { ok: false, mensaje: "La IA no devolvió una descripción. Intenta de nuevo." };
     return { ok: true, texto };
   } catch (error) {
-    console.error("[ia] redactarDescripcion", error);
+    registrarError("[ia] redactarDescripcion", error);
     return { ok: false, mensaje: "No pudimos consultar la IA. Intenta de nuevo en unos minutos." };
   }
 }

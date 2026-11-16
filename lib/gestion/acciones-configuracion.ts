@@ -7,6 +7,7 @@ import { CRITERIOS_POR_DEFECTO } from "./criterios-por-defecto";
 import { MENSAJE_CON_POSTULACIONES, tienePostulaciones } from "./postulaciones";
 import { REQUISITOS_POR_DEFECTO, type RequisitoPropuesto, proponerRequisitos } from "./requisitos-por-defecto";
 import { type Peso, repartir } from "./repartir";
+import { registrarError } from "@/lib/registro";
 
 // Acciones de requisitos, etapas y rúbrica. Cada una comprueba que la vacante sea de
 // la empresa de la sesión; RLS vuelve a comprobarlo en la base.
@@ -61,7 +62,7 @@ export async function agregarRequisito(vacanteId: string, datos: DatosRequisito)
     .select("id")
     .single();
   if (errorOferta || !requisito) {
-    console.error("[requisitos] insert", errorOferta);
+    registrarError("[requisitos] insert", errorOferta);
     return FALLO;
   }
 
@@ -70,7 +71,7 @@ export async function agregarRequisito(vacanteId: string, datos: DatosRequisito)
       .from("requisitos_minimos")
       .insert({ requisito_id: requisito.id, valor_minimo: datos.minimo.trim() });
     if (errorMinimo) {
-      console.error("[requisitos] minimo", errorMinimo);
+      registrarError("[requisitos] minimo", errorMinimo);
       return FALLO;
     }
   }
@@ -95,14 +96,14 @@ export async function sembrarRequisitosPorDefecto(
       .select("id")
       .single();
     if (error || !requisito) {
-      console.error("[requisitos] sembrar", error);
+      registrarError("[requisitos] sembrar", error);
       return;
     }
     if (datos.minimo.trim()) {
       const { error: errorMinimo } = await supabase
         .from("requisitos_minimos")
         .insert({ requisito_id: requisito.id, valor_minimo: datos.minimo.trim() });
-      if (errorMinimo) console.error("[requisitos] sembrar minimo", errorMinimo);
+      if (errorMinimo) registrarError("[requisitos] sembrar minimo", errorMinimo);
     }
   }
 }
@@ -123,14 +124,14 @@ export async function reemplazarRequisitosConIa(vacanteId: string): Promise<Resu
   try {
     propuestos = await proponerRequisitos(vacante.cargo, vacante.descripcion ?? "");
   } catch (error) {
-    console.error("[ia] proponerRequisitos", error);
+    registrarError("[ia] proponerRequisitos", error);
     return { ok: false, mensaje: "No pudimos consultar la IA. Intenta de nuevo en unos minutos." };
   }
 
   // Borrar la oferta borra su mínimo en cascada.
   const { error } = await supabase.from("requisitos_oferta").delete().eq("vacante_id", vacanteId);
   if (error) {
-    console.error("[requisitos] reemplazar", error);
+    registrarError("[requisitos] reemplazar", error);
     return FALLO;
   }
   await sembrarRequisitosPorDefecto(vacanteId, propuestos);
@@ -151,7 +152,7 @@ export async function guardarRequisito(id: string, vacanteId: string, datos: Dat
     .eq("id", id)
     .eq("vacante_id", vacanteId);
   if (errorOferta) {
-    console.error("[requisitos] update", errorOferta);
+    registrarError("[requisitos] update", errorOferta);
     return FALLO;
   }
 
@@ -164,7 +165,7 @@ export async function guardarRequisito(id: string, vacanteId: string, datos: Dat
       ).error
     : (await supabase.from("requisitos_minimos").delete().eq("requisito_id", id)).error;
   if (errorMinimo) {
-    console.error("[requisitos] minimo", errorMinimo);
+    registrarError("[requisitos] minimo", errorMinimo);
     return FALLO;
   }
 
@@ -177,7 +178,7 @@ export async function quitarRequisito(id: string, vacanteId: string): Promise<Re
   if (!supabase) return NO_ENCONTRADA;
   const { error } = await supabase.from("requisitos_oferta").delete().eq("id", id).eq("vacante_id", vacanteId);
   if (error) {
-    console.error("[requisitos] delete", error);
+    registrarError("[requisitos] delete", error);
     return FALLO;
   }
   refrescar(vacanteId);
@@ -203,7 +204,7 @@ export async function agregarEtapa(vacanteId: string, tipo: string): Promise<Res
     .from("vacante_etapas")
     .insert({ vacante_id: vacanteId, tipo, orden: (ultima?.orden ?? 0) + 1 });
   if (error) {
-    console.error("[etapas] insert", error);
+    registrarError("[etapas] insert", error);
     return FALLO;
   }
   refrescar(vacanteId);
@@ -220,7 +221,7 @@ export async function renombrarEtapa(id: string, vacanteId: string, nombre: stri
     .eq("id", id)
     .eq("vacante_id", vacanteId);
   if (error) {
-    console.error("[etapas] renombrar", error);
+    registrarError("[etapas] renombrar", error);
     return FALLO;
   }
   refrescar(vacanteId);
@@ -263,7 +264,7 @@ export async function moverEtapa(id: string, vacanteId: string, direccion: "subi
   for (const paso of pasos) {
     const { error } = await paso;
     if (error) {
-      console.error("[etapas] mover", error);
+      registrarError("[etapas] mover", error);
       return FALLO;
     }
   }
@@ -280,7 +281,7 @@ export async function quitarEtapa(id: string, vacanteId: string): Promise<Result
   if (bloqueada) return { ok: false, mensaje: "Esta etapa está bloqueada desde que se publicó la vacante: no se puede quitar." };
   const { error } = await supabase.from("vacante_etapas").delete().eq("id", id).eq("vacante_id", vacanteId);
   if (error) {
-    console.error("[etapas] delete", error);
+    registrarError("[etapas] delete", error);
     return FALLO;
   }
   refrescar(vacanteId);
@@ -296,7 +297,7 @@ async function aplicarPesos(supabase: Cliente, rubricaId: string, pesos: Peso[])
     pesos.map(({ id, peso }) => supabase.from("criterios").update({ peso }).eq("id", id).eq("rubrica_id", rubricaId)),
   );
   const fallo = resultados.find((r) => r.error);
-  if (fallo) console.error("[rubrica] pesos", fallo.error);
+  if (fallo) registrarError("[rubrica] pesos", fallo.error);
   return !fallo;
 }
 
@@ -320,13 +321,13 @@ export async function sembrarRubricaSiFalta(vacanteId: string): Promise<void> {
     .select("id")
     .single();
   if (error || !rubrica) {
-    console.error("[rubrica] sembrar", error);
+    registrarError("[rubrica] sembrar", error);
     return;
   }
   const { error: errorCriterios } = await supabase
     .from("criterios")
     .insert(CRITERIOS_POR_DEFECTO.map((c) => ({ ...c, rubrica_id: rubrica.id })));
-  if (errorCriterios) console.error("[rubrica] criterios por defecto", errorCriterios);
+  if (errorCriterios) registrarError("[rubrica] criterios por defecto", errorCriterios);
 }
 
 function revisarCriterio(nombre: string, descripcion: string): string | null {
@@ -366,7 +367,7 @@ export async function agregarCriterio(vacanteId: string, nombre: string, descrip
     .select("id, peso")
     .single<Peso>();
   if (errorCriterio || !nuevo) {
-    console.error("[rubrica] insert", errorCriterio);
+    registrarError("[rubrica] insert", errorCriterio);
     return FALLO;
   }
 
@@ -391,7 +392,7 @@ export async function guardarCriterio(id: string, vacanteId: string, nombre: str
     .eq("rubrica_id", rubricaId)
     .select("id");
   if (errorUpdate) {
-    console.error("[rubrica] update", errorUpdate);
+    registrarError("[rubrica] update", errorUpdate);
     return FALLO;
   }
   if (!data?.length) return { ok: false, mensaje: "Criterio no encontrado." };
@@ -424,7 +425,7 @@ export async function quitarCriterio(id: string, vacanteId: string): Promise<Res
 
   const { data, error } = await supabase.from("criterios").delete().eq("id", id).eq("rubrica_id", rubricaId).select("id");
   if (error) {
-    console.error("[rubrica] delete", error);
+    registrarError("[rubrica] delete", error);
     return FALLO;
   }
   if (!data?.length) return { ok: false, mensaje: "Criterio no encontrado." };

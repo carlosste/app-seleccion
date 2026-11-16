@@ -4,6 +4,7 @@ import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { esUuid, formatoNumero } from "@/lib/gestion/datos";
 import { esPdf } from "@/lib/ia/proteccion";
+import { registrarError } from "@/lib/registro";
 
 // Entrega el CV original de una postulación, en cualquier etapa (decisión de Carlos,
 // 2026-10-28: gestión humana necesita la hoja de vida a la mano). Reglas: la sesión debe ser
@@ -36,7 +37,7 @@ export async function GET(req: Request, ctx: RouteContext<"/api/gestion/cv/[post
   const admin = crearClienteAdmin();
   const { data: archivo, error } = await admin.storage.from("cvs").download(data.cv_path);
   if (error || !archivo) {
-    console.error("[cv] download", error);
+    registrarError("[cv] download", error);
     return NextResponse.json({ error: "No se pudo abrir el CV" }, { status: 500, headers: sinCache });
   }
 

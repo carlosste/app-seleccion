@@ -252,6 +252,22 @@ Nunca subir .env.local al repositorio.
 - Rol `entrevistador`: sigue igual que gestión humana (decisión de Carlos, 2026-11-16;
   se definirá más adelante).
 
+## Privacidad (2026-11-16, decisiones de Carlos)
+- **Solo datos ficticios mientras se use el plan gratuito de Gemini.** En ese plan Google
+  puede usar lo enviado para mejorar sus productos, con revisión humana, y sus términos
+  piden no enviar datos personales (verificado el 2026-11-16). Antes de recibir hojas de
+  vida reales hay que pasar a una clave con facturación activa.
+- Consentimiento v2 para Colombia (Ley 1581 de 2012, Decreto 1377 de 2013): dos casillas
+  separadas (datos con IA y transmisión internacional; grabación) y la política en
+  `/privacidad`. Responsable: la empresa de la vacante; encargado: el operador de la
+  plataforma. El texto vive en `lib/legal/tratamiento-datos.ts` (`VERSION_TEXTO`).
+  **PENDIENTE (Carlos):** nombre, identificación, domicilio, correo y teléfono del
+  operador; hoy la página dice "por definir".
+- Registros: los errores del servidor pasan por `registrarError` (`lib/registro.ts`),
+  que deja solo tipo, código, estado y mensaje (sin `details`, que trae valores de filas).
+- Tope de IA y aprobación de empresas: no por ahora (Carlos, 2026-11-16); se retoman al
+  producir a mayor escala.
+
 ## Pendientes
 
 ### Correos (en pausa hasta tener dominio propio y proveedor, p. ej. Resend)

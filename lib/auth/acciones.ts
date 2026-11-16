@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import type { EstadoIngreso, EstadoRegistro } from "./estados";
+import { registrarError } from "@/lib/registro";
 import {
   REGLAS,
   clave,
@@ -104,7 +105,7 @@ export async function registrarEmpresa(_previo: EstadoRegistro, fd: FormData): P
     if (errorAuth?.code === "weak_password") {
       return { estado: "error", errores: { clave: "La contraseña es demasiado débil o aparece en filtraciones conocidas. Elige otra." } };
     }
-    console.error("[registro] createUser", errorAuth);
+    registrarError("[registro] createUser", errorAuth);
     return { estado: "error", mensaje: "No pudimos crear la cuenta. Intenta de nuevo en unos minutos." };
   }
 
@@ -122,7 +123,7 @@ export async function registrarEmpresa(_previo: EstadoRegistro, fd: FormData): P
   });
 
   if (errorEmpresa) {
-    console.error("[registro] registrar_empresa", errorEmpresa);
+    registrarError("[registro] registrar_empresa", errorEmpresa);
     await admin.auth.admin.deleteUser(creado.user.id); // no dejar cuentas a medias
     return { estado: "error", mensaje: "No pudimos crear la cuenta. Intenta de nuevo en unos minutos." };
   }

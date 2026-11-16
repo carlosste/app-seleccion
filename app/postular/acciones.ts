@@ -9,9 +9,11 @@ import {
   obtenerIp,
   registrarIntento,
 } from "@/lib/auth/limite-intentos";
+import { VERSION_TEXTO } from "@/lib/legal/tratamiento-datos";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { crearClientePostulante } from "@/lib/supabase/servidor";
 import { vacantePorToken, type VacantePublica } from "@/lib/vacante-publica";
+import { registrarError } from "@/lib/registro";
 
 // MODO DE PRUEBAS (2026-10-28, decisión de Carlos): no se envían correos. El postulante entra
 // con ID = número de documento y contraseña = número de documento. Es inseguro a propósito
@@ -24,7 +26,8 @@ const DOCUMENTO_VALIDO = /^[A-Z0-9]{6,20}$/;
 const PAIS_POR_DEFECTO = "CO";
 // Igual al límite del bucket "cvs". Vercel corta los cuerpos de más de 4,5 MB.
 const LIMITE_CV_BYTES = 4 * 1024 * 1024;
-const VERSION_TEXTO = "v1";
+// v2 (2026-11-16): texto en lib/legal/tratamiento-datos.ts, con IA, proveedores fuera de Colombia
+// y política en /privacidad.
 const CONSENTIMIENTOS = ["datos", "grabacion"] as const;
 
 type Cliente = Awaited<ReturnType<typeof crearClientePostulante>>;
@@ -71,7 +74,7 @@ async function asegurarPostulacion(
       .from("cvs")
       .upload(ruta, cv as File, { contentType: "application/pdf", upsert: true });
     if (errorSubida) {
-      console.error("[postulacion] subir CV", errorSubida);
+      registrarError("[postulacion] subir CV", errorSubida);
       return "general";
     }
 
@@ -82,7 +85,7 @@ async function asegurarPostulacion(
       .select("id")
       .single<{ id: string }>();
     if (errorPostulacion || !nueva) {
-      console.error("[postulacion] insert", errorPostulacion);
+      registrarError("[postulacion] insert", errorPostulacion);
       return errorPostulacion?.message.includes("límite de postulantes") ? "limite" : "general";
     }
     postulacionId = nueva.id;
@@ -100,7 +103,7 @@ async function asegurarPostulacion(
       .from("consentimientos")
       .insert(faltan.map((tipo) => ({ postulacion_id: postulacionId, tipo, version_texto: VERSION_TEXTO })));
     if (error) {
-      console.error("[postulacion] consentimientos", error);
+      registrarError("[postulacion] consentimientos", error);
       return "general";
     }
   }
@@ -116,7 +119,8 @@ export async function postularse(formData: FormData) {
   const correo = String(formData.get("correo") ?? "").trim().toLowerCase();
   const telefono = String(formData.get("telefono") ?? "").trim();
   const documento = normalizarDocumento(String(formData.get("documento") ?? ""));
-  const aceptoDatos = formData.get("acepto") === "on";
+  // Dos autorizaciones separadas (datos con IA y transmisión internacional; grabación).
+  const aceptoDatos = formData.get("acepto_datos") === "on" && formData.get("acepto_grabacion") === "on";
   const cv = formData.get("cv");
 
   const vacante = await vacantePorToken(token);
@@ -156,7 +160,7 @@ export async function postularse(formData: FormData) {
       user_metadata: { nombre, telefono },
     });
     if (errorCrear || !creado.user) {
-      console.error("[postulacion] crear cuenta", errorCrear);
+      registrarError("[postulacion] crear cuenta", errorCrear);
       volver(errorCrear?.code === "email_exists" ? "correo-registrado" : "general");
     }
   }
@@ -165,7 +169,7 @@ export async function postularse(formData: FormData) {
   const supabase = await crearClientePostulante();
   const { data: sesion, error: errorSesion } = await supabase.auth.signInWithPassword({ email: correo, password: documento });
   if (errorSesion || !sesion.user) {
-    console.error("[postulacion] iniciar sesion", errorSesion);
+    registrarError("[postulacion] iniciar sesion", errorSesion);
     volver("general");
   }
   const usuario = sesion.user;
@@ -185,7 +189,7 @@ export async function postularse(formData: FormData) {
     });
     if (errorRegistro) {
       // Otro registro ganó el documento al mismo tiempo: no dejar la cuenta a medias.
-      console.error("[postulacion] registrar postulante", errorRegistro);
+      registrarError("[postulacion] registrar postulante", errorRegistro);
       await supabase.auth.signOut({ scope: "local" });
       await admin.auth.admin.deleteUser(usuario.id);
       volver("documento");
@@ -274,7 +278,7 @@ export async function responderPregunta(token: string, preguntaId: string, texto
   if (error) {
     // Ya estaba respondida (doble clic o dos pestañas): para el postulante no es un error.
     if (error.code === "23505") return { ok: true };
-    console.error("[postulacion] responder", error);
+    registrarError("[postulacion] responder", error);
     return { ok: false, mensaje: "No pudimos guardar tu respuesta. Intenta de nuevo." };
   }
   return { ok: true };

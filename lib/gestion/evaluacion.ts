@@ -8,6 +8,7 @@ import { sembrarRubricaSiFalta } from "./acciones-configuracion";
 import { type Criterio, type Numerada, puntuarEtapa, revisarCv } from "./calificacion-ia";
 import { NOMBRE_ETAPA } from "./datos";
 import { type EvaluacionEtapa, type ResultadoCv, type ResultadoRubrica, VERSION_PUNTAJE } from "./tipos-evaluacion";
+import { registrarError } from "@/lib/registro";
 
 // "Evaluar con IA": gestión humana lo pide desde el detalle del postulante (así no se gastan
 // tokens en cada postulación que llega). Hace dos cosas:
@@ -64,14 +65,14 @@ export async function evaluarPostulacion(vacanteId: string, postulacionId: strin
     try {
       ({ cv, modelo: modeloCv } = await analizarCv(supabase, vacante, postulacion.cv_path));
     } catch (error) {
-      console.error("[ia] analizarCv", error);
+      registrarError("[ia] analizarCv", error);
       return { ok: false, mensaje: "No pudimos analizar la hoja de vida con la IA. Intenta de nuevo en unos minutos." };
     }
     const { error } = await admin
       .from("evaluaciones_ia")
       .insert({ postulacion_id: postulacion.id, tarea: "leer_cv", resultado: cv, ajuste_total: null, modelo: modeloCv });
     if (error) {
-      console.error("[ia] guardar leer_cv", error);
+      registrarError("[ia] guardar leer_cv", error);
       return { ok: false, mensaje: "No pudimos guardar el análisis de la hoja de vida." };
     }
 
@@ -85,7 +86,7 @@ export async function evaluarPostulacion(vacanteId: string, postulacionId: strin
         p_postulacion: postulacion.id,
         p_cumple: cv.veredicto === "cumple",
       });
-      if (errorCambio) console.error("[ia] registrar_revision_cv", errorCambio);
+      if (errorCambio) registrarError("[ia] registrar_revision_cv", errorCambio);
       if (cambio === "descartada") {
         revalidatePath(`/gestion/${vacanteId}`, "layout");
         return { ok: true, mensaje: "Hoja de vida analizada: no cumple un requisito mínimo y quedó descartada." };
@@ -120,7 +121,7 @@ export async function evaluarPostulacion(vacanteId: string, postulacionId: strin
         { onConflict: "postulacion_id,tarea" },
       );
       if (error) {
-        console.error("[ia] guardar puntuar_rubrica", error);
+        registrarError("[ia] guardar puntuar_rubrica", error);
         return { ok: false, mensaje: "No pudimos guardar la evaluación de las respuestas." };
       }
       hechos.push(`Puntuadas con la rúbrica: ${r.etapasNuevas.join(", ")}.`);
@@ -129,7 +130,7 @@ export async function evaluarPostulacion(vacanteId: string, postulacionId: strin
       }
     }
   } catch (error) {
-    console.error("[ia] puntuarRespuestas", error);
+    registrarError("[ia] puntuarRespuestas", error);
     hechos.push("No pudimos puntuar las respuestas con la IA. Intenta de nuevo en unos minutos.");
     revalidatePath(`/gestion/${vacanteId}`, "layout");
     return { ok: false, mensaje: hechos.join(" ") };
