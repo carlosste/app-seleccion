@@ -236,6 +236,22 @@ Nunca subir .env.local al repositorio.
   máximo. Un correo de empresa no puede postularse. (Desde el 2026-10-28 ya no
   hay código por correo: ver "Modo de pruebas sin correos".)
 
+## Endurecer la base (2026-11-16)
+- Migración `20261116120000_endurecer_base.sql`, probada con roles reales en una
+  transacción deshecha (`supabase/pruebas/20261116_endurecer_base.sql`, 28 pruebas).
+  **PENDIENTE de aplicar: espera el visto bueno de Carlos.**
+- Etapas: con postulantes no se borran ni cambian tipo, orden o vacante (trigger
+  `proteger_etapas`); renombrar sí. Borrar la vacante entera sin postulantes sigue igual.
+- Columnas editables desde la API: `empresas` (nombre, sector, ciudad, teléfono,
+  sitio web, tamaño), `vacantes` (cargo, descripción, estado, cerrada_at),
+  `vacante_etapas` (nombre, orden, tipo).
+- Bucket `cvs`: un archivo por vacante con nombre fijo, solo a vacantes abiertas y solo
+  antes de crear la postulación (`puede_subir_cv`). `/api/gestion/cv` solo sirve PDF.
+- Decisiones solo por `decidir_postulacion`; `anon` sin permisos en tablas sin
+  política (salvo `requisitos_oferta`).
+- Rol `entrevistador`: sigue igual que gestión humana (decisión de Carlos, 2026-11-16;
+  se definirá más adelante).
+
 ## Pendientes
 
 ### Correos (en pausa hasta tener dominio propio y proveedor, p. ej. Resend)

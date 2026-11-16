@@ -3,6 +3,7 @@ import { obtenerSesionEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { esUuid, formatoNumero } from "@/lib/gestion/datos";
+import { esPdf } from "@/lib/ia/proteccion";
 
 // Entrega el CV original de una postulación, en cualquier etapa (decisión de Carlos,
 // 2026-10-28: gestión humana necesita la hoja de vida a la mano). Reglas: la sesión debe ser
@@ -39,6 +40,12 @@ export async function GET(req: Request, ctx: RouteContext<"/api/gestion/cv/[post
     return NextResponse.json({ error: "No se pudo abrir el CV" }, { status: 500, headers: sinCache });
   }
 
+  // Solo se sirve si de verdad es un PDF (firma %PDF-), aunque el bucket ya lo exija al subir.
+  const bytes = new Uint8Array(await archivo.arrayBuffer());
+  if (!esPdf(bytes)) {
+    return NextResponse.json({ error: "El archivo guardado no es un PDF" }, { status: 415, headers: sinCache });
+  }
+
   const descargar = new URL(req.url).searchParams.get("descargar") === "1";
   await admin.from("registro_actividad").insert({
     empresa_id: sesion.empresa.id,
@@ -49,7 +56,7 @@ export async function GET(req: Request, ctx: RouteContext<"/api/gestion/cv/[post
   });
 
   const nombre = `candidato-${formatoNumero(data.numero_anonimo)}.pdf`;
-  return new NextResponse(archivo, {
+  return new NextResponse(bytes, {
     headers: {
       ...sinCache,
       "Content-Type": "application/pdf",
