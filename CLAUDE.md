@@ -276,6 +276,14 @@ Nunca subir .env.local al repositorio.
   previa no reporte violaciones en el flujo completo (registro, panel, visor de CV,
   postulación). Páginas públicas revisadas en local el 2026-11-16: sin violaciones.
 
+## Borrado manual (2026-11-16, decisión de Carlos)
+- `scripts/cvs-huerfanos.mjs`: lista los PDF del bucket `cvs` sin postulación (no toca
+  los de menos de 24 h). Por defecto solo lee; con `--borrar` pide escribir una frase de
+  confirmación. Primera corrida (2026-11-16): 126 archivos, 0 huérfanos.
+- `docs/borrado-datos-postulante.md`: cómo atender un pedido de borrado de un postulante
+  (plazos de la Ley 1581, qué borrar y cómo comprobarlo). Sin pantalla nueva.
+- Nada se borra automáticamente: la retención por plazo sigue siendo de la versión de pago.
+
 ## Pendientes
 
 ### Correos (en pausa hasta tener dominio propio y proveedor, p. ej. Resend)
