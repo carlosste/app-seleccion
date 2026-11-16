@@ -81,6 +81,19 @@ automáticamente.
 - Instrucciones de sistema fijas con las reglas éticas, salida JSON con
   esquema fijo, temperatura 0.2.
 - Ahorro: preguntas generadas una vez por vacante, cada CV analizado una vez.
+- **Contenido de terceros como datos (2026-11-16).** Lo que escribe el postulante
+  (respuestas, CV) va delimitado como datos y nunca mezclado con las instrucciones
+  (`delimitar` en `lib/ia/gemini.ts`); cada tarea manda su esquema de salida en
+  `generationConfig.responseJsonSchema` (JSON Schema estándar; `responseSchema` da 400).
+  La lógica que toca contenido del postulante está en `lib/gestion/calificacion-ia.ts`
+  y las defensas del servidor en `lib/ia/proteccion.ts`: cita verificada contra la
+  respuesta, detector de manipulación, enmascarado de datos personales y firma `%PDF-`.
+  Si la IA o el detector ven un posible intento de manipulación, la etapa o el CV quedan
+  con `sospecha` (aviso en el detalle y en la lista) y el CV pasa a "por revisar" sin
+  avance ni descarte automático. `VERSION_PUNTAJE` = 3. Pruebas:
+  `node --env-file=.env.local scripts/pruebas-inyeccion.mjs` (llama a Gemini con datos
+  ficticios, no toca la base).
+- Los errores de Gemini no copian el texto de la respuesta a los registros.
 
 ## Variables de entorno
 NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,

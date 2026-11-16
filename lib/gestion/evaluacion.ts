@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
-import { pedirJsonConModelo } from "@/lib/ia/gemini";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { sembrarRubricaSiFalta } from "./acciones-configuracion";
+import { type Criterio, type Numerada, puntuarEtapa, revisarCv } from "./calificacion-ia";
 import { NOMBRE_ETAPA } from "./datos";
-import { type EstadoRequisito, type EvaluacionEtapa, type ResultadoCv, type ResultadoRubrica, type VeredictoCv, VERSION_PUNTAJE } from "./tipos-evaluacion";
+import { type EvaluacionEtapa, type ResultadoCv, type ResultadoRubrica, VERSION_PUNTAJE } from "./tipos-evaluacion";
 
 // "Evaluar con IA": gestión humana lo pide desde el detalle del postulante (así no se gastan
 // tokens en cada postulación que llega). Hace dos cosas:
@@ -23,9 +23,6 @@ type Resultado = { ok: true; mensaje: string } | { ok: false; mensaje: string };
 type Cliente = Awaited<ReturnType<typeof crearClienteServidor>>;
 
 const UUID = /^[0-9a-f-]{36}$/i;
-const ESTADOS: EstadoRequisito[] = ["cumple", "no_cumple", "no_se_sabe"];
-
-const texto = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
 export async function evaluarPostulacion(vacanteId: string, postulacionId: string): Promise<Resultado> {
   if (!UUID.test(vacanteId) || !UUID.test(postulacionId)) return { ok: false, mensaje: "Postulación no encontrada." };
@@ -78,7 +75,10 @@ export async function evaluarPostulacion(vacanteId: string, postulacionId: strin
       return { ok: false, mensaje: "No pudimos guardar el análisis de la hoja de vida." };
     }
 
-    if (cv.veredicto === "por_revisar") {
+    // Con sospecha de manipulación el veredicto ya viene "por_revisar": nada se mueve solo.
+    if (cv.sospecha) {
+      hechos.push("Hoja de vida analizada: posible intento de manipular la lectura. Queda por revisar a mano.");
+    } else if (cv.veredicto === "por_revisar") {
       hechos.push("Hoja de vida analizada: falta información para algún requisito, queda por revisar.");
     } else {
       const { data: cambio, error: errorCambio } = await admin.rpc("registrar_revision_cv", {
@@ -124,6 +124,9 @@ export async function evaluarPostulacion(vacanteId: string, postulacionId: strin
         return { ok: false, mensaje: "No pudimos guardar la evaluación de las respuestas." };
       }
       hechos.push(`Puntuadas con la rúbrica: ${r.etapasNuevas.join(", ")}.`);
+      if (r.resultado.etapas.some((e) => e.sospecha)) {
+        hechos.push("Atención: posible intento de manipular la evaluación. Revisa las respuestas a mano.");
+      }
     }
   } catch (error) {
     console.error("[ia] puntuarRespuestas", error);
@@ -136,6 +139,7 @@ export async function evaluarPostulacion(vacanteId: string, postulacionId: strin
   return { ok: true, mensaje: hechos.join(" ") };
 }
 
+// Junta los requisitos y el archivo; la lectura con la IA está en calificacion-ia.ts.
 async function analizarCv(
   supabase: Cliente,
   vacante: { id: string; cargo: string },
@@ -165,66 +169,12 @@ async function analizarCv(
   // El CV está en un bucket privado: lo baja el servidor y va directo a Gemini.
   const { data: archivo, error: errorArchivo } = await crearClienteAdmin().storage.from("cvs").download(cvPath);
   if (errorArchivo || !archivo) throw new Error(`No se pudo descargar el CV: ${errorArchivo?.message}`);
-  const pdf = Buffer.from(await archivo.arrayBuffer()).toString("base64");
-
-  const { datos: r, modelo } = await pedirJsonConModelo<{
-    hoja_de_vida?: { etiqueta?: string; valor?: string }[];
-    requisitos?: { indice?: number; estado?: string; evidencia?: string }[];
-  }>(
-    "Eres asistente de selección de personal. Lee la hoja de vida adjunta (PDF) y compárala con los requisitos " +
-      "mínimos del cargo. " +
-      '1) "hoja_de_vida": entre 3 y 6 datos profesionales, cada uno {"etiqueta", "valor"}: formación, experiencia ' +
-      "(años y área), idiomas, certificaciones o habilidades. NUNCA incluyas nombre, documento, correo, teléfono, " +
-      "dirección, ciudad, fecha de nacimiento, edad, género, estado civil, foto ni otro dato personal. " +
-      '2) "requisitos": uno por cada requisito mínimo dado, {"indice", "dato_hoja_de_vida", "estado", "evidencia"}. ' +
-      '"dato_hoja_de_vida" es lo que dice la hoja de vida sobre ese requisito. Compara ese dato SOLO contra el mínimo ' +
-      'escrito: si lo iguala o lo supera, "cumple" (2 años cumple un mínimo de 1 año; B1 cumple un mínimo de B1; ' +
-      'profesional cumple un mínimo de tecnólogo). Si queda por debajo, "no_cumple". Si la hoja de vida no trae el ' +
-      'dato o no se puede leer, "no_se_sabe": nunca supongas que no cumple. ' +
-      "La evidencia es una frase con lo que dice la hoja de vida, sin datos personales. Para la edad mínima di " +
-      "solo si cumple, sin escribir la edad ni la fecha. " +
-      'Devuelve {"hoja_de_vida": [...], "requisitos": [...]}.',
-    // Solo el mínimo: si la IA ve también lo que pide la oferta, compara contra eso y descarta de más.
-    `Cargo: ${vacante.cargo}\nRequisitos mínimos:\n` +
-      (requisitos.length
-        ? requisitos.map((q, i) => `${i + 1}. Mínimo: ${q.minimo}`).join("\n")
-        : "(ninguno: solo resume la hoja de vida)"),
-    [{ mimeType: "application/pdf", data: pdf }],
-    // Temperatura 0: el mismo CV siempre da el mismo veredicto (de esto depende un descarte).
-    { temperatura: 0 },
-  );
-
-  const hojaDeVida = (Array.isArray(r.hoja_de_vida) ? r.hoja_de_vida : [])
-    .map((d) => ({ etiqueta: texto(d?.etiqueta, 40), valor: texto(d?.valor, 200) }))
-    .filter((d) => d.etiqueta && d.valor)
-    .slice(0, 6);
-
-  // Cada requisito se busca por su número; si la IA no lo devolvió, queda "no_se_sabe".
-  const revisados = requisitos.map((q, i) => {
-    const dado = (Array.isArray(r.requisitos) ? r.requisitos : []).find((x) => Number(x?.indice) === i + 1);
-    const estado = ESTADOS.includes(dado?.estado as EstadoRequisito) ? (dado!.estado as EstadoRequisito) : "no_se_sabe";
-    return {
-      requisito: q.oferta || q.minimo,
-      minimo: q.minimo,
-      estado,
-      evidencia: texto(dado?.evidencia, 300) || "Sin evidencia en la hoja de vida.",
-    };
-  });
-
-  const veredicto: VeredictoCv = revisados.some((q) => q.estado === "no_cumple")
-    ? "no_cumple"
-    : revisados.some((q) => q.estado === "no_se_sabe")
-      ? "por_revisar"
-      : "cumple";
-  return { cv: { hojaDeVida, requisitos: revisados, veredicto }, modelo };
+  return revisarCv(vacante.cargo, requisitos, new Uint8Array(await archivo.arrayBuffer()));
 }
 
 type Puntuacion =
   | { tipo: "sin-respuestas" | "sin-cambios" | "sin-rubrica" }
   | { tipo: "nueva"; resultado: ResultadoRubrica; ajuste: number | null; modelo: string; etapasNuevas: string[] };
-
-type Criterio = { nombre: string; descripcion: string | null; peso: number };
-type Numerada = { numero: number; pregunta: string; respuesta: string };
 
 // Puntúa cada etapa de preguntas por separado (texto, voz…), para comparar las rondas.
 // Solo llama a la IA por las etapas con respuestas nuevas: las demás conservan su puntaje.
@@ -314,71 +264,5 @@ async function puntuarRespuestas(
     ajuste,
     etapasNuevas,
     resultado: { etapas: resultado, respuestasEvaluadas: respuestas.length },
-  };
-}
-
-// Cada etapa se califica SOLO con sus respuestas (sin la hoja de vida ni otras etapas), con
-// una escala fija y temperatura 0: así se compara a todos con el mismo criterio, también
-// cuando se evalúan muchos seguidos con "Analizar todos".
-async function puntuarEtapa(
-  vacante: { cargo: string; descripcion: string | null },
-  criterios: Criterio[],
-  nombreEtapa: string,
-  respondidas: Numerada[],
-): Promise<{ evaluacion: Omit<EvaluacionEtapa, "etapaId" | "nombre">; modelo: string }> {
-  const { datos: r, modelo } = await pedirJsonConModelo<{
-    criterios?: { indice?: number; puntaje?: number | null; evidencia?: string }[];
-    fortalezas?: string;
-    profundizar?: string;
-  }>(
-    "Eres asistente de selección de personal. Puntúa con la rúbrica del cargo las respuestas de un postulante en " +
-      "UNA etapa del proceso. " +
-      'Para cada criterio, en el mismo orden: {"indice", "puntaje", "evidencia"}. puntaje es un entero de 0 a 100, ' +
-      'o null si las respuestas de esta etapa no dan evidencia para ese criterio (por ejemplo "rapidez de respuesta": ' +
-      'no tienes tiempos). evidencia cita la pregunta y lo que respondió, por ejemplo "Pregunta 2 · describe pasos ' +
-      'ordenados". Usa siempre esta escala, igual para todos los postulantes: 90-100 respuesta completa, correcta y ' +
-      "con ejemplos concretos; 70-89 correcta pero general o con algún vacío; 50-69 incompleta o superficial; menos " +
-      "de 50 incorrecta, evasiva o sin contenido. " +
-      "Una respuesta evasiva, fuera de tema o vacía baja el puntaje del criterio que debía mostrar. " +
-      "Evalúa solo el contenido de las respuestas: nunca la edad, el género, el origen, la forma de hablar ni rasgos " +
-      "personales. No digas si es el mejor ni si debe pasar: eso lo decide una persona. " +
-      '"fortalezas": una frase. "profundizar": una frase con lo que conviene preguntar en la entrevista. ' +
-      'Devuelve {"criterios": [...], "fortalezas": "...", "profundizar": "..."}.',
-    `Cargo: ${vacante.cargo}\nDescripción: ${vacante.descripcion?.trim() || "(sin descripción)"}\nEtapa: ${nombreEtapa}\n\n` +
-      `Rúbrica:\n${criterios.map((c, i) => `${i + 1}. ${c.nombre} (peso ${c.peso}%): ${c.descripcion ?? ""}`).join("\n")}\n\n` +
-      `Respuestas de esta etapa:\n${respondidas.map((x) => `Pregunta ${x.numero}: ${x.pregunta}\nRespuesta: ${x.respuesta}`).join("\n\n")}`,
-    [],
-    { temperatura: 0 },
-  );
-
-  const dados = Array.isArray(r.criterios) ? r.criterios : [];
-  const puntuados = criterios.map((c, i) => {
-    const d = dados.find((x) => Number(x?.indice) === i + 1);
-    const n = d?.puntaje == null ? null : Number(d.puntaje);
-    return {
-      nombre: c.nombre,
-      peso: c.peso,
-      puntaje: n == null || !Number.isFinite(n) ? null : Math.max(0, Math.min(100, Math.round(n))),
-      evidencia: texto(d?.evidencia, 300) || "Sin evidencia en las respuestas.",
-    };
-  });
-
-  // El ajuste lo calcula el servidor (promedio ponderado por peso), no la IA. Los criterios
-  // sin evidencia no cuentan: así la falta de datos no resta.
-  const conPuntaje = puntuados.filter((c) => c.puntaje != null);
-  const pesoTotal = conPuntaje.reduce((s, c) => s + c.peso, 0);
-  const ajuste = pesoTotal ? Math.round(conPuntaje.reduce((s, c) => s + c.puntaje! * c.peso, 0) / pesoTotal) : null;
-
-  return {
-    modelo,
-    evaluacion: {
-      ajuste,
-      criterios: puntuados,
-      fortalezas: texto(r.fortalezas, 400),
-      profundizar: texto(r.profundizar, 400),
-      respuestasEvaluadas: respondidas.length,
-      fecha: new Date().toISOString(),
-      version: VERSION_PUNTAJE,
-    },
   };
 }

@@ -9,14 +9,22 @@ export type ResultadoCv = {
   hojaDeVida: { etiqueta: string; valor: string }[];
   requisitos: { requisito: string; minimo: string; estado: EstadoRequisito; evidencia: string }[];
   veredicto: VeredictoCv;
+  // Desde el 2026-11-16. Posible intento de manipular la lectura (texto oculto, instrucciones
+  // para la IA). Con sospecha el veredicto queda "por_revisar" y decide una persona.
+  sospecha?: boolean;
+  motivoSospecha?: string;
 };
 
-export type CriterioPuntuado = { nombre: string; peso: number; puntaje: number | null; evidencia: string };
+// verificada (desde VERSION_PUNTAJE 3): la cita de la IA aparece en la respuesta. false = la
+// evidencia no se encontró tal cual; revisar a mano.
+export type CriterioPuntuado = { nombre: string; peso: number; puntaje: number | null; evidencia: string; verificada?: boolean };
 
 // Sube cuando cambia cómo se califica (prompt, escala, temperatura). Una etapa evaluada con
 // otra versión se vuelve a calificar, para que todos queden medidos con el mismo criterio.
 // 2 (2026-10-28): solo respuestas de la etapa, escala fija y temperatura 0.
-export const VERSION_PUNTAJE = 2;
+// 3 (2026-11-16): respuestas como datos no confiables, esquema de salida, cita verificada y
+// aviso de posible manipulación.
+export const VERSION_PUNTAJE = 3;
 
 // Puntaje de una etapa de preguntas (texto o voz) con la rúbrica. puntaje null = sin evidencia.
 export type EvaluacionEtapa = {
@@ -29,6 +37,10 @@ export type EvaluacionEtapa = {
   respuestasEvaluadas: number;
   fecha: string;
   version?: number;
+  // Desde VERSION_PUNTAJE 3: la IA o el detector del servidor vieron un posible intento de
+  // manipular la evaluación. El puntaje se guarda igual, pero una persona debe revisarlo.
+  sospecha?: boolean;
+  motivoSospecha?: string;
 };
 
 // Tarea puntuar_rubrica: una evaluación por etapa (desde el 2026-10-28), así se compara cómo

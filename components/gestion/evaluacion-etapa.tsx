@@ -15,6 +15,14 @@ export function EvaluacionEtapaVista({ evaluacion }: { evaluacion: EvaluacionEta
           <span style={{ fontSize: 13, color: "var(--gris)", fontWeight: 500 }}>/100</span>
         </b>
       </div>
+      {evaluacion.sospecha && (
+        <div className="nota nota-error" role="alert" style={{ fontSize: 13 }}>
+          <span>
+            <b>Posible intento de manipular la evaluación:</b> revisa las respuestas a mano antes de usar este puntaje.
+            {evaluacion.motivoSospecha && <> Motivo: {evaluacion.motivoSospecha}</>}
+          </span>
+        </div>
+      )}
       {evaluacion.criterios.map((c) => (
         <div key={c.nombre}>
           <div className="fila-puntaje">
@@ -24,7 +32,12 @@ export function EvaluacionEtapaVista({ evaluacion }: { evaluacion: EvaluacionEta
             <span className="num">{c.puntaje ?? "—"}</span>
           </div>
           <Barra valor={c.puntaje ?? 0} fina />
-          <div className="evidencia">{c.evidencia}</div>
+          <div className="evidencia">
+            {c.evidencia}
+            {c.verificada === false && (
+              <span style={{ color: "var(--naranja)", fontWeight: 600 }}> · Evidencia no verificada: la cita no aparece en la respuesta.</span>
+            )}
+          </div>
         </div>
       ))}
       <div style={{ fontSize: 13, lineHeight: 1.5, display: "flex", flexDirection: "column", gap: 6 }}>

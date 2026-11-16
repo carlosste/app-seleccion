@@ -104,6 +104,8 @@ export type PostulanteFila = {
   etapa: string;
   ajuste: number | null;
   decision: Decision;
+  // Posible intento de manipular la IA (CV o alguna etapa): un puntaje alto así no debe pasar desapercibido.
+  sospecha: boolean;
 };
 
 export const formatoNumero = (n: number) => String(n).padStart(3, "0");
@@ -135,9 +137,18 @@ export async function listarPostulantes(vacanteId: string): Promise<PostulanteFi
   const etapaPorId = new Map((etapas ?? []).map((e) => [e.id, e]));
   const ajuste = new Map<string, number | null>();
   const porRevisar = new Set<string>();
+  const sospecha = new Set<string>();
   for (const e of evaluaciones ?? []) {
-    if (e.tarea === "puntuar_rubrica") ajuste.set(e.postulacion_id, e.ajuste_total);
-    if (e.tarea === "leer_cv" && (e.resultado as ResultadoCv).veredicto === "por_revisar") porRevisar.add(e.postulacion_id);
+    if (e.tarea === "puntuar_rubrica") {
+      ajuste.set(e.postulacion_id, e.ajuste_total);
+      const etapas = (e.resultado as Partial<ResultadoRubrica>)?.etapas;
+      if (Array.isArray(etapas) && etapas.some((x) => x?.sospecha)) sospecha.add(e.postulacion_id);
+    }
+    if (e.tarea === "leer_cv") {
+      const cv = e.resultado as ResultadoCv;
+      if (cv.veredicto === "por_revisar") porRevisar.add(e.postulacion_id);
+      if (cv.sospecha) sospecha.add(e.postulacion_id);
+    }
   }
 
   return filas
@@ -151,6 +162,7 @@ export async function listarPostulantes(vacanteId: string): Promise<PostulanteFi
         etapa: f.estado === "en_proceso" && porRevisar.has(f.id) ? `${nombre} · CV por revisar` : nombre,
         ajuste: valor == null ? null : Math.round(Number(valor)),
         decision: DECISION_POR_ESTADO[f.estado],
+        sospecha: sospecha.has(f.id),
       };
     })
     .sort((a, b) => (b.ajuste ?? -1) - (a.ajuste ?? -1));

@@ -43,6 +43,11 @@ export default async function ListaPostulantes({ params }: PageProps<"/gestion/[
                 <tr key={p.id}>
                   <td>
                     <b>Candidato #{p.numero}</b>
+                    {p.sospecha && (
+                      <div style={{ color: "var(--peligro-osc)", fontSize: 12, fontWeight: 600 }} title="La IA o el servidor vieron un posible intento de manipular la evaluación">
+                        ⚠ Revisar a mano: posible manipulación
+                      </div>
+                    )}
                   </td>
                   <td>{p.etapa}</td>
                   <td>

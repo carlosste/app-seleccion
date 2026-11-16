@@ -96,7 +96,15 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
                     ))}
                   </div>
                 )}
-                {cv.veredicto === "por_revisar" && (
+                {cv.sospecha && (
+                  <div className="nota nota-error" role="alert" style={{ fontSize: 13 }}>
+                    <span>
+                      <b>Posible intento de manipular la lectura de la hoja de vida:</b> no avanzó ni se descartó sola. Ábrela y
+                      revisa los requisitos a mano.{cv.motivoSospecha && <> Motivo: {cv.motivoSospecha}</>}
+                    </span>
+                  </div>
+                )}
+                {cv.veredicto === "por_revisar" && !cv.sospecha && (
                   <span className="texto-gris" style={{ fontSize: 13 }}>
                     La IA no encontró algún dato: no se descarta. Revisa y decide tú.
                   </span>
