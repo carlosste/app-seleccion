@@ -268,6 +268,14 @@ Nunca subir .env.local al repositorio.
 - Tope de IA y aprobación de empresas: no por ahora (Carlos, 2026-11-16); se retoman al
   producir a mayor escala.
 
+## Cabeceras de seguridad (2026-11-16)
+- `next.config.ts` (`headers()`): nosniff, Referrer-Policy, `X-Frame-Options: SAMEORIGIN`
+  (el visor de CV usa un iframe propio), Permissions-Policy (micrófono solo propio) y CSP
+  en modo **Report-Only**. Sin nonces: Next.js 16 los declara incompatibles con PPR
+  (`cacheComponents`). Pasar a `Content-Security-Policy` obligatoria cuando la vista
+  previa no reporte violaciones en el flujo completo (registro, panel, visor de CV,
+  postulación). Páginas públicas revisadas en local el 2026-11-16: sin violaciones.
+
 ## Pendientes
 
 ### Correos (en pausa hasta tener dominio propio y proveedor, p. ej. Resend)
