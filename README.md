@@ -201,6 +201,16 @@ Todas las instrucciones llevan una regla fija que prohíbe criterios de edad má
 - Página y servidor en un solo proyecto: las llamadas a Supabase con permisos especiales y a Gemini quedan del lado del servidor sin montar una API aparte.
 - TypeScript detecta errores de tipos antes de desplegar.
 
+## Seguridad
+
+En noviembre de 2026 hicimos una revisión de seguridad y aplicamos correcciones en cinco frentes. El detalle (riesgo, solución, archivos y pruebas) está en [docs/seguridad.md](docs/seguridad.md). En resumen:
+
+1. **Manipulación de la IA (*prompt injection*).** Lo que escribe el postulante (hoja de vida y respuestas) se envía a la IA como datos delimitados, nunca como instrucciones. La salida tiene un esquema fijo, cada puntaje debe citar textualmente la respuesta (el servidor comprueba la cita), y un intento de manipulación detectado por la IA o por el servidor deja la evaluación "por revisar" con un aviso visible, sin avance automático.
+2. **Reglas en la base de datos.** Etapas protegidas cuando ya hay postulantes, columnas editables limitadas, un solo CV por vacante que no se cambia después de postularse, y mínimo privilegio para visitantes sin sesión. Probado con 28 pruebas que usan los roles reales.
+3. **Privacidad (Ley 1581 de 2012).** Consentimiento en dos casillas, aviso del uso de IA y de proveedores fuera de Colombia, página [`/privacidad`](https://app-seleccion-mu.vercel.app/privacidad) con la política de tratamiento, y registros del servidor sin datos personales. Mientras se use el plan gratuito de Gemini, solo se usan datos ficticios.
+4. **Cabeceras HTTP de seguridad** y una política de contenido (CSP) en modo de observación.
+5. **Borrado de datos:** guion para encontrar hojas de vida huérfanas y procedimiento para atender pedidos de borrado.
+
 ## Mejoras a futuro
 
 1. **Grabación de voz real con transcripción.** Hoy las preguntas de las etapas "por voz" se responden por texto.

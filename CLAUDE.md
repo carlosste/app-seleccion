@@ -236,6 +236,12 @@ Nunca subir .env.local al repositorio.
   máximo. Un correo de empresa no puede postularse. (Desde el 2026-10-28 ya no
   hay código por correo: ver "Modo de pruebas sin correos".)
 
+## Revisión de seguridad (2026-11-16)
+Resumen completo, pensado para el profesor: `docs/seguridad.md` (enlazado desde el README).
+Cinco ramas apiladas, a unir en este orden: `seguridad-prompt-injection` →
+`seguridad-base` → `seguridad-privacidad` → `seguridad-cabeceras` → `mantenimiento-borrado`.
+Si cambia algo de seguridad, actualizar también ese documento.
+
 ## Endurecer la base (2026-11-16)
 - Migración `20261116120000_endurecer_base.sql`, probada con roles reales en una
   transacción deshecha (`supabase/pruebas/20261116_endurecer_base.sql`, 28 pruebas).
