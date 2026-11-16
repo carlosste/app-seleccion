@@ -136,6 +136,7 @@ datos, no solo el código de la página.
 con los roles reales (empresa, postulante y visitante sin sesión) dentro de una transacción
 que siempre se deshace, así la base no cambia. Cubren lo que debe bloquearse y también el
 flujo normal completo: crear vacante, publicar, postularse, subir el CV, responder y decidir.
+La migración se aplicó en la base real el 2026-11-16 y las 28 pruebas se repitieron después: 28 OK.
 Resultado: 28 de 28 correctas.
 
 **Estado:** la migración se aplica en la base de datos real cuando el equipo dé el visto bueno.
@@ -278,7 +279,6 @@ de pago**, con dos ventajas:
 - El ingreso del postulante con su número de documento como ID y contraseña es un modo de
   pruebas. Se reemplazará por un ingreso con correo y una clave segura cuando haya proveedor
   de correo.
-- Aplicar la migración de la base de datos del frente 2.
 - Datos de contacto del operador en la política de privacidad.
 - Pasar la política de contenido (CSP) a modo obligatorio.
 - Tope de uso de la IA por empresa y aprobación de empresas nuevas, al pasar a uso real.

@@ -126,8 +126,8 @@ Nunca subir .env.local al repositorio.
 
 ## Estado de la base de datos (2026-10-28)
 - Proyecto Supabase `app-seleccion` (id `wknyyiejvafdcwkdpoqr`, us-east-1,
-  plan gratis). Las 13 migraciones de `supabase\migrations\` están aplicadas,
-  la última `bloqueo_preguntas`. Todas las tablas con RLS activo.
+  plan gratis). Las 14 migraciones de `supabase\migrations\` están aplicadas,
+  la última `endurecer_base` (2026-11-16). Todas las tablas con RLS activo.
 - 2026-10-28, ~21:47 UTC: base vaciada a pedido de Carlos (todas las empresas,
   cuentas, vacantes, postulantes y CVs). Se conservan el esquema, funciones,
   políticas y el bucket `cvs`. Para datos de prueba: `scripts/seed-postulantes.mjs`.
@@ -245,7 +245,8 @@ Si cambia algo de seguridad, actualizar también ese documento.
 ## Endurecer la base (2026-11-16)
 - Migración `20261116120000_endurecer_base.sql`, probada con roles reales en una
   transacción deshecha (`supabase/pruebas/20261116_endurecer_base.sql`, 28 pruebas).
-  **PENDIENTE de aplicar: espera el visto bueno de Carlos.**
+  **Aplicada en Supabase el 2026-11-16** con el visto bueno de Carlos. Después de aplicarla
+  se repitieron las 28 pruebas sobre la base real: 28 OK.
 - Etapas: con postulantes no se borran ni cambian tipo, orden o vacante (trigger
   `proteger_etapas`); renombrar sí. Borrar la vacante entera sin postulantes sigue igual.
 - Columnas editables desde la API: `empresas` (nombre, sector, ciudad, teléfono,
