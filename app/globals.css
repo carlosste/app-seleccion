@@ -1040,6 +1040,18 @@ button.pill:hover:not(:disabled):not(.on) {
   gap: 16px;
 }
 
+/* Registro: "Crear cuenta de empresa" e "Iniciar sesión" lado a lado; en pantallas
+   angostas cada uno ocupa su propia fila. */
+.auth-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.auth-acciones > .btn {
+  flex: 1 1 200px;
+}
+
 .grupo {
   display: flex;
   flex-direction: column;
