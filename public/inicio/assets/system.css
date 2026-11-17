@@ -674,6 +674,9 @@ html:not([data-tone="dark"]) :is(.frame--cta, .frame--lit, .footer--statement) {
   .nav__link { padding: 0 var(--s-2); }
   .nav__link::before, .nav__link[aria-current="page"]::after { left: var(--s-2); right: var(--s-2); }
   .nav__links { gap: 0; }
+  /* con dos acciones (Iniciar sesión + Registrar empresa) las columnas iguales del centrado
+     dejan que las acciones se monten sobre las palabras: aquí el centro toma el espacio que sobra */
+  .nav.nav--centre .nav__bar { grid-template-columns: auto minmax(0, 1fr) auto; }
 }
 /* the words take no pill or fill (ST-08, ST-11): a 2px line draws under the word from the left on hover and focus and leaves to the right */
 .nav__link::before { content: ""; position: absolute; left: var(--s-3); right: var(--s-3); bottom: -2px; height: 2px; border-radius: 2px; background: currentColor;

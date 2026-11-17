@@ -63,7 +63,8 @@ azulado, voz ocre, entrevista verde oliva, CV gris). Interfaz sencilla.
 Inicio para empresas (2026-11-16): `/` muestra `public/inicio/index.html`, página
 estática hecha con el kit de Taste (copiado en `public/inicio/assets`) y servida con un
 rewrite en `next.config.ts`; pasó su revisión (`gate.mjs`: PASS). Acción principal
-"Registrar empresa" → `/empresa/registro`. Marca de la plataforma: "Selección" con el
+"Registrar empresa" → `/empresa/registro`; a su lado, en el encabezado y en la barra
+móvil, "Iniciar sesión" → `/empresa/ingreso` (2026-11-17). Marca de la plataforma: "Selección" con el
 logo de cuatro puntos (`components/marca.tsx`), en ingreso, registro y la página 404.
 **CONFIRMAR (Carlos):** "Selección" como nombre visible de la plataforma.
 Textos del inicio (2026-11-17, Carlos): es un prototipo para presentar, así que no habla
