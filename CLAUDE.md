@@ -42,6 +42,11 @@ Postulante (móvil primero): postulación con hoja de vida, ingreso con ID +
 contraseña, preguntas (texto/voz), confirmación.
 Gestión humana (escritorio): vacantes activas, requisitos y etapas, rúbrica,
 postulantes a ciegas, detalle del postulante.
+Registro de empresas: "Iniciar sesión" (→ `/empresa/ingreso`) va como botón
+secundario al lado de "Crear cuenta de empresa" (2026-11-17).
+Postulantes: buscador por número de candidato arriba de la tabla ("14", "014" o "#14"
+encuentran al #014); filtra en el navegador, sin pedir nada nuevo a la base
+(`components/gestion/lista-postulantes.tsx`, 2026-11-17).
 Diseño (desde 2026-10-28, paleta "Violeta y durazno" elegida por Carlos): violeta
 #7C3AED como color principal, durazno #F97316 de acento, fondos lavanda suaves
 (#FAF7FF, página #F3EEFB), fuente Inter. Los colores viven como variables en

@@ -179,11 +179,13 @@ export function FormularioRegistro() {
         {error("aceptaTerminos") && <span className="campo-error">{error("aceptaTerminos")}</span>}
       </div>
 
-      <BotonEnviar texto="Crear cuenta de empresa" textoCargando="Creando cuenta…" cargando={cargando} />
-
-      <p className="centrado texto-gris">
-        ¿Ya tienes cuenta? <Link href="/empresa/ingreso">Inicia sesión</Link>
-      </p>
+      {/* Crear la cuenta y, al lado, entrar si la empresa ya tiene una. */}
+      <div className="auth-acciones">
+        <BotonEnviar texto="Crear cuenta de empresa" textoCargando="Creando cuenta…" cargando={cargando} />
+        <Link href="/empresa/ingreso" className="btn btn-sec btn-grande">
+          Iniciar sesión
+        </Link>
+      </div>
     </form>
   );
 }

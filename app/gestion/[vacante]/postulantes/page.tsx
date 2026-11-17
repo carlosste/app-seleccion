@@ -1,12 +1,10 @@
-import Link from "next/link";
-import { Barra } from "@/components/barra";
-import { Estado } from "@/components/estado";
 import { AnalizarTodos } from "@/components/gestion/analizar-todos";
+import { ListaPostulantes } from "@/components/gestion/lista-postulantes";
 import { listarPostulantes } from "@/lib/gestion/datos";
 
 // D · Postulantes a ciegas: sin nombres ni datos personales hasta la entrevista.
 // Solo aparecen postulaciones de vacantes de la empresa de la sesión (RLS).
-export default async function ListaPostulantes({ params }: PageProps<"/gestion/[vacante]/postulantes">) {
+export default async function PaginaPostulantes({ params }: PageProps<"/gestion/[vacante]/postulantes">) {
   const { vacante } = await params;
   const postulantes = await listarPostulantes(vacante);
 
@@ -27,47 +25,7 @@ export default async function ListaPostulantes({ params }: PageProps<"/gestion/[
           <span className="texto-gris">Comparte el link de la vacante para empezar a recibir hojas de vida.</span>
         </div>
       ) : (
-        <div className="tarjeta tabla-caja" style={{ padding: 0 }}>
-          <table style={{ minWidth: 720 }}>
-            <thead>
-              <tr>
-                <th>Postulante</th>
-                <th>Etapa</th>
-                <th style={{ width: 260 }}>Ajuste al cargo (IA)</th>
-                <th>Decisión</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {postulantes.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <b>Candidato #{p.numero}</b>
-                  </td>
-                  <td>{p.etapa}</td>
-                  <td>
-                    {p.ajuste == null ? (
-                      <span className="texto-gris">Sin evaluar</span>
-                    ) : (
-                      <div className="celda-ajuste">
-                        <Barra valor={p.ajuste} />
-                        <span className="num">{p.ajuste}</span>
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    <Estado decision={p.decision} />
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    <Link href={`/gestion/${vacante}/postulantes/${p.numero}`} style={{ fontWeight: 600 }}>
-                      Ver respuestas
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ListaPostulantes vacanteId={vacante} postulantes={postulantes} />
       )}
 
       <div className="texto-gris">

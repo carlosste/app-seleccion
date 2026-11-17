@@ -1040,6 +1040,18 @@ button.pill:hover:not(:disabled):not(.on) {
   gap: 16px;
 }
 
+/* Registro: "Crear cuenta de empresa" e "Iniciar sesión" lado a lado; en pantallas
+   angostas cada uno ocupa su propia fila. */
+.auth-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.auth-acciones > .btn {
+  flex: 1 1 200px;
+}
+
 .grupo {
   display: flex;
   flex-direction: column;
@@ -1272,4 +1284,32 @@ button.pill {
 button.pill:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Buscador de postulantes por número (components/gestion/lista-postulantes.tsx) */
+.buscador-postulantes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.buscador-postulantes label {
+  flex-basis: 100%;
+  font-size: 13px;
+  font-weight: 600;
+}
+.buscador-postulantes__campo {
+  position: relative;
+  flex: 0 1 320px;
+}
+.buscador-postulantes__campo svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gris);
+  pointer-events: none;
+}
+.buscador-postulantes__campo .inp {
+  padding-left: 36px;
 }
