@@ -72,7 +72,7 @@ export function DecisionPostulante({
         />
       </div>
       {porConfirmar ? (
-        <div className="nota nota-na" role="alertdialog" aria-label="Confirmar decisión" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div className="nota nota-na nota-columna" role="alertdialog" aria-label="Confirmar decisión">
           <b>{pregunta}</b>
           <div className="flex" style={{ gap: 10 }}>
             <button type="button" className="btn btn-sec btn-ancho" onClick={() => setPorConfirmar(null)}>

@@ -48,7 +48,7 @@ export function AnalizarTodos({ vacanteId, postulantes }: { vacanteId: string; p
   const descartados = resultados.filter((r) => r.mensaje.includes("descartada")).length;
 
   return (
-    <div className="tarjeta" style={{ gap: 10 }}>
+    <div className="superficie superficie--relleno">
       <div className="flex" style={{ justifyContent: "space-between", alignItems: "center", gap: 12 }}>
         <div>
           <b>Analizar todos con IA</b>

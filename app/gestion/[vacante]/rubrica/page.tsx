@@ -9,20 +9,22 @@ export default async function Rubrica({ params }: PageProps<"/gestion/[vacante]/
   const criterios = await listarCriterios(id);
 
   return (
-    <div className="dos">
-      <section className="tarjeta ancho">
-        <h2 style={{ fontSize: 18 }}>Criterios de evaluación</h2>
-        <RubricaEditor vacanteId={id} criterios={criterios} />
-      </section>
-
-      <aside className="lado">
-        <div className="nota nota-na" style={{ flexDirection: "column", gap: 6, padding: 18 }}>
-          <b style={{ fontSize: 15 }}>La IA nunca evalúa</b>
-          <span style={{ fontSize: 14, lineHeight: 1.5 }}>
-            Acento, edad, género, tono de voz ni ningún rasgo personal. Tampoco descarta ni elige al mejor.
-          </span>
+    <section className="bloque" aria-labelledby="h-rubrica">
+      <div className="bloque__cabeza">
+        <div>
+          <h2 id="h-rubrica">Criterios de evaluación</h2>
+          <p>La IA puntúa cada etapa con estos criterios y cita la frase que sostiene cada puntaje. Los pesos suman 100.</p>
         </div>
-      </aside>
-    </div>
+      </div>
+      <div className="rubrica-marco">
+        <div className="superficie superficie--relleno">
+          <RubricaEditor vacanteId={id} criterios={criterios} />
+        </div>
+        <aside className="nota-etica">
+          <b>La IA nunca evalúa</b>
+          <span>Acento, edad, género, tono de voz ni ningún rasgo personal. Tampoco descarta ni elige al mejor.</span>
+        </aside>
+      </div>
+    </section>
   );
 }

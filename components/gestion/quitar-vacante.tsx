@@ -44,7 +44,7 @@ export function QuitarVacante({ id, cargo, postulados }: { id: string; cargo: st
   }
 
   return (
-    <div className="nota nota-na" role="alertdialog" aria-label={`Confirmar: ${cargo}`} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <div className="nota nota-na nota-columna" role="alertdialog" aria-label={`Confirmar: ${cargo}`}>
       <span>
         {eliminar ? (
           <>

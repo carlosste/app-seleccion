@@ -23,7 +23,7 @@ export default function Privacidad() {
         <div className="campo" style={{ gap: 6 }}>
           <span className="etq">Postulantes</span>
           <h1 className="titulo-vacante">Política de tratamiento de datos personales</h1>
-          <span className="texto-gris" style={{ fontSize: 12 }}>
+          <span className="texto-gris" style={{ fontSize: 13 }}>
             Vigente desde el {VIGENTE_DESDE} · versión {VERSION_TEXTO}
           </span>
         </div>
@@ -51,7 +51,7 @@ export default function Privacidad() {
             <li>Teléfono: {porDefinir(OPERADOR.telefono)}</li>
           </ul>
           {!operadorCompleto && (
-            <p className="texto-gris" style={{ fontSize: 12 }}>
+            <p className="texto-gris" style={{ fontSize: 13 }}>
               Los datos del operador se publicarán antes de recibir postulaciones reales.
             </p>
           )}

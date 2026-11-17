@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { agregarCriterio, cambiarPesoCriterio, guardarCriterio, quitarCriterio } from "@/lib/gestion/acciones-configuracion";
+import { Barra } from "@/components/barra";
 import type { CriterioVacante } from "@/lib/gestion/configuracion";
 
 type Resultado = { ok: boolean; mensaje?: string };
@@ -49,7 +50,9 @@ export function RubricaEditor({ vacanteId, criterios }: { vacanteId: string; cri
         >
           + Agregar criterio
         </button>
-        <b className={total === 100 || criterios.length === 0 ? "total-ok" : "total-mal"}>Total: {total}%</b>
+        <span className={total === 100 || criterios.length === 0 ? "chip-estado chip-estado--ok" : "chip-estado chip-estado--revisar"}>
+          Suma {total}%
+        </span>
       </div>
     </>
   );
@@ -91,7 +94,7 @@ function FilaCriterio({
 
   return (
     <div className="crit">
-      <div className="crit-texto" style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+      <div className="crit-texto">
         <input
           className="inp"
           value={nombre}
@@ -136,6 +139,9 @@ function FilaCriterio({
       >
         Quitar
       </button>
+      <div className="crit-barra">
+        <Barra valor={criterio.peso} fina />
+      </div>
     </div>
   );
 }

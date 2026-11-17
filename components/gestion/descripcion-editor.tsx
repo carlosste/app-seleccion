@@ -45,7 +45,7 @@ export function DescripcionEditor({ vacanteId, cargo, descripcion }: { vacanteId
           onChange={(e) => setTexto(e.target.value)}
           disabled={guardando || redactando}
         />
-        <span className="texto-gris" style={{ fontSize: 12 }}>
+        <span className="texto-gris" style={{ fontSize: 13 }}>
           {texto.length} / 2000 · No escribas aquí los mínimos internos: esos van en los requisitos.
         </span>
       </div>

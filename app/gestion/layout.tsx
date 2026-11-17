@@ -11,12 +11,12 @@ export default function LayoutGestion({ children }: { children: React.ReactNode 
       <Suspense fallback={<NavGestionEsqueleto />}>
         <NavGestion />
       </Suspense>
-      <div className="main">
+      <main className="panel-cuerpo">
         <AvisoModoPruebas para="empresa" />
         <Suspense fallback={<p className="texto-gris">Cargando…</p>}>
           <Protegido>{children}</Protegido>
         </Suspense>
-      </div>
+      </main>
     </>
   );
 }

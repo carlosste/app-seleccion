@@ -7,7 +7,6 @@ export default function IngresoEmpresa({ searchParams }: PageProps<"/empresa/ing
   return (
     <section className="tarjeta auth-tarjeta">
       <div className="auth-cabecera">
-        <div className="logo">SEL</div>
         <h1>Ingreso de empresas</h1>
         <p className="texto-gris">Entra al panel de gestión humana de tu empresa.</p>
       </div>

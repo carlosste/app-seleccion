@@ -5,6 +5,7 @@ import { listarEtapas, listarPreguntas, listarRequisitos } from "@/lib/gestion/c
 import { obtenerVacante } from "@/lib/gestion/datos";
 
 // B · Descripción, requisitos y etapas. Cada requisito tiene valor de la oferta (público) y mínimo (interno).
+// Tres bloques con su título y su frase en gris, separados por una línea fina (sin cajas dentro de cajas).
 export default async function Requisitos({ params, searchParams }: PageProps<"/gestion/[vacante]">) {
   const { vacante: id } = await params;
   const { aviso } = await searchParams;
@@ -18,24 +19,28 @@ export default async function Requisitos({ params, searchParams }: PageProps<"/g
   return (
     <>
       {vacante && (
-        <section className="tarjeta">
-          <div>
-            <h2 style={{ fontSize: 18, marginBottom: 4 }}>Descripción de la oferta</h2>
-            <span className="texto-gris" style={{ lineHeight: 1.45 }}>
-              Es lo que ve el postulante en el link, junto con el cargo. Puedes pedirle un borrador a la IA y ajustarlo.
-            </span>
+        <section className="bloque" aria-labelledby="h-descripcion">
+          <div className="bloque__cabeza">
+            <div>
+              <h2 id="h-descripcion">Descripción de la oferta</h2>
+              <p>Es lo que ve el postulante en el link, junto con el cargo. Puedes pedirle un borrador a la IA y ajustarlo.</p>
+            </div>
           </div>
-          <DescripcionEditor vacanteId={vacante.id} cargo={vacante.cargo} descripcion={vacante.descripcion} />
+          <div className="superficie superficie--relleno">
+            <DescripcionEditor vacanteId={vacante.id} cargo={vacante.cargo} descripcion={vacante.descripcion} />
+          </div>
         </section>
       )}
 
-      <section className="tarjeta">
-        <div>
-          <h2 style={{ fontSize: 18, marginBottom: 4 }}>Requisitos de la vacante</h2>
-          <span className="texto-gris" style={{ lineHeight: 1.45 }}>
-            Para cada requisito, escribe lo que pide la oferta y lo mínimo que aceptarías. El mínimo es interno: no lo ve el
-            postulante.
-          </span>
+      <section className="bloque" aria-labelledby="h-requisitos">
+        <div className="bloque__cabeza">
+          <div>
+            <h2 id="h-requisitos">Requisitos de la vacante</h2>
+            <p>
+              Para cada requisito, escribe lo que pide la oferta y lo mínimo que aceptarías. El mínimo es interno: no lo ve el
+              postulante.
+            </p>
+          </div>
         </div>
         {aviso === "requisitos-ia" && (
           <div className="nota nota-na" role="status">
@@ -46,10 +51,12 @@ export default async function Requisitos({ params, searchParams }: PageProps<"/g
         <RequisitosEditor vacanteId={id} requisitos={requisitos} />
       </section>
 
-      <section className="tarjeta">
-        <div>
-          <h2 style={{ fontSize: 18, marginBottom: 4 }}>Etapas del proceso</h2>
-          <span className="texto-gris">La empresa decide cuántas etapas tiene esta vacante, en qué orden y de qué tipo.</span>
+      <section className="bloque" aria-labelledby="h-etapas">
+        <div className="bloque__cabeza">
+          <div>
+            <h2 id="h-etapas">Etapas del proceso</h2>
+            <p>La empresa decide cuántas etapas tiene esta vacante, en qué orden y de qué tipo.</p>
+          </div>
         </div>
         <EtapasEditor vacanteId={id} etapas={etapas} preguntas={preguntas} />
       </section>

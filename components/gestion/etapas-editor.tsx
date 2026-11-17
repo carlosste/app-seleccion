@@ -269,7 +269,7 @@ function FilaEtapa({
                 <button type="button" className="btn btn-claro btn-chico" disabled={deshabilitado} onClick={() => onGenerar(modo)}>
                   {deshabilitado ? "Generando…" : "Generar con IA"}
                 </button>
-                <span className="texto-gris" style={{ fontSize: 12, width: "100%" }}>
+                <span className="texto-gris" style={{ fontSize: 13, width: "100%" }}>
                   Generar con IA reemplaza solo las preguntas creadas por la IA; las escritas a mano se conservan.
                 </span>
               </div>
@@ -316,7 +316,7 @@ function FilaPregunta({
           onChange={(e) => setTexto(e.target.value)}
           onBlur={() => guardar(texto, enfoque)}
         />
-        <span className="texto-gris" style={{ fontSize: 12 }}>
+        <span className="texto-gris" style={{ fontSize: 13 }}>
           {pregunta.origen === "ia" ? "Creada con IA" : "Escrita a mano"}
         </span>
       </div>

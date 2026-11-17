@@ -23,32 +23,66 @@ Proyecto académico (Ingeniería de Sistemas, UCC Cali), pensado para escalar.
 - Requisitos mínimos sí descartan automáticamente. Si la IA no lee un dato,
   queda "por revisar", nunca descartado.
 - Solo edad mínima; prohibido filtrar por edad máxima, género o estado civil.
-- Revisión a ciegas en primeras etapas ("Candidato #014"); nombre visible
-  solo en la entrevista final. **Excepción (2026-10-28, decisión de Carlos):**
-  el CV original se puede ver y descargar en cualquier etapa, porque gestión
-  humana lo necesita a la mano. La interfaz sigue mostrando solo el número.
+- **Sin revisión a ciegas (2026-11-17, decisión de Carlos).** La app ya no se
+  presenta ni funciona como selección "a ciegas". El código de candidato
+  ("Candidato #014") se queda, pero solo para distinguir rápido a muchos
+  postulantes, no para ocultarlos. El CV original se ve y se descarga en cualquier
+  etapa (decisión del 2026-10-28).
+  **PENDIENTE en el código:** la vista `v_postulaciones_staff` todavía oculta
+  nombre, correo y teléfono hasta la entrevista, y `/privacidad` todavía dice que
+  la revisión es a ciegas. Quitarlo pide una migración de la vista, ajustar
+  `lib/gestion/datos.ts` y el texto legal; se planea aparte, con el ok de Carlos.
 - Rapidez de respuesta suma un poco; lentitud no resta.
 
-## Flujo de etapas (configurable por empresa y vacante)
-1. Revisión automática de CV por requisitos mínimos.
-2. Preguntas por texto, a ciegas.
-3. Preguntas por voz, a ciegas (5–10 min). Botón "Solicitar ajuste" para
-   responder por texto sin explicar motivo.
-4. Entrevista con entrevistador, grabada y analizada después (no IA en vivo).
+## Flujo de etapas (lo define gestión humana en cada vacante)
+No hay un número fijo de etapas: gestión humana decide cuántas, en qué orden y de
+qué tipo (2026-11-17, Carlos). Los tipos disponibles:
+- Revisión automática de CV por requisitos mínimos.
+- Preguntas por texto.
+- Preguntas por voz (5–10 min). Botón "Solicitar ajuste" para responder por texto
+  sin explicar motivo.
+- Entrevista con entrevistador, grabada y analizada después (no IA en vivo).
 Preguntas iguales para todos los postulantes del mismo cargo.
 
 ## Pantallas
 Postulante (móvil primero): postulación con hoja de vida, ingreso con ID +
 contraseña, preguntas (texto/voz), confirmación.
 Gestión humana (escritorio): vacantes activas, requisitos y etapas, rúbrica,
-postulantes a ciegas, detalle del postulante.
-Diseño (desde 2026-10-28, paleta "Violeta y durazno" elegida por Carlos): violeta
-#7C3AED como color principal, durazno #F97316 de acento, fondos lavanda suaves
-(#FAF7FF, página #F3EEFB), fuente Inter. Los colores viven como variables en
-`app/globals.css` (`--primario`, `--acento`, `--verde`, `--peligro`…); todo texto
-cumple contraste AA. Botones con estados al pasar el mouse, presionar y enfocar;
-cada tipo de etapa tiene su color (texto violeta, voz durazno, entrevista verde,
-CV gris). Interfaz sencilla.
+postulantes (con su código), detalle del postulante.
+Diseño (desde 2026-11-16, rediseño con las skills `design-taste-frontend` y
+`emil-design-eng`, a pedido de Carlos; reemplaza a "Violeta y durazno"): paleta
+"Verde azulado sobre papel" repartida por Taste: verde azulado #06525C como color
+principal, ocre #C2610C para la etapa de voz, verde oliva #3D7A1F para avanzar, fondos
+casi blancos (#F7F9F8, página #EBF0EE), fuente Onest (vía `next/font`). Los colores
+viven como variables en `app/globals.css` (`--primario`, `--acento`, `--verde`,
+`--peligro`…; los nombres no cambiaron); todo texto cumple contraste AA y nada baja de
+13px. Movimiento según Emil: hover solo con mouse (`@media (hover: hover)`), botones que
+se achican un 3 % al presionar, curvas `--ease-out`, avisos que entran con un fundido
+corto y "reducir movimiento" respetado. Cada tipo de etapa tiene su color (texto verde
+azulado, voz ocre, entrevista verde oliva, CV gris). Interfaz sencilla.
+Inicio para empresas (2026-11-16): `/` muestra `public/inicio/index.html`, página
+estática hecha con el kit de Taste (copiado en `public/inicio/assets`) y servida con un
+rewrite en `next.config.ts`; pasó su revisión (`gate.mjs`: PASS). Acción principal
+"Registrar empresa" → `/empresa/registro`. Marca de la plataforma: "Selección" con el
+logo de cuatro puntos (`components/marca.tsx`), en ingreso, registro y la página 404.
+**CONFIRMAR (Carlos):** "Selección" como nombre visible de la plataforma.
+Textos del inicio (2026-11-17, Carlos): es un prototipo para presentar, así que no habla
+del desarrollo (plan gratuito de Gemini, datos de prueba). Nada de "a ciegas" ni de un
+número fijo de etapas. En lugar de "Reglas de la IA", una frase de la empresa (sección
+`#proposito`) con un aparte "Importante: la IA nunca decide por ti; tú pones los topes y
+los parámetros". En lugar de preguntas frecuentes, "Cómo te ayuda en el día a día"
+(`#equipo`): dudas de alguien de gestión humana que no sabe de IA (qué hace la IA por mí,
+si descarta candidatos, cómo ayuda a encontrar un buen candidato, datos protegidos,
+cambiar una pregunta publicada).
+Panel de gestión (2026-11-16, mismo rediseño): es la "ventana de app" del inicio. Barra
+superior blanca (`nav-gestion.tsx`); en cada vacante, barra lateral con Requisitos, Rúbrica y
+Postulantes, y las etapas con su color y cuántos llegaron (`pestanas.tsx`; en tableta pasa a
+pestañas arriba). Postulantes en filas (número, etapa, ajuste, chip de decisión). En el detalle,
+la frase que la IA citó se marca dentro de la respuesta (`marcar-evidencia.tsx`). Para eso
+`puntuar_rubrica` guarda en `resultado.etapas[].criterios[]` dos campos opcionales, `cita` y
+`pregunta`, **solo si la cita se verificó** como fragmento literal de la respuesta. Sin migración
+(es jsonb); las evaluaciones anteriores se ven igual, sin marca. Estilos en la sección "Panel de
+gestión humana" de `app/globals.css`.
 
 ## Tablas (Supabase)
 - Acceso y empresa: empresas, usuarios_empresa.

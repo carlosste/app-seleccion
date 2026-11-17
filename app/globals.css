@@ -1,36 +1,41 @@
-/* Paleta "Violeta y durazno" (2026-10-28, elegida por Carlos): violeta como color principal,
-   durazno como acento y fondos lavanda suaves para no cansar la vista. Todo texto sobre su
-   fondo cumple contraste WCAG AA (4,5:1). */
+/* Paleta "Verde azulado sobre papel" (2026-11-16, repartida por la skill design-taste-frontend a
+   pedido de Carlos; reemplaza a "Violeta y durazno"). Interfaz casi neutra: el verde azulado marca
+   la acción principal, los enlaces y el foco; el ocre queda para la etapa de voz y el verde oliva para
+   avanzar. Todo texto sobre su fondo cumple contraste WCAG AA (4,5:1). Los nombres de las variables
+   no cambian, así los componentes siguen igual. */
 :root {
-  --primario: #7c3aed;
-  --primario-hover: #6d28d9;
-  --primario-osc: #5b21b6;
-  --primario-cl: #f1e9fe;
-  --primario-borde: #dccbfa;
-  --acento: #f97316;
-  --acento-osc: #b93c0b;
-  --acento-cl: #ffebdd;
-  --tx: #2a1b47;
-  --tx2: #4a3f63;
-  --gris: #6b6280;
-  --borde: #e7e0f3;
-  --borde2: #d6cbea;
-  --fondo: #faf7ff;
-  --pagina: #f3eefb;
+  --primario: #06525c;
+  --primario-hover: #05454e;
+  --primario-osc: #043940;
+  --primario-cl: #e3efed;
+  --primario-borde: #c3dad6;
+  --acento: #c2610c;
+  --acento-osc: #8f4508;
+  --acento-cl: #fcefe1;
+  --tx: #10292d;
+  --tx2: #344c50;
+  --gris: #586c6f;
+  --borde: #dfe7e5;
+  --borde2: #c9d6d3;
+  --fondo: #f7f9f8;
+  --pagina: #ebf0ee;
   --sup: #ffffff;
-  --linea: #f1ecf9;
-  --barra: #efe6fd;
-  --verde: #0f766e;
-  --verde-tx: #0b5e52;
-  --verde-cl: #ddf5ef;
-  --naranja-cl: #ffebdd;
-  --naranja: #9a3412;
+  --linea: #edf2f0;
+  --barra: #dfeae7;
+  --verde: #3d7a1f;
+  --verde-tx: #2f5f17;
+  --verde-cl: #e8f3df;
+  --naranja-cl: #fcefe1;
+  --naranja: #8a3f06;
   --peligro: #be123c;
   --peligro-osc: #9f1239;
   --peligro-cl: #ffe4ea;
-  --sombra: 0 1px 2px rgba(76, 29, 149, 0.06), 0 2px 8px rgba(76, 29, 149, 0.05);
-  --sombra-alta: 0 4px 14px rgba(124, 58, 237, 0.28);
-  --anillo: 0 0 0 3px rgba(124, 58, 237, 0.28);
+  --sombra: 0 1px 2px rgba(16, 41, 45, 0.06), 0 2px 8px rgba(16, 41, 45, 0.05);
+  --sombra-alta: 0 4px 14px rgba(6, 82, 92, 0.22);
+  --anillo: 0 0 0 3px rgba(6, 82, 92, 0.25);
+  /* Curvas de movimiento (skill emil-design-eng): salida rápida para lo que responde al usuario. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   color-scheme: light;
 }
 
@@ -46,9 +51,17 @@ body {
   overflow-x: hidden;
 }
 
+/* Sensación nativa en el celular (skill mobile-native): sin destello gris al tocar y sin que el
+   texto se agrande solo al girar el teléfono. */
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   min-height: 100vh;
-  font-family: var(--font-inter), system-ui, sans-serif;
+  min-height: 100dvh;
+  font-family: var(--font-texto), system-ui, sans-serif;
   color: var(--tx);
   background: var(--pagina);
   -webkit-font-smoothing: antialiased;
@@ -57,23 +70,29 @@ body {
 a {
   color: var(--primario);
   text-decoration: none;
-  transition: color 0.15s ease;
+  transition: color 150ms ease;
 }
 
-a:hover {
-  color: var(--primario-osc);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
+/* Todo :hover va dentro de esta consulta: en pantallas táctiles el hover queda "pegado" después de
+   tocar. En el celular la respuesta al dedo es :active. */
+@media (hover: hover) and (pointer: fine) {
+  a:hover {
+    color: var(--primario-osc);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 
-a.btn:hover {
-  text-decoration: none;
+  a.btn:hover {
+    text-decoration: none;
+  }
 }
 
 h1,
 h2,
 h3 {
-  line-height: 1.25;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 /* ---------- Postulante (móvil) ---------- */
@@ -82,6 +101,7 @@ h3 {
   width: 100%;
   max-width: 390px;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -96,7 +116,7 @@ h3 {
     border: 1px solid var(--borde);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(76, 29, 149, 0.08);
+    box-shadow: 0 2px 10px rgba(16, 41, 45, 0.08);
   }
 }
 
@@ -118,7 +138,9 @@ h3 {
 }
 
 .titulo-vacante {
-  font-size: 22px;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
 }
 
 .centrado {
@@ -151,17 +173,16 @@ h3 {
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* ---------- Componentes ---------- */
 
+/* Etiquetas en minúscula normal (sin mayúsculas espaciadas), 13px: se leen mejor. */
 .etq {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--gris);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .chip {
@@ -170,7 +191,7 @@ h3 {
   border-radius: 99px;
   background: var(--primario-cl);
   color: var(--primario-osc);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .chip-grande {
@@ -214,14 +235,17 @@ h3 {
   border-radius: 8px;
   background: var(--sup);
   font-family: inherit;
-  font-size: 15px;
+  /* 16px: con menos, Safari del iPhone agranda la página al tocar el campo (skill mobile-native). */
+  font-size: 16px;
   color: var(--tx);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
-.inp:hover,
-.area:hover {
-  border-color: var(--primario-borde);
+@media (hover: hover) and (pointer: fine) {
+  .inp:hover,
+  .area:hover {
+    border-color: var(--primario-borde);
+  }
 }
 
 .inp:focus,
@@ -251,20 +275,21 @@ h3 {
   border-radius: 8px;
   background: var(--sup);
   font-family: inherit;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.5;
   resize: vertical;
   color: var(--tx);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 /* ---------- Botones ----------
    Cuatro familias que se distinguen a simple vista:
-   - .btn (principal): violeta sólido, se eleva al pasar el mouse.
-   - .btn-sec (secundario): blanco con borde violeta.
-   - .btn-verde (avanzar / confirmar) y .btn-claro (acción de la IA, tinte violeta).
+   - .btn (principal): verde azulado sólido, se oscurece al pasar el mouse.
+   - .btn-sec (secundario): blanco con borde verde azulado.
+   - .btn-verde (avanzar / confirmar) y .btn-claro (acción de la IA, tinte verde azulado).
    - .btn-punto (agregar): borde punteado.
-   Todos se hunden al presionar y muestran un anillo violeta con el teclado. */
+   Todos se achican un 3 % al presionar (skill emil-design-eng: la interfaz "escucha" el dedo o el
+   clic al instante) y muestran un anillo con el teclado. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -281,20 +306,22 @@ h3 {
   font-weight: 600;
   cursor: pointer;
   text-align: center;
-  box-shadow: 0 1px 2px rgba(76, 29, 149, 0.18);
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease,
-    transform 0.1s ease;
-}
-
-.btn:hover:not(:disabled) {
-  background: var(--primario-hover);
-  box-shadow: var(--sombra-alta);
-  transform: translateY(-1px);
+  box-shadow: 0 1px 2px rgba(16, 41, 45, 0.18);
+  /* Propiedades exactas (nunca "all"); el achicado usa la curva de salida rápida. */
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease,
+    transform 160ms var(--ease-out);
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(76, 29, 149, 0.18);
+  transform: scale(0.97);
+  box-shadow: 0 1px 2px rgba(16, 41, 45, 0.18);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled) {
+    background: var(--primario-hover);
+    box-shadow: var(--sombra-alta);
+  }
 }
 
 .btn-sec {
@@ -304,20 +331,24 @@ h3 {
   box-shadow: none;
 }
 
-.btn-sec:hover:not(:disabled) {
-  background: var(--primario-cl);
-  border-color: var(--primario);
-  color: var(--primario-osc);
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.12);
+@media (hover: hover) and (pointer: fine) {
+  .btn-sec:hover:not(:disabled) {
+    background: var(--primario-cl);
+    border-color: var(--primario);
+    color: var(--primario-osc);
+    box-shadow: 0 2px 8px rgba(6, 82, 92, 0.1);
+  }
 }
 
 .btn-verde {
   background: var(--verde);
 }
 
-.btn-verde:hover:not(:disabled) {
-  background: var(--verde-tx);
-  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.28);
+@media (hover: hover) and (pointer: fine) {
+  .btn-verde:hover:not(:disabled) {
+    background: var(--verde-tx);
+    box-shadow: 0 4px 14px rgba(61, 122, 31, 0.25);
+  }
 }
 
 .btn-claro {
@@ -327,11 +358,13 @@ h3 {
   box-shadow: none;
 }
 
-.btn-claro:hover:not(:disabled) {
-  background: #e6d8fd;
-  color: var(--primario-osc);
-  border-color: var(--primario);
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+@media (hover: hover) and (pointer: fine) {
+  .btn-claro:hover:not(:disabled) {
+    background: #d3e6e2;
+    color: var(--primario-osc);
+    border-color: var(--primario);
+    box-shadow: 0 2px 8px rgba(6, 82, 92, 0.12);
+  }
 }
 
 .btn-punto {
@@ -343,11 +376,13 @@ h3 {
   box-shadow: none;
 }
 
-.btn-punto:hover:not(:disabled) {
-  background: var(--primario-cl);
-  border-color: var(--primario);
-  color: var(--primario-osc);
-  box-shadow: none;
+@media (hover: hover) and (pointer: fine) {
+  .btn-punto:hover:not(:disabled) {
+    background: var(--primario-cl);
+    border-color: var(--primario);
+    color: var(--primario-osc);
+    box-shadow: none;
+  }
 }
 
 .btn-chico {
@@ -374,6 +409,11 @@ h3 {
   border-radius: 10px;
   font-size: 13px;
   line-height: 1.45;
+}
+
+.nota-columna {
+  flex-direction: column;
+  gap: 10px;
 }
 
 .nota-az {
@@ -403,7 +443,7 @@ h3 {
   height: 100%;
   border-radius: 99px;
   background: var(--primario);
-  transition: width 0.3s ease;
+  transition: width 300ms var(--ease-out);
 }
 
 .flex {
@@ -436,7 +476,7 @@ h3 {
   color: #fff;
 }
 
-/* Barra superior violeta: el texto va en blanco y el enlace activo se subraya en durazno. */
+/* Barra superior verde azulado: el texto va en blanco y el enlace activo se subraya en ocre. */
 .marca {
   display: flex;
   align-items: center;
@@ -465,13 +505,15 @@ h3 {
   border-bottom: 2px solid var(--acento);
 }
 
-.nav-links a:hover {
-  color: var(--acento-cl);
-  text-decoration: none;
+@media (hover: hover) and (pointer: fine) {
+  .nav-links a:hover {
+    color: var(--acento-cl);
+    text-decoration: none;
+  }
 }
 
 .nav-links span {
-  color: #ede4fd;
+  color: #d6e7e5;
 }
 
 .nav .btn-enlace {
@@ -481,10 +523,12 @@ h3 {
   border-radius: 8px;
 }
 
-.nav .btn-enlace:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  text-decoration: none;
+@media (hover: hover) and (pointer: fine) {
+  .nav .btn-enlace:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    text-decoration: none;
+  }
 }
 
 .main {
@@ -520,12 +564,14 @@ h3 {
   border-bottom: 3px solid transparent;
   border-radius: 8px 8px 0 0;
   margin-bottom: -1px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition: color 150ms ease, background-color 150ms ease;
 }
 
-.pestana:hover {
-  color: var(--primario-osc);
-  background: var(--primario-cl);
+@media (hover: hover) and (pointer: fine) {
+  .pestana:hover {
+    color: var(--primario-osc);
+    background: var(--primario-cl);
+  }
 }
 
 .pestana.on {
@@ -578,7 +624,7 @@ h3 {
 
 /* ---------- Etapas del proceso ----------
    Cada etapa es una tarjeta con un color según su tipo (borde izquierdo, número y etiqueta),
-   así se distinguen de un vistazo: texto violeta, voz durazno, entrevista verde, CV gris. */
+   así se distinguen de un vistazo: texto verde azulado, voz ocre, entrevista verde oliva, CV gris. */
 .paso {
   --color-etapa: var(--primario);
   --color-etapa-cl: var(--primario-cl);
@@ -628,7 +674,7 @@ h3 {
   border-radius: 99px;
   background: var(--color-etapa-cl);
   color: var(--color-etapa);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -650,7 +696,7 @@ h3 {
   font-weight: 600;
   list-style: none;
   cursor: pointer;
-  transition: filter 0.15s ease;
+  transition: filter 150ms ease, transform 160ms var(--ease-out);
 }
 
 .etapa-preguntas > summary::-webkit-details-marker {
@@ -659,15 +705,17 @@ h3 {
 
 .etapa-preguntas > summary::before {
   content: "▸";
-  transition: transform 0.15s ease;
+  transition: transform 200ms var(--ease-out);
 }
 
 .etapa-preguntas[open] > summary::before {
   transform: rotate(90deg);
 }
 
-.etapa-preguntas > summary:hover {
-  filter: brightness(0.96);
+@media (hover: hover) and (pointer: fine) {
+  .etapa-preguntas > summary:hover {
+    filter: brightness(0.96);
+  }
 }
 
 .lista-preguntas {
@@ -734,7 +782,23 @@ h3 {
   flex: 1 1 260px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+}
+
+/* Barra del peso de cada criterio: se ve de un vistazo cuánto pesa frente a los demás. */
+.crit-barra {
+  width: 100%;
+  display: flex;
+}
+
+/* .barra-fina no crece sola (flex: none): dentro de una fila flex se le da el ancho. */
+.crit-barra .barra,
+.fila__ajuste .barra {
+  flex: 1 1 auto;
+}
+
+.fila__ajuste .barra {
+  max-width: 120px;
 }
 
 .crit-texto small {
@@ -777,10 +841,8 @@ th {
   padding: 12px 14px;
   text-align: left;
   color: var(--gris);
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 td {
@@ -798,7 +860,7 @@ td {
   display: inline-block;
   padding: 4px 10px;
   border-radius: 99px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -828,13 +890,15 @@ td {
   color: var(--tx2);
   font-family: inherit;
   font-size: 13px;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 160ms var(--ease-out);
 }
 
-button.pill:hover:not(:disabled):not(.on) {
-  background: var(--primario-cl);
-  border-color: var(--primario);
-  color: var(--primario-osc);
+@media (hover: hover) and (pointer: fine) {
+  button.pill:hover:not(:disabled):not(.on) {
+    background: var(--primario-cl);
+    border-color: var(--primario);
+    color: var(--primario-osc);
+  }
 }
 
 .pill.on {
@@ -842,7 +906,7 @@ button.pill:hover:not(:disabled):not(.on) {
   border-color: var(--primario);
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+  box-shadow: 0 2px 8px rgba(6, 82, 92, 0.22);
 }
 
 .pill.punto {
@@ -874,7 +938,7 @@ button.pill:hover:not(:disabled):not(.on) {
 }
 
 .evidencia {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--gris);
   margin-top: 4px;
 }
@@ -895,7 +959,7 @@ button.pill:hover:not(:disabled):not(.on) {
 
 .grid-datos small {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--gris);
 }
 
@@ -968,10 +1032,12 @@ button.pill:hover:not(:disabled):not(.on) {
   cursor: pointer;
 }
 
-.boton-enlace:hover:not(:disabled) {
-  color: var(--primario-osc);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+@media (hover: hover) and (pointer: fine) {
+  .boton-enlace:hover:not(:disabled) {
+    color: var(--primario-osc);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 
 .ajuste-pie {
@@ -1006,6 +1072,39 @@ button.pill:hover:not(:disabled):not(.on) {
   background: var(--fondo);
 }
 
+/* Columna del ingreso y registro: la marca arriba a la izquierda y la tarjeta debajo, con el mismo
+   borde izquierdo (como el inicio: el texto empieza en la línea izquierda, no centrado). */
+.auth-columna {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-columna:has(.auth-tarjeta-ancha) {
+  max-width: 640px;
+}
+
+.marca-plataforma {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--primario);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .marca-plataforma:hover {
+    color: var(--primario-osc);
+    text-decoration: none;
+  }
+}
+
 .auth-tarjeta {
   width: 100%;
   max-width: 420px;
@@ -1020,17 +1119,17 @@ button.pill:hover:not(:disabled):not(.on) {
 .auth-cabecera {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 8px;
-  text-align: center;
 }
 
 .auth-cabecera h1 {
-  font-size: 24px;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
 }
 
 .auth-cabecera p {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
 }
 
@@ -1050,7 +1149,7 @@ button.pill:hover:not(:disabled):not(.on) {
 
 .grupo legend {
   margin-bottom: 12px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--gris);
   text-transform: uppercase;
@@ -1063,7 +1162,7 @@ button.pill:hover:not(:disabled):not(.on) {
   gap: 14px;
 }
 
-/* Foco con teclado: anillo violeta visible en todo lo que se puede usar. */
+/* Foco con teclado: anillo verde azulado visible en todo lo que se puede usar. */
 .btn:focus-visible,
 .btn-enlace:focus-visible,
 .boton-enlace:focus-visible,
@@ -1083,13 +1182,13 @@ a:focus-visible {
 }
 
 .campo-error {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--peligro);
   line-height: 1.4;
 }
 
 .campo-ayuda {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--gris);
   line-height: 1.4;
 }
@@ -1241,10 +1340,12 @@ a:focus-visible {
   cursor: pointer;
 }
 
-.btn-enlace:hover:not(:disabled) {
-  color: var(--primario-osc);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+@media (hover: hover) and (pointer: fine) {
+  .btn-enlace:hover:not(:disabled) {
+    color: var(--primario-osc);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 
 .vacio {
@@ -1290,4 +1391,972 @@ button.pill:disabled {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* ---------- Respuesta al presionar y movimiento reducido (skill emil-design-eng) ---------- */
+
+/* Lo que se presiona se achica un poco: chips de filtro y el desplegable de preguntas. */
+button.pill:active:not(:disabled),
+.etapa-preguntas > summary:active {
+  transform: scale(0.97);
+}
+
+/* Los avisos que aparecen después de una acción (error, guardado, resultado de la IA) entran con
+   un fundido corto en vez de saltar: pasan pocas veces, así que sí vale animarlos. Sin JavaScript,
+   con @starting-style; un navegador sin soporte simplemente los muestra. */
+.nota[role="alert"],
+.nota[role="status"] {
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* Con "reducir movimiento" no hay desplazamientos ni escalas; los cambios de color se quedan porque
+   ayudan a entender el estado. */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  button.pill,
+  .etapa-preguntas > summary,
+  .etapa-preguntas > summary::before,
+  .barra > div {
+    transition-property: background-color, border-color, color, box-shadow, opacity;
+  }
+
+  .btn:active:not(:disabled),
+  button.pill:active:not(:disabled),
+  .etapa-preguntas > summary:active {
+    transform: none;
+  }
+
+  .nota[role="alert"],
+  .nota[role="status"] {
+    transition: opacity 200ms ease;
+
+    @starting-style {
+      opacity: 0;
+      transform: none;
+    }
+  }
+}
+
+/* =====================================================================================
+   Panel de gestión humana (2026-11-16, rediseño con design-taste-frontend + emil-design-eng)
+   La misma ventana de app que muestra el inicio (public/inicio): barra superior blanca con
+   línea fina, barra lateral con las secciones y las etapas, filas de candidatos por número
+   con su ajuste y un chip de estado, y la evidencia de la IA marcada dentro de la respuesta.
+   Solo presentación: los datos y las acciones son los mismos de antes.
+   ===================================================================================== */
+
+/* ---------- Barra superior ---------- */
+.panel-barra {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 64px;
+  background: var(--fondo);
+  border-bottom: 1px solid var(--borde);
+}
+
+.panel-barra__interior {
+  height: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.panel-barra .marca-plataforma {
+  align-self: center;
+}
+
+.panel-barra__empresa {
+  padding-left: 16px;
+  border-left: 1px solid var(--borde2);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tx);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-barra__enlaces {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 16px;
+}
+
+.panel-barra__enlace {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tx2);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.panel-barra__enlace[aria-current="page"] {
+  background: var(--primario-cl);
+  color: var(--primario-osc);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .panel-barra__enlace:hover {
+    background: var(--linea);
+    color: var(--tx);
+    text-decoration: none;
+  }
+}
+
+.panel-barra__usuario {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--gris);
+  min-width: 0;
+}
+
+.panel-barra__usuario > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-barra__usuario .btn-enlace {
+  font-size: 14px;
+  min-height: 36px;
+}
+
+/* ---------- Contenido ---------- */
+.panel-cuerpo {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 32px 32px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.panel-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+
+.panel-cabeza__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.panel-cabeza h1 {
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+/* El nombre del candidato va como h2: el h1 de la página es el cargo de la vacante. */
+.titulo-candidato {
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.panel-cabeza p {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--tx2);
+  max-width: 62ch;
+}
+
+.miga {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--gris);
+}
+
+.miga a {
+  color: var(--gris);
+}
+
+.miga i {
+  font-style: normal;
+  color: var(--borde2);
+}
+
+/* Bloque de una página del panel: título con su frase en gris y el contenido, sin cajas dentro
+   de cajas. Los bloques se separan con aire y una línea fina. */
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bloque + .bloque {
+  padding-top: 32px;
+  border-top: 1px solid var(--borde);
+}
+
+.bloque__cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.bloque__cabeza > div {
+  flex: 1 1 480px;
+}
+
+.bloque__cabeza h2 {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  max-width: 40ch;
+}
+
+.bloque__cabeza p {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tx2);
+  max-width: 68ch;
+}
+
+/* Superficie blanca: la "ventana" de la app (lista, editor, columna lateral). */
+.superficie {
+  background: var(--sup);
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  box-shadow: var(--sombra);
+}
+
+.superficie--relleno {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.superficie--relleno h2 {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Vacante: barra lateral + contenido ---------- */
+.vacante-marco {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.lateral {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.lateral__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--tx2);
+  font-weight: 500;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.lateral__item svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+.lateral__item em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gris);
+}
+
+.lateral__item[aria-current="page"] {
+  background: var(--sup);
+  color: var(--primario-osc);
+  box-shadow: 0 0 0 1px var(--borde);
+}
+
+.lateral__item[aria-current="page"] svg {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lateral__item:hover {
+    background: var(--linea);
+    color: var(--tx);
+    text-decoration: none;
+  }
+
+  .lateral__item[aria-current="page"]:hover {
+    background: var(--sup);
+    color: var(--primario-osc);
+  }
+}
+
+.lateral__titulo {
+  margin: 18px 10px 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gris);
+}
+
+.lateral__etapa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 0 10px;
+  color: var(--tx2);
+}
+
+.lateral__etapa i {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-etapa, var(--primario));
+}
+
+.lateral__etapa span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lateral__etapa em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gris);
+}
+
+.lateral__etapa[data-tipo="texto"],
+.etapa-color[data-tipo="texto"] { --color-etapa: var(--primario); --color-etapa-cl: var(--primario-cl); }
+.lateral__etapa[data-tipo="voz"],
+.etapa-color[data-tipo="voz"] { --color-etapa: var(--acento-osc); --color-etapa-cl: var(--acento-cl); }
+.lateral__etapa[data-tipo="entrevista"],
+.etapa-color[data-tipo="entrevista"] { --color-etapa: var(--verde); --color-etapa-cl: var(--verde-cl); }
+.lateral__etapa[data-tipo="cv"],
+.etapa-color[data-tipo="cv"] { --color-etapa: var(--gris); --color-etapa-cl: var(--linea); }
+
+.vacante-contenido {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Aviso de estado de la vacante (borrador o publicada) en una línea. */
+.aviso-vacante {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 14px 16px 14px 20px;
+}
+
+.aviso-vacante__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  color: var(--tx2);
+}
+
+.aviso-vacante__texto b {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+/* ---------- Chips de estado ---------- */
+.chip-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--primario-cl);
+  color: var(--primario-osc);
+}
+
+.chip-estado::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.chip-estado--ok { background: var(--verde-cl); color: var(--verde-tx); }
+.chip-estado--revisar { background: var(--acento-cl); color: var(--naranja); }
+.chip-estado--no { background: var(--peligro-cl); color: var(--peligro-osc); }
+.chip-estado--neutro { background: var(--linea); color: var(--tx2); }
+
+/* ---------- Filas (lista de vacantes y de postulantes) ---------- */
+.lista-filas {
+  list-style: none;
+  overflow: hidden;
+}
+
+.lista-filas__cabeza,
+.fila {
+  display: grid;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+}
+
+.lista-filas__cabeza {
+  height: 44px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gris);
+  border-bottom: 1px solid var(--borde);
+}
+
+.fila {
+  min-height: 68px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--linea);
+  font-size: 14px;
+  color: var(--tx2);
+}
+
+.lista-filas > li:last-child > .fila {
+  border-bottom: 0;
+}
+
+a.fila {
+  color: inherit;
+  transition: background-color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.fila:hover {
+    background: var(--fondo);
+    text-decoration: none;
+  }
+}
+
+.lista-postulantes .lista-filas__cabeza,
+.lista-postulantes .fila {
+  grid-template-columns: 44px minmax(0, 1.4fr) minmax(0, 1fr) minmax(140px, 1fr) 132px 20px;
+}
+
+.lista-vacantes .lista-filas__cabeza,
+.lista-vacantes .fila {
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 2fr) auto;
+}
+
+.avatar-num {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--primario-cl);
+  color: var(--primario-osc);
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.fila__principal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fila__principal b {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tx);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fila__principal small {
+  font-size: 13px;
+  color: var(--gris);
+}
+
+.fila__alerta {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--peligro-osc);
+}
+
+.fila__ajuste {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fila__ajuste .num {
+  min-width: 28px;
+  font-size: 15px;
+  color: var(--tx);
+}
+
+.fila__flecha {
+  color: var(--borde2);
+  transition: transform 160ms var(--ease-out), color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.fila:hover .fila__flecha {
+    color: var(--primario);
+    transform: translateX(2px);
+  }
+}
+
+.fila__chip {
+  justify-self: start;
+}
+
+.fila__principal .chip-estado {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+
+/* Embudo de una vacante: cuántos llegaron a cada etapa, en cuatro columnas cortas. */
+.embudo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.embudo > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--gris);
+}
+
+.embudo b {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+}
+
+.fila__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.fila-vacante {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.lista-filas > li:last-child.fila-vacante {
+  border-bottom: 0;
+}
+
+.fila-vacante > .fila {
+  border-bottom: 0;
+}
+
+.fila-vacante__quitar {
+  padding: 0 20px 14px;
+}
+
+/* ---------- Detalle del postulante ---------- */
+.detalle-marco {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  align-items: start;
+}
+
+.detalle-principal {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.detalle-lateral {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.total-ia {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.total-ia b {
+  font-size: 44px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+}
+
+.total-ia span {
+  font-size: 15px;
+  color: var(--gris);
+}
+
+.etapa-puntaje {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.etapa-puntaje__fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--tx);
+}
+
+/* Respuesta del postulante con la evidencia marcada (como el documento del inicio). */
+.respuesta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 0;
+  border-top: 1px solid var(--linea);
+}
+
+.respuesta:first-child {
+  border-top: 0;
+  padding-top: 4px;
+}
+
+.respuesta__pregunta {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--tx);
+}
+
+.respuesta__texto {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--tx2);
+  white-space: pre-wrap;
+}
+
+mark.evidencia-marca {
+  background: var(--primario-cl);
+  color: var(--tx);
+  border-bottom: 2px solid var(--primario);
+  border-radius: 3px;
+  padding: 1px 2px;
+}
+
+.analisis-etapa {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+}
+
+.analisis-etapa__cabeza {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+
+.analisis-etapa__cabeza b {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.analisis-etapa__cabeza strong {
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.analisis-etapa__cabeza strong span {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--gris);
+}
+
+.criterio {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0;
+  border-top: 1px solid var(--borde);
+}
+
+.criterio__fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--tx);
+}
+
+.criterio__cita {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+
+.criterio__aviso {
+  color: var(--naranja);
+  font-weight: 500;
+}
+
+.analisis-etapa__notas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--borde);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+
+.pestanas-etapa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.datos-cv {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  font-size: 15px;
+  color: var(--tx);
+}
+
+.datos-cv small {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 13px;
+  color: var(--gris);
+}
+
+.requisitos-cv {
+  display: flex;
+  flex-direction: column;
+}
+
+.requisito-cv {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-top: 1px solid var(--linea);
+}
+
+.requisito-cv__fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--tx);
+}
+
+.historial {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--linea);
+  font-size: 13px;
+  color: var(--tx2);
+}
+
+.historial__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ---------- Rúbrica ---------- */
+.rubrica-marco {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+.nota-etica {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--acento-cl);
+  color: var(--naranja);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.nota-etica b {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+/* ---------- Tableta y celular ---------- */
+@media (max-width: 1023px) {
+  .vacante-marco,
+  .detalle-marco,
+  .rubrica-marco {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* La barra lateral se vuelve una fila de pestañas arriba. */
+  .lateral {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .lateral__item {
+    height: 40px;
+  }
+
+  .lateral__titulo,
+  .lateral__etapa {
+    display: none;
+  }
+
+  .detalle-lateral {
+    position: static;
+  }
+
+  .lista-postulantes .lista-filas__cabeza,
+  .lista-vacantes .lista-filas__cabeza {
+    display: none;
+  }
+
+  .lista-postulantes .fila {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    row-gap: 8px;
+  }
+
+  .lista-postulantes .fila__etapa,
+  .lista-postulantes .fila__ajuste {
+    grid-column: 2 / -1;
+  }
+
+  .lista-postulantes .fila__chip {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .lista-postulantes .fila__flecha {
+    display: none;
+  }
+
+  .lista-vacantes .fila {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 14px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .lista-vacantes .fila__acciones {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .panel-barra__interior,
+  .panel-cuerpo {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .panel-barra__empresa,
+  .panel-barra__usuario > span {
+    display: none;
+  }
+
+  .panel-cabeza h1 {
+    font-size: 28px;
+  }
+
+  .embudo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

@@ -215,14 +215,20 @@ export async function puntuarEtapa(
     const d = dados.find((x) => Number(x?.indice) === i + 1);
     const n = d?.puntaje == null ? null : Number(d.puntaje);
     const puntaje = n == null || !Number.isFinite(n) ? null : Math.max(0, Math.min(100, Math.round(n)));
-    const respuesta = respuestaDe.get(Number(d?.numero_pregunta));
+    const numeroPregunta = Number(d?.numero_pregunta);
+    const respuesta = respuestaDe.get(numeroPregunta);
+    const cita = String(d?.cita ?? "");
+    const citaOk = puntaje != null && respuesta != null && citaVerificada(cita, respuesta);
     return {
       nombre: c.nombre,
       peso: c.peso,
       puntaje,
       evidencia: limpio(d?.evidencia, 300) || "Sin evidencia en las respuestas.",
       // Sin puntaje no hay nada que sustentar.
-      verificada: puntaje == null ? true : respuesta != null && citaVerificada(String(d?.cita ?? ""), respuesta),
+      verificada: puntaje == null ? true : citaOk,
+      // La cita solo se guarda si es un fragmento literal de la respuesta (verificada): así el
+      // panel la marca en el texto y nunca muestra algo que el postulante no escribió.
+      ...(citaOk ? { cita: cita.slice(0, 400), pregunta: numeroPregunta } : {}),
     };
   });
 

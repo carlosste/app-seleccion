@@ -109,7 +109,7 @@ export default async function Postulacion({
               title="De 6 a 20 letras o números"
               aria-describedby="documento-ayuda"
             />
-            <span id="documento-ayuda" className="texto-gris" style={{ fontSize: 12 }}>
+            <span id="documento-ayuda" className="texto-gris" style={{ fontSize: 13 }}>
               Con este número vuelves a entrar: es tu ID y tu contraseña.
             </span>
           </div>
@@ -118,7 +118,7 @@ export default async function Postulacion({
             <input id="cv" name="cv" type="file" accept="application/pdf" className="inp" required />
           </div>
 
-          <div className="nota nota-az" style={{ fontSize: 12, lineHeight: 1.5, flexDirection: "column", gap: 4 }}>
+          <div className="nota nota-az" style={{ fontSize: 13, lineHeight: 1.5, flexDirection: "column", gap: 4 }}>
             <span>
               <b>Tus datos.</b> Responsable: <b>{vacante.empresa_nombre}</b>. Se usan solo para este proceso de selección. Una
               IA de un proveedor externo (Google) analiza tu hoja de vida y tus respuestas; la decisión de cada etapa la toma
@@ -132,13 +132,13 @@ export default async function Postulacion({
 
           <div className="flex" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
             <input id="acepto_datos" name="acepto_datos" type="checkbox" required style={{ width: 20, height: 20, marginTop: 2, flexShrink: 0 }} />
-            <label htmlFor="acepto_datos" style={{ fontSize: 12, lineHeight: 1.45, color: "var(--tx2)" }}>
+            <label htmlFor="acepto_datos" style={{ fontSize: 13, lineHeight: 1.45, color: "var(--tx2)" }}>
               {CASILLA_DATOS}
             </label>
           </div>
           <div className="flex" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
             <input id="acepto_grabacion" name="acepto_grabacion" type="checkbox" required style={{ width: 20, height: 20, marginTop: 2, flexShrink: 0 }} />
-            <label htmlFor="acepto_grabacion" style={{ fontSize: 12, lineHeight: 1.45, color: "var(--tx2)" }}>
+            <label htmlFor="acepto_grabacion" style={{ fontSize: 13, lineHeight: 1.45, color: "var(--tx2)" }}>
               {CASILLA_GRABACION}
             </label>
           </div>

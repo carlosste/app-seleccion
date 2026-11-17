@@ -17,7 +17,18 @@ export type ResultadoCv = {
 
 // verificada (desde VERSION_PUNTAJE 3): la cita de la IA aparece en la respuesta. false = la
 // evidencia no se encontró tal cual; revisar a mano.
-export type CriterioPuntuado = { nombre: string; peso: number; puntaje: number | null; evidencia: string; verificada?: boolean };
+// cita y pregunta (2026-11-16, rediseño del panel): el fragmento literal de la respuesta y su
+// número de pregunta, guardados SOLO si la cita se verificó, para marcarlo en la respuesta.
+// Opcionales: las evaluaciones anteriores no los tienen y se ven igual, sin marca.
+export type CriterioPuntuado = {
+  nombre: string;
+  peso: number;
+  puntaje: number | null;
+  evidencia: string;
+  verificada?: boolean;
+  cita?: string;
+  pregunta?: number;
+};
 
 // Sube cuando cambia cómo se califica (prompt, escala, temperatura). Una etapa evaluada con
 // otra versión se vuelve a calificar, para que todos queden medidos con el mismo criterio.

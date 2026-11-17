@@ -37,7 +37,7 @@ export function RequisitosEditor({ vacanteId, requisitos }: { vacanteId: string;
           {aviso}
         </div>
       )}
-      <div className="tabla-caja">
+      <div className="superficie tabla-caja">
         <table style={{ minWidth: 640 }}>
           <thead>
             <tr>
@@ -67,7 +67,7 @@ export function RequisitosEditor({ vacanteId, requisitos }: { vacanteId: string;
       </div>
 
       {confirmarIa ? (
-        <div className="nota nota-na" role="alertdialog" aria-label="Confirmar sugerencia de la IA" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div className="nota nota-na nota-columna" role="alertdialog" aria-label="Confirmar sugerencia de la IA">
           <span>
             <b>¿Reemplazar todos los requisitos por los que sugiera la IA para este cargo?</b> Los actuales se borran; después
             puedes editar los nuevos.

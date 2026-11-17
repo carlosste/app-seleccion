@@ -203,6 +203,13 @@ bloquearía, sin bloquearlo. Pasará a obligatoria cuando el flujo completo no m
 No usa *nonces* porque la guía de Next.js 16 indica que son incompatibles con el
 prerenderizado parcial (PPR) que usa la app.
 
+**Excepción de la página de inicio (2026-11-16).** `/` muestra una página estática
+(`public/inicio/index.html`) que carga sus fuentes desde Google Fonts. Solo para esa ruta, la CSP
+suma `https://fonts.googleapis.com` en `style-src` y `https://fonts.gstatic.com` en `font-src`.
+Esas dos direcciones solo sirven hojas de estilo y archivos de fuente, y la página de inicio no
+tiene formularios ni datos del postulante. El resto de la app no cambia: sus fuentes las sirve
+`next/font` desde el propio dominio.
+
 **Cómo se probó:** se revisaron las cabeceras en las páginas y en la API, y que las páginas
 públicas no generaran avisos de la política.
 

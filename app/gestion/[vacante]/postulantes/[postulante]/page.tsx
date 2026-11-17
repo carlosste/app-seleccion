@@ -16,15 +16,17 @@ const VEREDICTO: Record<VeredictoCv, { texto: string; color: string }> = {
 };
 
 const REQUISITO: Record<EstadoRequisito, { texto: string; clase: string }> = {
-  cumple: { texto: "Cumple", clase: "est pasa" },
-  no_cumple: { texto: "No cumple", clase: "est no" },
-  no_se_sabe: { texto: "Sin dato", clase: "est pend" },
+  cumple: { texto: "Cumple", clase: "chip-estado chip-estado--ok" },
+  no_cumple: { texto: "No cumple", clase: "chip-estado chip-estado--no" },
+  no_se_sabe: { texto: "Sin dato", clase: "chip-estado chip-estado--revisar" },
 };
 
 const fecha = (iso: string) =>
   new Date(iso).toLocaleString("es-CO", { timeZone: "America/Bogota", dateStyle: "short", timeStyle: "short" });
 
-// E · Detalle del postulante: respuestas, CV sin datos personales, evaluación con evidencia y decisión.
+// E · Detalle del postulante: respuestas con la evidencia marcada, CV sin datos personales,
+// evaluación de la IA por etapa y decisión. Dos columnas: el contenido a la izquierda y, fija a
+// la derecha, el total, las etapas, la decisión y el historial.
 // La postulación se busca con la sesión de la empresa: si es de otra empresa, 404.
 export default async function DetallePostulante({ params }: PageProps<"/gestion/[vacante]/postulantes/[postulante]">) {
   const { vacante: idVacante, postulante: numero } = await params;
@@ -43,33 +45,35 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
 
   return (
     <>
-      <div className="flex" style={{ justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>
-        <div>
-          <Link href={`/gestion/${vacante.id}/postulantes`} className="volver">
-            ← {vacante.cargo} · Postulantes
-          </Link>
-          <h1 className="titulo-pagina">{datos.revelado && datos.nombre ? datos.nombre : `Candidato #${datos.numero}`}</h1>
+      <div className="panel-cabeza">
+        <div className="panel-cabeza__texto">
+          <nav className="miga" aria-label="Ruta">
+            <Link href={`/gestion/${vacante.id}/postulantes`}>Postulantes</Link>
+            <i aria-hidden="true">/</i>
+            <span>#{datos.numero}</span>
+          </nav>
+          <h2 className="titulo-candidato">{datos.revelado && datos.nombre ? datos.nombre : `Candidato #${datos.numero}`}</h2>
         </div>
         <div className="flex">
-          {!datos.revelado && <span className="chip chip-grande">Nombre oculto hasta la entrevista</span>}
+          {!datos.revelado && <span className="chip-estado chip-estado--neutro">Nombre oculto hasta la entrevista</span>}
           <VisorCv postulacionId={datos.id} numero={datos.numero} tieneCv={datos.tieneCv} />
         </div>
       </div>
 
-      <div className="dos">
-        <section className="ancho">
-          <div className="tarjeta">
-            <h2 style={{ fontSize: 18 }}>Respuestas por etapa</h2>
+      <div className="detalle-marco">
+        <div className="detalle-principal">
+          <section className="superficie superficie--relleno" aria-labelledby="h-respuestas">
+            <h2 id="h-respuestas">Respuestas por etapa</h2>
             <RespuestasPostulante grupos={datos.grupos} evaluaciones={rubrica && !rubrica.anterior ? rubrica.etapas : []} />
-          </div>
+          </section>
 
-          <div className="tarjeta">
-            <h2 style={{ fontSize: 18 }}>Hoja de vida (sin datos personales)</h2>
+          <section className="superficie superficie--relleno" aria-labelledby="h-cv">
+            <h2 id="h-cv">Hoja de vida (sin datos personales)</h2>
             {!cv ? (
               <span className="texto-gris">Sin analizar. Usa “Evaluar con IA” para leerla y revisar los requisitos mínimos.</span>
             ) : (
               <>
-                <div className="grid-datos">
+                <div className="datos-cv">
                   {cv.hojaDeVida.map((d) => (
                     <div key={d.etiqueta}>
                       <small>{d.etiqueta}</small>
@@ -82,22 +86,22 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
                   </div>
                 </div>
                 {cv.requisitos.length > 0 && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid var(--linea)", paddingTop: 12 }}>
+                  <div className="requisitos-cv">
                     {cv.requisitos.map((q) => (
-                      <div key={q.requisito + q.minimo}>
-                        <div className="fila-puntaje" style={{ alignItems: "center", gap: 8 }}>
+                      <div key={q.requisito + q.minimo} className="requisito-cv">
+                        <div className="requisito-cv__fila">
                           <span>
                             <b>{q.requisito}</b> · mínimo: {q.minimo}
                           </span>
                           <span className={REQUISITO[q.estado].clase}>{REQUISITO[q.estado].texto}</span>
                         </div>
-                        <div className="evidencia">{q.evidencia}</div>
+                        <div className="criterio__cita">{q.evidencia}</div>
                       </div>
                     ))}
                   </div>
                 )}
                 {cv.sospecha && (
-                  <div className="nota nota-error" role="alert" style={{ fontSize: 13 }}>
+                  <div className="nota nota-error" role="alert">
                     <span>
                       <b>Posible intento de manipular la lectura de la hoja de vida:</b> no avanzó ni se descartó sola. Ábrela y
                       revisa los requisitos a mano.{cv.motivoSospecha && <> Motivo: {cv.motivoSospecha}</>}
@@ -105,51 +109,44 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
                   </div>
                 )}
                 {cv.veredicto === "por_revisar" && !cv.sospecha && (
-                  <span className="texto-gris" style={{ fontSize: 13 }}>
-                    La IA no encontró algún dato: no se descarta. Revisa y decide tú.
-                  </span>
+                  <span className="texto-gris">La IA no encontró algún dato: no se descarta. Revisa y decide tú.</span>
                 )}
-                <span className="texto-gris" style={{ fontSize: 12 }}>
+                <span className="texto-gris">
                   Analizada por la IA el {fecha(cv.fecha)}. Los requisitos mínimos no los ve el postulante.
                 </span>
               </>
             )}
-          </div>
-        </section>
+          </section>
+        </div>
 
-        <aside className="lado">
-          <div className="tarjeta">
-            <div className="flex" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
-              <h2 style={{ fontSize: 18 }}>Evaluación de la IA</h2>
-              {rubrica?.ajuste != null && (
-                <span style={{ fontSize: 24, fontWeight: 700 }}>
-                  <span style={{ fontSize: 13, color: "var(--gris)", fontWeight: 500 }}>Total </span>
-                  {rubrica.ajuste}
-                  <span style={{ fontSize: 14, color: "var(--gris)", fontWeight: 500 }}>/100</span>
-                </span>
-              )}
-            </div>
+        <aside className="detalle-lateral">
+          <section className="superficie superficie--relleno" aria-labelledby="h-evaluacion">
+            <h2 id="h-evaluacion">Evaluación de la IA</h2>
+            {rubrica?.ajuste != null && (
+              <div className="total-ia">
+                <b>{rubrica.ajuste}</b>
+                <span>de 100{variasEtapas ? ", promedio de las etapas" : ""}</span>
+              </div>
+            )}
             {!rubrica ? (
               <span className="texto-gris">Sin evaluar todavía.</span>
             ) : rubrica.anterior ? (
-              <span className="texto-gris" style={{ fontSize: 13 }}>
+              <span className="texto-gris">
                 Esta evaluación se hizo antes de separar por etapa. Usa el botón para verla etapa por etapa.
               </span>
             ) : (
               <>
                 {/* Una barra por etapa; el total es el promedio de las etapas evaluadas. */}
                 {rubrica.etapas.map((e) => (
-                  <div key={e.etapaId}>
-                    <div className="fila-puntaje">
-                      <b>{e.nombre}</b>
+                  <div key={e.etapaId} className="etapa-puntaje">
+                    <div className="etapa-puntaje__fila">
+                      <span>{e.nombre}</span>
                       <span className="num">{e.ajuste ?? "—"}</span>
                     </div>
-                    <Barra valor={e.ajuste ?? 0} />
+                    <Barra valor={e.ajuste ?? 0} fina />
                   </div>
                 ))}
-                <span className="texto-gris" style={{ fontSize: 12 }}>
-                  {variasEtapas ? "Total = promedio de las etapas. " : ""}El detalle de cada etapa está en su pestaña de respuestas.
-                </span>
+                <span className="texto-gris">El detalle de cada etapa está en su pestaña de respuestas.</span>
               </>
             )}
             <EvaluarIa
@@ -159,10 +156,10 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
               yaEvaluada={Boolean(cv || rubrica)}
               enProceso={enProceso}
             />
-          </div>
+          </section>
 
-          <div className="tarjeta">
-            <h2 style={{ fontSize: 16 }}>Tu decisión</h2>
+          <section className="superficie superficie--relleno" aria-labelledby="h-decision">
+            <h2 id="h-decision">Tu decisión</h2>
             <DecisionPostulante
               vacanteId={vacante.id}
               postulacionId={datos.id}
@@ -172,18 +169,25 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
               puedeDecidir={sesion.rol === "gestion_humana"}
             />
             {datos.decisiones.length > 0 && (
-              <div style={{ borderTop: "1px solid var(--linea)", paddingTop: 12, display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
-                <b>Historial</b>
+              <div className="historial">
+                <span className="etiqueta-sec">Historial</span>
                 {datos.decisiones.map((d) => (
-                  <div key={d.fecha + d.etapa}>
-                    <span className={d.resultado === "pasa" ? "est pasa" : "est no"}>{d.resultado === "pasa" ? "Pasa" : "No pasa"}</span>{" "}
-                    {d.etapa} · {d.automatica ? "IA, requisitos mínimos" : "gestión humana"} · {fecha(d.fecha)}
-                    {d.motivo && <div className="evidencia">{d.motivo}</div>}
+                  <div key={d.fecha + d.etapa} className="historial__item">
+                    <span>
+                      <span className={d.resultado === "pasa" ? "chip-estado chip-estado--ok" : "chip-estado chip-estado--no"}>
+                        {d.resultado === "pasa" ? "Pasa" : "No pasa"}
+                      </span>{" "}
+                      {d.etapa}
+                    </span>
+                    <span className="texto-gris">
+                      {d.automatica ? "IA, requisitos mínimos" : "Gestión humana"} · {fecha(d.fecha)}
+                    </span>
+                    {d.motivo && <span className="criterio__cita">{d.motivo}</span>}
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </section>
         </aside>
       </div>
     </>

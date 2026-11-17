@@ -41,7 +41,7 @@ export function EvaluarIa({
       <button type="button" className="btn btn-claro" onClick={evaluar} disabled={deshabilitado}>
         {cargando ? "Evaluando… (puede tardar unos segundos)" : yaEvaluada ? "Actualizar evaluación con IA" : "Evaluar con IA"}
       </button>
-      <span className="texto-gris" style={{ fontSize: 12 }}>
+      <span className="texto-gris" style={{ fontSize: 13 }}>
         {ayuda}
       </span>
       {mensaje && (

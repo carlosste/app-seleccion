@@ -90,7 +90,7 @@ export function PreguntasVoz({
             onChange={(e) => setTexto(e.target.value)}
             disabled={enviando}
           />
-          <span className="texto-gris" style={{ fontSize: 12, textAlign: "right" }}>
+          <span className="texto-gris" style={{ fontSize: 13, textAlign: "right" }}>
             {texto.length} / {LARGO_MAXIMO}
           </span>
         </div>
@@ -104,7 +104,7 @@ export function PreguntasVoz({
         <button type="submit" className="btn" disabled={!valido || enviando}>
           {enviando ? "Guardando…" : esUltima ? "Enviar y terminar" : "Enviar y seguir"}
         </button>
-        <span className="texto-gris centrado" style={{ fontSize: 12 }}>
+        <span className="texto-gris centrado" style={{ fontSize: 13 }}>
           Cada respuesta se guarda al enviarla. Si sales, al volver sigues donde ibas.
         </span>
       </form>

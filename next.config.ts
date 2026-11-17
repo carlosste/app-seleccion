@@ -26,6 +26,12 @@ const csp = [
   ...(desarrollo ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
+// La página de inicio (public/inicio/index.html) es estática y carga sus fuentes de Google Fonts:
+// solo esa ruta suma fonts.googleapis.com (hoja de estilos) y fonts.gstatic.com (archivos de fuente).
+const cspInicio = csp
+  .replace("style-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com")
+  .replace("font-src 'self'", "font-src 'self' https://fonts.gstatic.com");
+
 const cabecerasSeguridad = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -45,7 +51,15 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: "4.5mb" },
   },
   async headers() {
-    return [{ source: "/:path*", headers: cabecerasSeguridad }];
+    // La regla de "/" va después: con la misma clave, Next.js aplica la última que coincide.
+    return [
+      { source: "/:path*", headers: cabecerasSeguridad },
+      { source: "/", headers: [{ key: "Content-Security-Policy-Report-Only", value: cspInicio }] },
+    ];
+  },
+  async rewrites() {
+    // "/" muestra la página de inicio para empresas (construida con la skill design-taste-frontend).
+    return { beforeFiles: [{ source: "/", destination: "/inicio/index.html" }], afterFiles: [], fallback: [] };
   },
 };
 

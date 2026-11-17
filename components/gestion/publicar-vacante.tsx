@@ -12,12 +12,10 @@ export function PublicarVacante({ id, estado, enlaceToken }: { id: string; estad
 
   if (estado === "abierta") {
     return (
-      <div className="tarjeta flex" style={{ justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <div>
+      <div className="superficie aviso-vacante">
+        <div className="aviso-vacante__texto">
           <b>Vacante publicada</b>
-          <div className="texto-gris" style={{ fontSize: 14 }}>
-            Los postulantes entran con este link: /postular/{enlaceToken}
-          </div>
+          <span>Los postulantes entran con este link: /postular/{enlaceToken}</span>
         </div>
         <CopiarLink ruta={`/postular/${enlaceToken}`} />
       </div>
@@ -27,14 +25,14 @@ export function PublicarVacante({ id, estado, enlaceToken }: { id: string; estad
   if (estado !== "borrador") return null;
 
   return (
-    <form action={accion} className="tarjeta flex" style={{ justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+    <form action={accion} className="superficie aviso-vacante">
       <input type="hidden" name="id" value={id} />
-      <div>
+      <div className="aviso-vacante__texto">
         <b>Esta vacante está en borrador</b>
-        <div className="texto-gris" style={{ fontSize: 14 }}>
+        <span>
           Publícala para generar su link de postulación. Al publicar, las preguntas de la primera etapa quedan fijas
           para que todos respondan las mismas.
-        </div>
+        </span>
         {resultado.estado === "error" && (
           <div className="nota nota-error" role="alert">
             {resultado.mensaje}

@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="es" data-type="software" data-radius="soft" data-ground="sand" data-buttons="arrow" data-motion>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Selección: software de selección de personal con IA para gestión humana</title>
+<meta name="description" content="Publica la vacante, define las etapas del proceso y deja que la IA revise hojas de vida y respuestas para encontrar al candidato indicado.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Selección: selección de personal con IA para gestión humana">
+<meta property="og:description" content="La IA lee hojas de vida y puntúa respuestas con evidencia; tu equipo decide quién sigue.">
+<meta property="og:image" content="/inicio/share.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/inicio/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f7f9f8">
+<!-- <link rel="canonical" href="https://[dominio propio]/"> pendiente: la app aún no tiene dominio propio -->
+<meta name="site-kind" content="software">
+<meta name="page-type" content="software">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/inicio/assets/system.css">
+<link rel="stylesheet" href="/inicio/assets/ui/cards.css">
+<link rel="stylesheet" href="/inicio/assets/motion/motion.css">
+<link rel="stylesheet" href="/inicio/assets/backgrounds/backgrounds.css">
+<link rel="stylesheet" href="/inicio/assets/layout/layout.css">
+<link rel="stylesheet" href="/inicio/assets/icons/icon.css">
+<style>
+:root {
+  --p-bg: #f7f9f8; --p-surface: #ebf0ee; --p-ink: #06525c; --p-muted: #2f737d;
+  --p-accent: #06525c; --p-accent-ink: #f7f9f8; --p-action: #06525c; --p-action-ink: #f7f9f8;
+  --p-inv-bg: #06525c; --p-inv-surface: #205d66; --p-inv-ink: #f7f9f8; --p-inv-muted: #c1d0d2;
+  --p-inv-accent: #f7f9f8; --p-inv-accent-ink: #06525c; --p-inv-action: #f7f9f8; --p-inv-action-ink: #06525c;
+  --font-display: "Onest", system-ui, sans-serif;
+  --font-text: "Onest", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 400;
+  --display-tracking: -0.035em;
+  --display-tracking-xl: -0.04em;
+}
+</style>
+<link rel="stylesheet" href="/inicio/assets/ui/base.css">
+<link rel="stylesheet" href="/inicio/assets/ui/window/fragment.css">
+<link rel="stylesheet" href="/inicio/assets/ui/doc/fragment.css">
+<link rel="stylesheet" href="/inicio/assets/moments/word-highlight/moment.css">
+<script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
+<script src="/inicio/assets/backgrounds/backgrounds.js"></script>
+<script>document.documentElement.classList.add('mo-js');setTimeout(()=>document.documentElement.classList.add('mo-safe'),2500)</script>
+<link rel="modulepreload" href="/inicio/assets/moments/moments.js">
+<link rel="modulepreload" href="/inicio/assets/moments/lib.js">
+<link rel="modulepreload" href="/inicio/assets/moments/word-highlight/moment.js">
+<style>
+/* Página: solo lo que va dentro de una pieza visual (la interfaz de la app dibujada en HTML). */
+.d-win { background: #fff; color: #16181a; border-radius: 12px; overflow: hidden; font: 400 14px/1.4 var(--font-text);
+         box-shadow: 0 0 0 1px rgb(0 0 0 / .07), 0 24px 60px -28px rgb(0 0 0 / .45); text-align: left; }
+.d-win__bar { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; border-bottom: 1px solid rgb(0 0 0 / .07); font-size: 13px; color: #5d6268; }
+.d-win__dots { display: flex; gap: 6px; } .d-win__dots i { width: 10px; height: 10px; border-radius: 50%; background: #dcdfe2; }
+.d-win__body { display: grid; grid-template-columns: 160px 1fr; min-height: 420px; }
+.d-side { padding: 14px 10px; border-right: 1px solid rgb(0 0 0 / .07); display: grid; align-content: start; gap: 2px; font-size: 13px; color: #4d5257; }
+.d-side > span { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border-radius: 7px; }
+.d-side > span.is-on { background: rgb(0 0 0 / .05); color: #16181a; font-weight: 500; }
+.d-side > span i { width: 14px; height: 14px; border-radius: 4px; background: currentColor; opacity: .3; flex: none; }
+.d-side .d-side__label { font-size: 13px; color: #6b7076; height: 26px; margin-top: 8px; }
+.d-main { padding: 16px 18px; padding-right: var(--ly-cut-room, 48px); display: grid; align-content: start; gap: 12px; min-width: 0; }
+.d-main__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.d-main__head h4 { font: 600 16px/1.2 var(--font-text); letter-spacing: -0.01em; margin: 0; color: inherit; }
+.d-btn { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 7px; background: #06525c; color: #fff; font-size: 13px; font-weight: 500; }
+.d-tabs { display: flex; gap: 4px; font-size: 13px; } .d-tabs span { padding: 4px 10px; border-radius: 99px; color: #5d6268; } .d-tabs span.is-on { background: rgb(0 0 0 / .06); color: #16181a; font-weight: 500; }
+.d-rows { display: grid; border-top: 1px solid rgb(0 0 0 / .07); }
+.d-row { display: grid; grid-template-columns: 36px minmax(0, 1fr) 56px 104px; align-items: center; gap: 12px; padding: 9px 2px; border-bottom: 1px solid rgb(0 0 0 / .07); font-size: 13px; }
+.d-av { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; background: #e3eeec; color: #06525c; font: 500 13px/1 var(--font-mono); }
+.d-row b { display: block; font-weight: 500; color: #16181a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.d-row small { color: #5d6268; font-size: 13px; }
+.d-row .num { text-align: right; font-variant-numeric: tabular-nums; color: #16181a; }
+.d-chip { justify-self: end; display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 99px; font-size: 13px; font-weight: 500; background: #e3f1ee; color: #0b5e52; white-space: nowrap; }
+.d-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.d-chip--rev { background: #fdf0dc; color: #7a4a00; }
+.d-chip--out { background: #fbe6e3; color: #a3271b; }
+.d-card { background: #fff; color: #16181a; border-radius: 12px; padding: 14px 16px; font: 400 14px/1.4 var(--font-text); text-align: left;
+          box-shadow: 0 0 0 1px rgb(0 0 0 / .06), 0 14px 32px -18px rgb(0 0 0 / .35); }
+.d-card h5 { margin: 0 0 4px; font: 600 14px/1.3 var(--font-text); }
+.d-card p { margin: 0; color: #4d5257; font-size: 13px; }
+.d-card__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.d-note__line { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 13px; color: #3d4247; border-top: 1px solid rgb(0 0 0 / .06); }
+.d-note__line i { width: 18px; height: 18px; border-radius: 50%; flex: none; display: grid; place-items: center; background: #e3f1ee; color: #0b5e52; font-style: normal; font-size: 13px; font-weight: 700; }
+.d-note__line i.warn { background: #fdf0dc; color: #7a4a00; }
+.d-note__line b { font-weight: 500; color: #16181a; }
+.d-bar { height: 6px; border-radius: 99px; background: #e6ebea; overflow: hidden; margin: 8px 0 4px; }
+.d-bar i { display: block; height: 100%; width: var(--v); background: #06525c; border-radius: inherit; }
+.hero__art { background:
+    radial-gradient(70% 60% at 18% 12%, color-mix(in oklab, var(--ground-surface) 80%, white), transparent 70%),
+    radial-gradient(60% 50% at 90% 100%, color-mix(in oklab, var(--ground-bg) 80%, var(--ground-accent)), transparent 70%),
+    var(--ground-bg); }
+.hero__art > .ly-piece--note { left: var(--s-6); bottom: var(--s-6); width: 300px; z-index: 2; }
+.hero__proof { font-size: var(--t-small); color: var(--ink); }
+/* la tinta de la paleta es verde azulado: el texto de las tarjetas va en la tinta plena para llegar a 7:1 */
+.card { --c-text: var(--ink); }
+@media (max-width: 1023px) { .hero__art > .ly-piece--note { left: var(--s-4); bottom: var(--s-4); width: 270px; } }
+/* bajo 1280 la ventana del hero pierde la barra lateral, y en tableta muestra cuatro filas: nada queda cortado por el marco */
+@media (max-width: 1279px) { .hero__art .d-win__body { grid-template-columns: 1fr; } .hero__art .d-side { display: none; } }
+@media (max-width: 1279px) { .hero__art .d-row:nth-child(n+6) { display: none; } }
+@media (max-width: 1023px) { .hero__art .d-row:nth-child(n+5) { display: none; } }
+@media (max-width: 639px) { .d-win__body { grid-template-columns: 1fr; } .d-side { display: none; } .d-row { grid-template-columns: 36px minmax(0, 1fr) 104px; } .d-row .num { display: none; } }
+
+/* la línea "Importante" bajo la frase de la empresa */
+#proposito .importante { margin-top: var(--s-7); max-width: 62ch; font-size: var(--t-body); line-height: 1.6; color: var(--ink); }
+#proposito .importante b { font-weight: 500; }
+
+/* app-frame: la lista de candidatos al lado de la respuesta abierta */
+.app.ui { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); margin-top: var(--s-7); background: var(--u-bg); border: 1px solid var(--u-border); border-radius: var(--u-r); box-shadow: var(--u-shadow); }
+.app > .app__pane { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+.app > .app__pane + .app__pane { border-left: 1px solid var(--u-line); }
+.app > .app__pane > .ui-panel { width: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.app > .app__pane::after { content: ""; position: absolute; inset: auto 0 0 0; height: 64px; background: linear-gradient(transparent, var(--u-bg)); pointer-events: none; }
+.app .ui-doc { width: 100%; }
+@media (min-width: 1024px) and (max-width: 1279px) { .app.ui { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); } }
+@media (max-width: 1023px) {
+  .app.ui { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .app > .app__pane--list { max-height: 252px; }
+  .app > .app__pane--list::after { display: none; }
+  .app .ui-win__side { display: none; }
+  .app .ui-win__body { grid-template-columns: minmax(0, 1fr); }
+  .app > .app__pane + .app__pane { border-left: 0; border-top: 1px solid var(--u-line); }
+}
+@media (max-width: 639px) {
+  .app.ui { grid-template-rows: minmax(0, 1fr); }
+  .app > .app__pane--list { display: none; }
+  .app > .app__pane + .app__pane { border-top: 0; }
+}
+
+/* pasos y funciones: tarjetas de la app sobre el fondo iluminado */
+#funciones .panel { --p-h: 400px; }
+#etapas .panel { --p-h: 300px; }
+#etapas .panel, #funciones .panel { background:
+    radial-gradient(80% 70% at 20% 0%, color-mix(in oklab, var(--ground-surface) 80%, white), transparent 70%),
+    var(--ground-bg); }
+#etapas .stage > .at-rise, #funciones .stage > .at-rise { --ax: 24px; --ay: 32px; --fit-max: 320px; }
+/* las funciones ocupan dos pantallas: la tarjeta va al pie del panel para que la segunda fila no quede vacía abajo */
+@media (min-width: 1024px) { #funciones .stage > .at-rise { --ay: calc(100% - 196px); } }
+@media (min-width: 640px) and (max-width: 1023px) {
+  #etapas .panel { --p-h: 220px; } #etapas { --h: 2; }
+  /* dos tarjetas por pantalla en tableta: el panel toma lo que deja el alto de la pantalla */
+  #funciones .panel { --p-h: max(180px, calc((100svh - 412px) / 2 - 110px)); }
+  #funciones .card { grid-column: 1 / -1; }
+}
+@media (max-width: 639px) {
+  #etapas .panel { --p-h: 168px; } #funciones .panel { --p-h: 120px; }
+  #etapas .stage > .at-rise, #funciones .stage > .at-rise { --ay-sm: 20px; }
+  /* en el celular cada tarjeta muestra su encabezado y dos líneas: nada queda cortado por el panel */
+  #etapas .d-card > :nth-child(n+4), #funciones .d-card > :nth-child(n+4) { display: none; }  .hero__art .d-row:nth-child(n+3), .hero__art .d-tabs { display: none; }
+}
+</style>
+</head>
+<body>
+<!-- type: software
+     type: onest (host dealt first; falla hero-lines con 50 caracteres, se toma la siguiente)
+     deal: hero collage, nav nav-centre (nav-cards dealt; sin fotografías, repartido de nuevo a nav-centre),
+     close close-type (close-word dealt; el nombre con tilde se corta en su caja, repartido de nuevo),
+     footer footer-statement, rhythm dark-band, buttons arrow, mark dots, ground sand
+     moments: word-highlight en #proposito -->
+<header class="nav nav--centre">
+  <div class="wrap nav__bar">
+    <a class="skip-link" href="#top">Saltar al contenido</a>
+    <a class="nav__logo" href="#top"><span class="mark" data-mark="dots" aria-hidden="true"></span>Selección</a>
+    <nav class="nav__links" aria-label="Principal">
+      <div class="nav__item"><a class="nav__link" href="#producto">Producto</a></div>
+      <div class="nav__item"><a class="nav__link" href="#etapas">Etapas</a></div>
+      <div class="nav__item"><a class="nav__link" href="#funciones">Funciones</a></div>
+      <div class="nav__item"><a class="nav__link" href="#equipo">Tu equipo</a></div>
+    </nav>
+    <div class="nav__actions">
+      <a class="btn btn--primary" href="/empresa/registro">Registrar empresa</a>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menú">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero hero--collage" data-enter aria-labelledby="hero-h">
+    <div class="wrap"><div class="hero-text grid hero__grid">
+      <div class="hero__text span-5">
+        <h1 id="hero-h">Selección con IA para gestión humana</h1>
+        <p class="hero__lead">Publicas la vacante con un link y defines sus etapas. La IA revisa hojas de vida y respuestas y te da un puntaje de 0 a 100 con su evidencia.</p>
+        <div class="btn-row"><a class="btn btn--primary" href="/empresa/registro">Registrar empresa<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a><a class="btn btn--secondary" href="#producto">Ver la app</a></div>
+        <p class="hero__proof">¿Tu empresa ya tiene cuenta? <a class="link" href="/empresa/ingreso">Ingresar al panel</a></p>
+      </div>
+      <div class="hero__art span-6 start-7" role="img" aria-label="Lista de postulantes de una vacante de auxiliar contable, cada uno con su número y su ajuste, y una evaluación terminada del candidato 014">
+        <div class="ly-piece ly-piece--main d-win" aria-hidden="true">
+          <div class="d-win__bar"><span class="d-win__dots"><i></i><i></i><i></i></span><span>Selección · Auxiliar contable</span></div>
+          <div class="d-win__body">
+            <div class="d-side">
+              <span><i></i>Vacantes</span><span><i></i>Requisitos</span><span><i></i>Rúbrica</span><span class="is-on"><i></i>Postulantes</span>
+              <span class="d-side__label">Etapas</span><span><i></i>Hoja de vida</span><span><i></i>Texto</span><span><i></i>Voz</span><span><i></i>Entrevista</span>
+            </div>
+            <div class="d-main">
+              <div class="d-main__head"><h4>Postulantes</h4><span class="d-btn">Analizar todos</span></div>
+              <div class="d-tabs"><span class="is-on">En proceso 23</span><span>Por revisar 3</span><span>Descartados 8</span></div>
+              <div class="d-rows">
+                <div class="d-row"><span class="d-av">014</span><div><b>Candidato #014</b><small>Texto · 5 de 5</small></div><span class="num">82</span><span class="d-chip">Pasa a voz</span></div>
+                <div class="d-row"><span class="d-av">009</span><div><b>Candidato #009</b><small>Texto · 5 de 5</small></div><span class="num">76</span><span class="d-chip">Evaluado</span></div>
+                <div class="d-row"><span class="d-av">021</span><div><b>Candidato #021</b><small>Hoja de vida</small></div><span class="num">–</span><span class="d-chip d-chip--rev">Por revisar</span></div>
+                <div class="d-row"><span class="d-av">017</span><div><b>Candidato #017</b><small>Texto · 3 de 5</small></div><span class="num">–</span><span class="d-chip">Respondiendo</span></div>
+                <div class="d-row"><span class="d-av">006</span><div><b>Candidato #006</b><small>Hoja de vida</small></div><span class="num">–</span><span class="d-chip d-chip--out">No cumple</span></div>
+                <div class="d-row"><span class="d-av">012</span><div><b>Candidato #012</b><small>Voz · 2 de 3</small></div><span class="num">71</span><span class="d-chip">Evaluado</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ly-piece ly-piece--note d-card" aria-hidden="true" data-ly-steps="700">
+          <div class="d-card__row"><h5>Candidato #014</h5><span class="d-chip" data-step data-step-at="4">Evaluado</span></div>
+          <div class="d-note__line" data-step><i>✓</i><span>Cumple los <b>5 requisitos mínimos</b></span></div>
+          <div class="d-note__line" data-step><i>✓</i><span>Etapa de texto: <b>82 de 100</b></span></div>
+          <div class="d-note__line" data-step><i class="warn">!</i><span>Quién pasa lo decides tú</span></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="section" id="producto" aria-labelledby="producto-h">
+    <div class="wrap">
+      <div class="grid">
+        <h2 id="producto-h" class="span-5">Cada respuesta, puntuada con su evidencia</h2>
+        <p class="span-6 start-7">A la izquierda, los postulantes de la vacante, cada uno con un código para ubicarlo rápido entre decenas de hojas de vida. Al abrir uno ves sus respuestas con la frase que sostiene cada puntaje de la rúbrica, y decides si pasa a la siguiente etapa. <a class="link" href="/empresa/registro">Registrar empresa</a></p>
+      </div>
+      <div class="ui app fill" role="img" aria-label="Ventana de la app: la lista de candidatos de la vacante y, abierta, la respuesta del candidato 014 con dos frases marcadas como evidencia de la rúbrica" data-ui-pause-host>
+        <div class="app__pane app__pane--list">
+          <div class="ui ui-panel ui-win" data-ui="window" data-open="Sin evaluar" data-work="Evaluando" data-done="Evaluado">
+            <div class="ui-win__bar">
+              <span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="ui-win__crumb">Auxiliar contable <i>/</i> <b>Postulantes</b></span>
+              <span class="ui-spacer"></span>
+              <span class="ui-win__search" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><span class="ui-win__ph">Buscar</span><span class="ui-kbd">/</span></span>
+            </div>
+            <div class="ui-win__body">
+              <nav class="ui-win__side" aria-hidden="true">
+                <span class="ui-win__nav is-on"><svg class="ui-icon" viewBox="0 0 16 16"><circle cx="8" cy="6" r="2.5"/><path d="M3.5 13.5c.6-2.3 2.4-3.5 4.5-3.5s3.9 1.2 4.5 3.5"/></svg>En proceso<em>23</em></span>
+                <span class="ui-win__nav"><svg class="ui-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/></svg>Por revisar<em>3</em></span>
+                <span class="ui-win__nav"><svg class="ui-icon" viewBox="0 0 16 16"><path d="m3.5 8.4 2.8 2.8 6.2-6.4"/></svg>Seleccionados</span>
+                <span class="ui-win__label">Etapas</span>
+                <span class="ui-win__nav"><span class="ui-win__hash">1</span>Texto</span>
+                <span class="ui-win__nav"><span class="ui-win__hash">2</span>Voz</span>
+                <span class="ui-win__nav"><span class="ui-win__hash">3</span>Entrevista</span>
+              </nav>
+              <div class="ui-win__main">
+                <div class="ui-win__cols" aria-hidden="true"><span>Candidato</span><span>Etapa</span><span>Estado</span><span>Ajuste</span></div>
+                <ul class="ui-win__rows">
+                  <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="1">14</span><span class="ui-win__who">Candidato #014</span><span class="ui-win__sub">Texto · 5 respuestas</span><span class="ui-win__st" data-st>Sin evaluar</span><span class="ui-win__age">82</span></li>
+                  <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="3">09</span><span class="ui-win__who">Candidato #009</span><span class="ui-win__sub">Texto · 5 respuestas</span><span class="ui-win__st" data-st>Sin evaluar</span><span class="ui-win__age">76</span></li>
+                  <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="4">12</span><span class="ui-win__who">Candidato #012</span><span class="ui-win__sub">Voz · 3 respuestas</span><span class="ui-win__st" data-st>Sin evaluar</span><span class="ui-win__age">71</span></li>
+                  <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="2">21</span><span class="ui-win__who">Candidato #021</span><span class="ui-win__sub">Hoja de vida</span><span class="ui-win__st is-you" data-st>Por revisar</span><span class="ui-win__age">–</span></li>
+                  <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="5">03</span><span class="ui-win__who">Candidato #003</span><span class="ui-win__sub">Entrevista</span><span class="ui-win__st is-done" data-st>Evaluado</span><span class="ui-win__age">88</span></li>
+                  <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="3">17</span><span class="ui-win__who">Candidato #017</span><span class="ui-win__sub">Texto · 3 respuestas</span><span class="ui-win__st is-done" data-st>Evaluado</span><span class="ui-win__age">64</span></li>
+                  <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="1">11</span><span class="ui-win__who">Candidato #011</span><span class="ui-win__sub">Voz · 3 respuestas</span><span class="ui-win__st is-done" data-st>Evaluado</span><span class="ui-win__age">69</span></li>
+                  <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="4">08</span><span class="ui-win__who">Candidato #008</span><span class="ui-win__sub">Texto · 5 respuestas</span><span class="ui-win__st is-done" data-st>Evaluado</span><span class="ui-win__age">58</span></li>
+                  <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="2">19</span><span class="ui-win__who">Candidato #019</span><span class="ui-win__sub">Texto · 4 respuestas</span><span class="ui-win__st is-done" data-st>Evaluado</span><span class="ui-win__age">73</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="app__pane app__pane--open" data-ui-loop>
+          <div class="ui ui-doc" data-ui="doc">
+            <article class="ui-doc__page">
+              <div class="ui-doc__label">Candidato #014 · Etapa de texto · Pregunta 3 de 5</div>
+              <div class="ui-doc__title">Cuéntanos de un cierre de mes que se complicó</div>
+              <div class="ui-doc__text">En marzo el extracto del banco no cuadraba con el auxiliar por una diferencia de 1,2 millones. <mark class="ui-doc__mark is-on">Revisé las conciliaciones día por día</mark> hasta encontrar dos pagos registrados dos veces.</div>
+              <div class="ui-doc__text">Anulé los registros duplicados, dejé la nota en el sistema y <mark class="ui-doc__mark" data-kind="Comunicación · 4 de 5" data-msg="Avisó a su jefe y a tesorería antes del cierre." data-where="Pregunta 3, segundo párrafo">avisé a mi jefe y a tesorería antes del cierre</mark> para que no se repitiera el pago.</div>
+              <div class="ui-doc__text">Desde entonces concilio cada semana y no a fin de mes. El cierre de abril salió dos días antes de la fecha.</div>
+              <div class="ui-doc__text">Uso Excel con tablas dinámicas y el módulo contable de Siigo, que manejé durante dos años.</div>
+              <div class="ui-doc__text">Si la diferencia hubiera sido mayor, la habría escalado el mismo día a la contadora.</div>
+            </article>
+            <aside class="ui-doc__note ui-panel is-on" aria-live="polite">
+              <div class="ui-doc__kind"><span class="ui-doc__dot"></span><span data-doc-kind>Análisis · 5 de 5</span></div>
+              <div class="ui-doc__msg" data-doc-msg>Encontró la causa revisando día por día.</div>
+              <div class="ui-doc__where" data-doc-where>Pregunta 3, primer párrafo</div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="etapas" style="--hm: 2" aria-labelledby="etapas-h">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="etapas-h">Una vacante en 3 pasos. <span class="muted">Las preguntas son iguales para todos los postulantes del cargo.</span></h2>
+      </div>
+      <div class="grid">
+        <article class="card card--row card--open span-4">
+          <span class="step-num">1</span>
+          <h3>Publica la vacante con un link</h3>
+          <p>La IA propone de 4 a 6 requisitos del cargo; tú los ajustas y compartes el link.</p>
+          <div class="panel panel--inset" role="img" aria-label="Requisitos mínimos de la vacante de auxiliar contable">
+            <div class="stage stage--fade-b"><div class="at-rise fit"><div class="d-card" aria-hidden="true">
+              <div class="d-card__row"><h5>Requisitos mínimos</h5><span class="d-chip">Publicada</span></div>
+              <div class="d-note__line"><i>✓</i><span>Técnico en contabilidad</span></div>
+              <div class="d-note__line"><i>✓</i><span><b>1 año</b> de experiencia</span></div>
+              <div class="d-note__line"><i>✓</i><span>Excel intermedio</span></div>
+              <div class="d-note__line"><i>✓</i><span>Mayor de 18 años</span></div>
+            </div></div></div>
+          </div>
+        </article>
+        <article class="card card--row card--open span-4">
+          <span class="step-num">2</span>
+          <h3>Recibe postulaciones desde el celular</h3>
+          <p>El postulante sube su hoja de vida y responde las preguntas por escrito o por voz.</p>
+          <div class="panel panel--inset" role="img" aria-label="Pregunta de la etapa de voz con la opción de responder por texto">
+            <div class="stage stage--fade-b"><div class="at-rise fit"><div class="d-card" aria-hidden="true">
+              <div class="d-card__row"><h5>Pregunta 2 de 3</h5><span class="d-chip d-chip--rev">Voz</span></div>
+              <p>¿Cómo organizas los pagos a proveedores de una semana?</p>
+              <div class="d-bar" style="--v: 38%"><i></i></div>
+              <div class="d-note__line"><i>●</i><span>Grabando <b>1:52</b> de 10:00</span></div>
+              <div class="d-note__line"><i>↺</i><span>Solicitar ajuste: responder por texto</span></div>
+            </div></div></div>
+          </div>
+        </article>
+        <article class="card card--row card--open span-4">
+          <span class="step-num">3</span>
+          <h3>Decide quién pasa de etapa</h3>
+          <p>Ves el puntaje de cada etapa con su evidencia y marcas «Pasa» o «No pasa».</p>
+          <div class="panel panel--inset" role="img" aria-label="Decisión sobre el candidato 014 con su puntaje por etapa">
+            <div class="stage stage--fade-b"><div class="at-rise fit"><div class="d-card" aria-hidden="true">
+              <div class="d-card__row"><h5>Candidato #014</h5><span class="d-chip">Texto</span></div>
+              <div class="d-note__line"><span>Análisis</span><b style="margin-left:auto">5 de 5</b></div>
+              <div class="d-note__line"><span>Comunicación</span><b style="margin-left:auto">4 de 5</b></div>
+              <div class="d-note__line"><span>Herramientas</span><b style="margin-left:auto">4 de 5</b></div>
+              <div class="d-note__line"><span>Ajuste de la etapa</span><b style="margin-left:auto">82</b></div>
+            </div></div></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section statement" id="proposito" data-moment="word-highlight" aria-label="Para qué existe Selección">
+    <div class="wrap">
+      <p class="t-label">Para qué existe Selección</p>
+      <p class="mo-wh__text">Menos horas leyendo hojas de vida y más tiempo para conocer a las personas. La IA ordena, resume y señala la evidencia; el criterio y la última palabra siguen siendo de <strong>tu equipo</strong>.</p>
+      <p class="importante"><b>Importante:</b> la IA nunca decide por ti. Tú le pones los topes y los parámetros: los requisitos mínimos, la rúbrica y sus pesos.</p>
+    </div>
+  </section>
+
+  <section class="section g2 ground-inverse" id="funciones" aria-labelledby="funciones-h">
+    <div class="wrap">
+      <div class="group">
+        <div class="section-head">
+          <h2 id="funciones-h">El panel de gestión humana. <span class="muted">Vacantes, rúbrica, candidatos y hojas de vida.</span></h2>
+        </div>
+        <div class="grid">
+          <article class="card card--row card--open span-6">
+            <h3>Arma la rúbrica con sus pesos</h3>
+            <p>Cada criterio lleva su peso y entre todos suman 100; la rúbrica se copia a cada vacante nueva.</p>
+            <div class="panel panel--inset" role="img" aria-label="Rúbrica con tres criterios y sus pesos">
+              <div class="stage stage--fade-b"><div class="at-rise fit"><div class="d-card" aria-hidden="true">
+                <div class="d-card__row"><h5>Rúbrica</h5><span class="d-chip">Suma 100</span></div>
+                <div class="d-note__line"><span>Análisis</span><b style="margin-left:auto">40</b></div>
+                <div class="d-note__line"><span>Comunicación</span><b style="margin-left:auto">35</b></div>
+                <div class="d-note__line"><span>Herramientas</span><b style="margin-left:auto">25</b></div>
+              </div></div></div>
+            </div>
+          </article>
+          <article class="card card--row card--open span-6">
+            <h3>Ubica a cada candidato por su código</h3>
+            <p>Cada postulante recibe un código, como #014, para distinguirlo rápido aunque la vacante reciba decenas.</p>
+            <div class="panel panel--inset" role="img" aria-label="Ficha del candidato 014 con su etapa, su ajuste y su hoja de vida">
+              <div class="stage stage--fade-b"><div class="at-rise fit"><div class="d-card" aria-hidden="true">
+                <div class="d-card__row"><h5>Candidato #014</h5><span class="d-chip">Preguntas por voz</span></div>
+                <div class="d-note__line"><span>Hoja de vida</span><b style="margin-left:auto">Cumple los mínimos</b></div>
+                <div class="d-note__line"><span>Etapa de texto</span><b style="margin-left:auto">82</b></div>
+                <div class="d-note__line"><span>Ajuste total</span><b style="margin-left:auto">82</b></div>
+              </div></div></div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="grid">
+        <article class="card card--row card--open span-6">
+          <h3>Marca lo dudoso como «por revisar»</h3>
+          <p>Si la IA no encuentra un dato en la hoja de vida, el candidato queda por revisar y nunca descartado.</p>
+          <div class="panel panel--inset" role="img" aria-label="Revisión de hoja de vida con un requisito sin dato">
+            <div class="stage stage--fade-b"><div class="at-rise fit"><div class="d-card" aria-hidden="true">
+              <div class="d-card__row"><h5>Candidato #021</h5><span class="d-chip d-chip--rev">Por revisar</span></div>
+              <div class="d-note__line"><i>✓</i><span>Técnico en contabilidad</span></div>
+              <div class="d-note__line"><i class="warn">?</i><span>Experiencia: <b>no aparece</b></span></div>
+              <div class="d-note__line"><i>✓</i><span>Excel intermedio</span></div>
+            </div></div></div>
+          </div>
+        </article>
+        <article class="card card--row card--open span-6">
+          <h3>Abre la hoja de vida en cualquier etapa</h3>
+          <p>El PDF original se ve o se descarga como candidato-014.pdf, y cada consulta queda registrada.</p>
+          <div class="panel panel--inset" role="img" aria-label="Registro de actividad con la consulta y la descarga de una hoja de vida">
+            <div class="stage stage--fade-b"><div class="at-rise fit"><div class="d-card" aria-hidden="true">
+              <div class="d-card__row"><h5>Registro de actividad</h5><span class="d-chip">2 hoy</span></div>
+              <div class="d-note__line"><i>↓</i><span>Descargó <b>candidato-014.pdf</b></span></div>
+              <div class="d-note__line"><i>◎</i><span>Vio la hoja de vida de <b>#009</b></span></div>
+              <div class="d-note__line"><i>✓</i><span>Marcó <b>#014</b>: pasa a voz</span></div>
+            </div></div></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section g2m" id="equipo" aria-labelledby="equipo-h">
+    <div class="wrap">
+      <div class="group"><div class="grid">
+        <div class="span-5 stack-4">
+          <h2 id="equipo-h">Cómo te ayuda en el día a día</h2>
+          <p>Lo que cambia para el equipo de gestión humana cuando la IA hace la primera lectura.</p>
+        </div>
+        <div class="faq span-6 start-7">
+          <div class="faq__item"><h3>¿Qué hace la IA por mí?</h3><p>Lee cada hoja de vida, revisa los requisitos mínimos y puntúa las respuestas con tu rúbrica, mostrando la frase que sostiene cada puntaje. Tú revisas un resumen en vez de empezar desde cero.</p></div>
+          <div class="faq__item"><h3>¿La IA descarta candidatos?</h3><p>Solo a quienes no cumplen los requisitos mínimos de la hoja de vida, para agilizar el proceso. En las preguntas puntúa, pero quién sigue lo decides tú.</p></div>
+        </div>
+      </div></div>
+      <div class="grid">
+        <div class="faq span-6 start-7">
+          <div class="faq__item"><h3>¿Cómo me ayuda a encontrar un buen candidato?</h3><p>Ordena a los postulantes por su ajuste al cargo y marca la evidencia de cada puntaje, así dedicas tu tiempo a los perfiles que más encajan.</p></div>
+          <div class="faq__item"><h3>¿Los datos de las personas están protegidos?</h3><p>Sí. Cada empresa ve únicamente sus vacantes y postulantes, y la información está protegida con controles de seguridad en la app y en la base de datos.</p></div>
+          <div class="faq__item"><h3>¿Puedo cambiar una pregunta ya publicada?</h3><p>No. Las preguntas de la primera etapa quedan fijas al publicar, y las de cualquier etapa a la que ya llegó un postulante también: así todos responden lo mismo.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer closing footer--statement g2m" id="contact" aria-labelledby="close-h">
+  <div class="wrap">
+    <div class="closing__cta close--type">
+      <div class="section-head">
+        <h2 id="close-h">Crea la cuenta de tu empresa</h2>
+        <p>El registro pide los datos de la empresa y una cuenta de gestión humana.</p>
+      </div>
+      <a class="btn btn--primary btn--xl btn--wide" href="/empresa/registro">Registrar empresa<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+    </div>
+    <div class="closing__links">
+      <div class="grid">
+        <div class="span-4 stack-4">
+          <p class="footer__lede">Software de selección de personal con IA, con la decisión final en manos de tu equipo.</p>
+        </div>
+        <div class="span-2 footer__col"><h3>Producto</h3><ul><li><a href="#producto">Revisión</a></li><li><a href="#etapas">Etapas</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Funciones</h3><ul><li><a href="#funciones">Panel</a></li><li><a href="#proposito">Para qué existe</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Empresas</h3><ul><li><a href="/empresa/registro">Registro</a></li><li><a href="/empresa/ingreso">Ingresar</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Datos</h3><ul><li><a href="/privacidad">Política de datos</a></li><li><a href="#equipo">Tu equipo</a></li></ul></div>
+      </div>
+      <div class="footer__legal">
+        <span>&copy; 2026 Selección &nbsp; <a href="/privacidad">Privacidad</a></span>
+        <div class="socials"></div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<nav class="actionbar" aria-label="Acciones rápidas">
+  <a class="btn btn--primary" href="/empresa/registro">Registrar empresa</a>
+</nav>
+
+<script type="module" src="/inicio/assets/system.js"></script>
+<script type="module" src="/inicio/assets/motion/motion.js"></script>
+<script type="module" src="/inicio/assets/layout/layout.js"></script>
+</body>
+</html>
