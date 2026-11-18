@@ -1891,9 +1891,44 @@ a.fila {
   grid-template-columns: 44px minmax(0, 1.4fr) minmax(0, 1fr) minmax(140px, 1fr) 132px 20px;
 }
 
+/* Buscador de postulantes por número, encima de la lista. */
+.buscador-postulantes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.buscador-postulantes__etiqueta {
+  flex-basis: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.buscador-postulantes__campo {
+  position: relative;
+  flex: 0 1 320px;
+}
+
+.buscador-postulantes__campo svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gris);
+  pointer-events: none;
+}
+
+.buscador-postulantes__campo .inp {
+  padding-left: 36px;
+}
+
 .lista-vacantes .lista-filas__cabeza,
 .lista-vacantes .fila {
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 2fr) auto;
+  /* Cada fila es su propia grilla: con la columna de acciones en `auto`, la fila con
+     "Copiar link" corría los números. Ancho fijo para que todas compartan columnas. */
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 2fr) 256px;
 }
 
 .avatar-num {

@@ -64,7 +64,12 @@ Inicio para empresas (2026-11-16): `/` muestra `public/inicio/index.html`, pági
 estática hecha con el kit de Taste (copiado en `public/inicio/assets`) y servida con un
 rewrite en `next.config.ts`; pasó su revisión (`gate.mjs`: PASS). Acción principal
 "Registrar empresa" → `/empresa/registro`; a su lado, en el encabezado y en la barra
-móvil, "Iniciar sesión" → `/empresa/ingreso` (2026-11-17). Marca de la plataforma: "Selección" con el
+móvil, "Iniciar sesión" → `/empresa/ingreso` (2026-11-17). Con sesión de empresa, esos
+dos botones se cambian por una bolita con las iniciales ("Ver cuenta"): abre un menú con
+nombre, correo, empresa, "Ir al panel" y "Cerrar sesión" (`public/inicio/assets/sesion.js`
+y `sesion.css`). Como el inicio es HTML estático, pregunta a `GET /api/sesion` (solo nombre,
+correo y empresa de quien ya tiene sesión, sin caché) y cierra con `POST /api/sesion/salir`
+(rechaza otro `Origin`). Marca de la plataforma: "Selección" con el
 logo de cuatro puntos (`components/marca.tsx`), en ingreso, registro y la página 404.
 **CONFIRMAR (Carlos):** "Selección" como nombre visible de la plataforma.
 Textos del inicio (2026-11-17, Carlos): es un prototipo para presentar, así que no habla
@@ -78,7 +83,10 @@ cambiar una pregunta publicada).
 Panel de gestión (2026-11-16, mismo rediseño): es la "ventana de app" del inicio. Barra
 superior blanca (`nav-gestion.tsx`); en cada vacante, barra lateral con Requisitos, Rúbrica y
 Postulantes, y las etapas con su color y cuántos llegaron (`pestanas.tsx`; en tableta pasa a
-pestañas arriba). Postulantes en filas (número, etapa, ajuste, chip de decisión). En el detalle,
+pestañas arriba). Postulantes en filas (número, etapa, ajuste, chip de decisión). Arriba, buscador por
+número de candidato ("14", "014" o "#14" → #014; filtra en el navegador,
+`components/gestion/lista-postulantes.tsx`, 2026-11-17). En "Vacantes activas" la columna
+del medio tiene ancho fijo para que los números queden alineados entre filas. En el detalle,
 la frase que la IA citó se marca dentro de la respuesta (`marcar-evidencia.tsx`). Para eso
 `puntuar_rubrica` guarda en `resultado.etapas[].criterios[]` dos campos opcionales, `cita` y
 `pregunta`, **solo si la cita se verificó** como fragmento literal de la respuesta. Sin migración

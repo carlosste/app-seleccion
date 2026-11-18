@@ -42,6 +42,7 @@
 <link rel="stylesheet" href="/inicio/assets/ui/window/fragment.css">
 <link rel="stylesheet" href="/inicio/assets/ui/doc/fragment.css">
 <link rel="stylesheet" href="/inicio/assets/moments/word-highlight/moment.css">
+<link rel="stylesheet" href="/inicio/assets/sesion.css">
 <script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
 <script src="/inicio/assets/backgrounds/backgrounds.js"></script>
 <script>document.documentElement.classList.add('mo-js');setTimeout(()=>document.documentElement.classList.add('mo-safe'),2500)</script>
@@ -168,8 +169,24 @@
       <div class="nav__item"><a class="nav__link" href="#equipo">Tu equipo</a></div>
     </nav>
     <div class="nav__actions">
-      <a class="btn btn--secondary" href="/empresa/ingreso">Iniciar sesión</a>
-      <a class="btn btn--primary" href="/empresa/registro">Registrar empresa</a>
+      <a class="btn btn--secondary" href="/empresa/ingreso" data-sin-sesion>Iniciar sesión</a>
+      <a class="btn btn--primary" href="/empresa/registro" data-sin-sesion>Registrar empresa</a>
+      <!-- Menú de la cuenta: aparece solo con sesión de empresa (assets/sesion.js). -->
+      <div class="perfil" data-perfil hidden>
+        <button class="perfil__boton" type="button" aria-expanded="false" aria-controls="perfil-menu" aria-label="Ver cuenta" title="Ver cuenta">
+          <span class="perfil__iniciales" data-perfil-iniciales aria-hidden="true"></span>
+        </button>
+        <div class="perfil__menu" id="perfil-menu" hidden>
+          <p class="perfil__titulo">Tu cuenta</p>
+          <p class="perfil__nombre" data-perfil-nombre></p>
+          <p class="perfil__correo" data-perfil-correo></p>
+          <p class="perfil__empresa" data-perfil-empresa></p>
+          <a class="perfil__enlace" href="/gestion">Ir al panel</a>
+          <form method="post" action="/api/sesion/salir">
+            <button class="perfil__salir" type="submit">Cerrar sesión</button>
+          </form>
+        </div>
+      </div>
     </div>
     <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menú">
       <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -455,12 +472,14 @@
 </footer>
 
 <nav class="actionbar" aria-label="Acciones rápidas">
-  <a class="btn btn--secondary" href="/empresa/ingreso">Iniciar sesión</a>
-  <a class="btn btn--primary" href="/empresa/registro">Registrar empresa</a>
+  <a class="btn btn--secondary" href="/empresa/ingreso" data-sin-sesion>Iniciar sesión</a>
+  <a class="btn btn--primary" href="/empresa/registro" data-sin-sesion>Registrar empresa</a>
+  <a class="btn btn--primary" href="/gestion" data-con-sesion>Ir al panel</a>
 </nav>
 
 <script type="module" src="/inicio/assets/system.js"></script>
 <script type="module" src="/inicio/assets/motion/motion.js"></script>
 <script type="module" src="/inicio/assets/layout/layout.js"></script>
+<script type="module" src="/inicio/assets/sesion.js"></script>
 </body>
 </html>
