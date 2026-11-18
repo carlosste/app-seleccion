@@ -19,7 +19,10 @@ export default async function Vacantes() {
       <div className="panel-cabeza">
         <div className="panel-cabeza__texto">
           <h1>Vacantes activas</h1>
-          <p>Cada vacante tiene su link de postulación, sus requisitos y su rúbrica.</p>
+          <p>
+            Cada vacante tiene su link de postulación, sus requisitos y su rúbrica.{" "}
+            <Link href="/gestion/cerradas">Ver vacantes cerradas</Link>
+          </p>
         </div>
         <Link href="/gestion/nueva" className="btn">
           Crear vacante

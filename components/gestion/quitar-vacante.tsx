@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { cerrarVacante, eliminarVacante } from "@/lib/gestion/vacantes";
 
 // Quitar una vacante de la lista. Sin postulantes se elimina; con postulantes solo se
-// cierra (deja de recibir y se oculta) para no borrar datos de nadie. Decisión de Carlos,
+// cierra (deja de recibir y pasa a /gestion/cerradas) para no borrar datos de nadie. Decisión de Carlos,
 // 2026-10-28. La confirmación va dentro de la tarjeta, sin window.confirm.
 export function QuitarVacante({ id, cargo, postulados }: { id: string; cargo: string; postulados: number }) {
   const [confirmando, setConfirmando] = useState(false);
@@ -53,7 +53,7 @@ export function QuitarVacante({ id, cargo, postulados }: { id: string; cargo: st
         ) : (
           <>
             <b>¿Cerrar “{cargo}”?</b> Tiene {postulados.toLocaleString("es-CO")} postulante{postulados === 1 ? "" : "s"}, así que no se
-            borra: deja de recibir postulaciones y sale de esta lista. Sus datos se conservan.
+            borra: deja de recibir postulaciones y pasa a <b>Vacantes cerradas</b>, donde se conservan todos sus datos.
           </>
         )}
       </span>

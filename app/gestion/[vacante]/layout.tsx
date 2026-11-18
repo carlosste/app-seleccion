@@ -4,6 +4,7 @@ import { Pestanas } from "@/components/pestanas";
 import { PublicarVacante } from "@/components/gestion/publicar-vacante";
 import { listarEtapas } from "@/lib/gestion/configuracion";
 import { NOMBRE_ETAPA, obtenerVacante } from "@/lib/gestion/datos";
+import { fechaCorta } from "@/lib/fecha";
 
 const ESTADO: Record<string, { texto: string; clase: string }> = {
   abierta: { texto: "Abierta", clase: "chip-estado chip-estado--ok" },
@@ -26,7 +27,11 @@ export default async function LayoutVacante({ children, params }: LayoutProps<"/
       <div className="panel-cabeza">
         <div className="panel-cabeza__texto">
           <nav className="miga" aria-label="Ruta">
-            <Link href="/gestion">Vacantes</Link>
+            {vacante.estado === "cerrada" ? (
+              <Link href="/gestion/cerradas">Vacantes cerradas</Link>
+            ) : (
+              <Link href="/gestion">Vacantes</Link>
+            )}
             <i aria-hidden="true">/</i>
             <span>{vacante.cargo}</span>
           </nav>
@@ -47,6 +52,12 @@ export default async function LayoutVacante({ children, params }: LayoutProps<"/
           }))}
         />
         <div className="vacante-contenido">
+          {vacante.estado === "cerrada" && (
+            <div className="nota nota-az">
+              <b>Vacante cerrada{vacante.cerradaEl ? ` el ${fechaCorta(vacante.cerradaEl)}` : ""}.</b> Ya no recibe
+              postulaciones; se guarda con sus postulantes, respuestas y decisiones para consultarla.
+            </div>
+          )}
           <PublicarVacante id={vacante.id} estado={vacante.estado} enlaceToken={vacante.enlaceToken} />
           {children}
         </div>

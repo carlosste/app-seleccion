@@ -16,6 +16,9 @@ export async function NavGestion() {
           <Link href="/gestion" className="panel-barra__enlace">
             Vacantes
           </Link>
+          <Link href="/gestion/cerradas" className="panel-barra__enlace">
+            Cerradas
+          </Link>
         </nav>
         <div className="panel-barra__usuario">
           <span>{nombre ?? correo}</span>

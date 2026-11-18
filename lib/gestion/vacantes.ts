@@ -117,7 +117,7 @@ export async function eliminarVacante(vacanteId: string): Promise<Resultado> {
 }
 
 // Una vacante con postulantes no se borra: se cierra. Deja de recibir postulaciones (el link
-// público solo muestra vacantes abiertas) y sale de la lista, sin borrar datos de nadie.
+// público solo muestra vacantes abiertas) y pasa a "Vacantes cerradas", sin borrar datos de nadie.
 export async function cerrarVacante(vacanteId: string): Promise<Resultado> {
   if (!/^[0-9a-f-]{36}$/i.test(vacanteId)) return { ok: false, mensaje: "Vacante no válida." };
   const { empresa, rol } = await requerirEmpresa();
@@ -126,7 +126,7 @@ export async function cerrarVacante(vacanteId: string): Promise<Resultado> {
   const supabase = await crearClienteServidor();
   const { data, error } = await supabase
     .from("vacantes")
-    .update({ estado: "cerrada" })
+    .update({ estado: "cerrada", cerrada_at: new Date().toISOString() })
     .eq("id", vacanteId)
     .eq("empresa_id", empresa.id)
     .select("id")
@@ -136,6 +136,7 @@ export async function cerrarVacante(vacanteId: string): Promise<Resultado> {
     return { ok: false, mensaje: "No pudimos cerrar la vacante. Intenta de nuevo." };
   }
   revalidatePath("/gestion");
+  revalidatePath("/gestion/cerradas");
   revalidatePath(`/gestion/${vacanteId}`, "layout");
   return { ok: true, mensaje: "Vacante cerrada." };
 }
