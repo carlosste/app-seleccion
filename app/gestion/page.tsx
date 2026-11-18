@@ -15,7 +15,8 @@ export default async function Vacantes() {
         <div>
           <h1 style={{ fontSize: 28, marginBottom: 4 }}>Vacantes activas</h1>
           <span className="texto-gris" style={{ fontSize: 14 }}>
-            Cada vacante tiene su link de postulación, sus requisitos y su rúbrica.
+            Cada vacante tiene su link de postulación, sus requisitos y su rúbrica.{" "}
+            <Link href="/gestion/cerradas">Ver vacantes cerradas</Link>
           </span>
         </div>
         <Link href="/gestion/nueva" className="btn btn-chico" style={{ height: 44 }}>

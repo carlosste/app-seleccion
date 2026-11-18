@@ -15,6 +15,7 @@ export async function NavGestion() {
       </div>
       <nav className="nav-links">
         <Link href="/gestion">Vacantes</Link>
+        <Link href="/gestion/cerradas">Cerradas</Link>
         <span className="nav-usuario">
           {nombre ?? correo}
           <form action={cerrarSesion}>

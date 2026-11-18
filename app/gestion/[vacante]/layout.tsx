@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Pestanas } from "@/components/pestanas";
 import { PublicarVacante } from "@/components/gestion/publicar-vacante";
 import { obtenerVacante } from "@/lib/gestion/datos";
+import { fechaCorta } from "@/lib/fecha";
 
 // Encabezado común de la vacante: título y pestañas Requisitos / Rúbrica / Postulantes.
 // obtenerVacante filtra por la empresa de la sesión: si la vacante es de otra
@@ -15,11 +16,18 @@ export default async function LayoutVacante({ children, params }: LayoutProps<"/
   return (
     <>
       <div>
-        <Link href="/gestion" className="volver">
-          ← Vacantes
+        <Link href={vacante.estado === "cerrada" ? "/gestion/cerradas" : "/gestion"} className="volver">
+          {vacante.estado === "cerrada" ? "← Vacantes cerradas" : "← Vacantes"}
         </Link>
         <h1 className="titulo-pagina">{vacante.cargo}</h1>
       </div>
+      {vacante.estado === "cerrada" && (
+        <div className="nota nota-az">
+          <b>Vacante cerrada{vacante.cerradaEl ? ` el ${fechaCorta(vacante.cerradaEl)}` : ""}.</b> Ya no recibe
+          postulaciones; se guarda con sus postulantes, respuestas y decisiones para consultarla.{" "}
+          <Link href="/gestion/cerradas">Ver todas las cerradas</Link>
+        </div>
+      )}
       <PublicarVacante id={vacante.id} estado={vacante.estado} enlaceToken={vacante.enlaceToken} />
       <Pestanas base={`/gestion/${vacante.id}`} total={vacante.total} />
       {children}

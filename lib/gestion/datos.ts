@@ -72,16 +72,62 @@ export async function listarVacantes(): Promise<VacanteResumen[]> {
   });
 }
 
+export type VacanteCerrada = {
+  id: string;
+  cargo: string;
+  cerradaEl: string | null; // ISO; null en las cerradas antes de guardar la fecha
+  postulados: number;
+  seleccionados: number;
+};
+
+// Vacantes cerradas: ya no reciben postulaciones, pero se guardan con todos sus datos
+// para consultarlas después (postulantes, respuestas, evaluaciones y decisiones).
+export async function listarVacantesCerradas(): Promise<VacanteCerrada[]> {
+  const { empresa } = await requerirEmpresa();
+  const supabase = await crearClienteServidor();
+
+  const { data: vacantes, error } = await supabase
+    .from("vacantes")
+    .select("id, cargo, cerrada_at, created_at")
+    .eq("empresa_id", empresa.id)
+    .eq("estado", "cerrada")
+    .returns<{ id: string; cargo: string; cerrada_at: string | null; created_at: string }[]>();
+  if (error) throw new Error(`No se pudieron leer las vacantes cerradas: ${error.message}`);
+  if (!vacantes.length) return [];
+
+  const { data: postulaciones, error: e2 } = await supabase
+    .from("postulaciones")
+    .select("vacante_id, estado")
+    .in("vacante_id", vacantes.map((v) => v.id))
+    .returns<{ vacante_id: string; estado: string }[]>();
+  if (e2) throw new Error(`No se pudieron leer las postulaciones: ${e2.message}`);
+
+  return vacantes
+    .map((v) => {
+      const propias = postulaciones.filter((p) => p.vacante_id === v.id);
+      return {
+        id: v.id,
+        cargo: v.cargo,
+        cerradaEl: v.cerrada_at,
+        postulados: propias.length,
+        seleccionados: propias.filter((p) => p.estado === "seleccionada").length,
+        orden: v.cerrada_at ?? v.created_at,
+      };
+    })
+    .sort((a, b) => b.orden.localeCompare(a.orden))
+    .map(({ orden: _orden, ...v }) => v);
+}
+
 export async function obtenerVacante(id: string) {
   if (!esUuid(id)) return null;
   const { empresa } = await requerirEmpresa();
   const supabase = await crearClienteServidor();
   const { data } = await supabase
     .from("vacantes")
-    .select("id, cargo, descripcion, estado, enlace_token")
+    .select("id, cargo, descripcion, estado, enlace_token, cerrada_at")
     .eq("id", id)
     .eq("empresa_id", empresa.id)
-    .maybeSingle<{ id: string; cargo: string; descripcion: string | null; estado: string; enlace_token: string }>();
+    .maybeSingle<{ id: string; cargo: string; descripcion: string | null; estado: string; enlace_token: string; cerrada_at: string | null }>();
   if (!data) return null;
   // Conteo directo, con la misma tabla y el mismo filtro que la lista de postulantes.
   const { count } = await supabase
@@ -94,6 +140,7 @@ export async function obtenerVacante(id: string) {
     descripcion: data.descripcion ?? "",
     estado: data.estado,
     enlaceToken: data.enlace_token,
+    cerradaEl: data.cerrada_at,
     total: count ?? 0,
   };
 }

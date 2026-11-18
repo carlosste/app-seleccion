@@ -192,7 +192,12 @@ Nunca subir .env.local al repositorio.
 - **Eliminar solo vacantes sin postulantes** (`eliminar_vacante`, migración
   `20261028180000_eliminar_vacante`, aplicada y probada). Con postulantes, el
   botón es "Cerrar vacante": estado `cerrada`, deja de recibir y sale de la
-  lista, sin borrar datos. Hoy no hay pantalla para ver o reabrir las cerradas.
+  lista, sin borrar datos.
+- **Vacantes cerradas (2026-11-17).** `/gestion/cerradas` (enlace "Cerradas" en la barra y
+  "Ver vacantes cerradas" en Vacantes activas) lista las cerradas con fecha de cierre,
+  postulantes y seleccionados; cada una se abre como siempre (postulantes, respuestas, CV)
+  con un aviso de "Vacante cerrada". Al cerrar se guarda `cerrada_at` (las cerradas antes
+  salen "Sin fecha"). Sin migración. Reabrir no se hace: sigue siendo decisión abierta.
 
 ## Sesiones separadas (2026-10-28)
 - La empresa usa la cookie de sesión por defecto de Supabase; el postulante, la
