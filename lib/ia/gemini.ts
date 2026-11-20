@@ -18,7 +18,14 @@ export type Adjunto = { mimeType: string; data: string };
 // Probado el 2026-11-16: responseSchema (formato OpenAPI) da 400 con este formato.
 export type Esquema = Record<string, unknown>;
 // temperatura: 0.2 por defecto; 0 donde importa calificar a todos con el mismo criterio.
-export type Opciones = { temperatura?: number; esquema?: Esquema };
+// limiteMs: espera por intento, para tareas largas (una entrevista de una hora).
+export type Opciones = { temperatura?: number; esquema?: Esquema; limiteMs?: number };
+
+// Puntajes estables (2026-11-19, Carlos): con temperatura 0 también se fija la semilla y se toma
+// siempre la palabra más probable (topK 1). Así la misma entrada da el mismo resultado en la
+// misma versión del modelo. Lo que todavía puede cambiar un puntaje: que responda un modelo de
+// respaldo (queda guardado en evaluaciones_ia.modelo) o que Google actualice el modelo.
+const SEMILLA = 20261119;
 
 const REGLAS =
   "Responde solo con JSON válido, en español. Nunca propongas requisitos ni preguntas sobre edad máxima, " +
@@ -89,11 +96,12 @@ export async function pedirJsonConModelo<T>(
     contents: [{ role: "user", parts: [...adjuntos.map((a) => ({ inlineData: a })), { text: datos }] }],
     generationConfig: {
       temperature: opciones.temperatura ?? 0.2,
+      ...(opciones.temperatura === 0 ? { seed: SEMILLA, topK: 1 } : {}),
       responseMimeType: "application/json",
       ...(opciones.esquema ? { responseJsonSchema: opciones.esquema } : {}),
     },
   });
-  const limiteMs = adjuntos.length ? TIEMPO_LIMITE_ADJUNTOS_MS : TIEMPO_LIMITE_MS;
+  const limiteMs = opciones.limiteMs ?? (adjuntos.length ? TIEMPO_LIMITE_ADJUNTOS_MS : TIEMPO_LIMITE_MS);
 
   let ultimoError: unknown;
   for (const modelo of MODELOS) {

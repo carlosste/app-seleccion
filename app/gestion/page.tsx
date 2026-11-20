@@ -9,7 +9,7 @@ const ESTADO: Record<string, { texto: string; clase: string }> = {
 };
 
 // A · Inicio del panel: vacantes de la empresa autenticada, una fila por vacante con su estado,
-// cuántos postulantes llegaron a cada etapa y sus acciones.
+// cuántos postulantes tiene en total y sus acciones (el detalle por etapa está dentro de la vacante).
 export default async function Vacantes() {
   const vacantes = await listarVacantes();
   const n = (v: number) => v.toLocaleString("es-CO");
@@ -38,7 +38,7 @@ export default async function Vacantes() {
         <div className="superficie lista-vacantes">
           <div className="lista-filas__cabeza" aria-hidden="true">
             <span>Cargo</span>
-            <span>Postulantes por etapa</span>
+            <span>Postulantes</span>
             <span />
           </div>
           <ul className="lista-filas">
@@ -57,16 +57,8 @@ export default async function Vacantes() {
                     </div>
                     <div className="embudo">
                       <div>
-                        Postulados <b>{n(v.postulados)}</b>
-                      </div>
-                      <div>
-                        Texto <b>{n(v.alcanzaron.texto)}</b>
-                      </div>
-                      <div>
-                        Voz <b>{n(v.alcanzaron.voz)}</b>
-                      </div>
-                      <div>
-                        Entrevista <b>{n(v.alcanzaron.entrevista)}</b>
+                        <span className="embudo__rotulo">Postulantes </span>
+                        <b>{n(v.postulados)}</b>
                       </div>
                     </div>
                     <div className="fila__acciones">

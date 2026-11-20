@@ -32,7 +32,7 @@ export function RespuestasPostulante({ grupos, evaluaciones }: { grupos: GrupoRe
   return (
     <>
       <div className="pestanas-etapa" role="tablist" aria-label="Etapas de la vacante">
-        {grupos.map((x, i) => (
+        {grupos.map((x) => (
           <button
             key={x.etapaId}
             type="button"
@@ -43,7 +43,7 @@ export function RespuestasPostulante({ grupos, evaluaciones }: { grupos: GrupoRe
             title={x.alcanzada ? undefined : "Todavía no llega a esta etapa."}
             onClick={() => setEtapaId(x.etapaId)}
           >
-            {i + 1}. {x.nombre} ({respondidas(x)}/{x.preguntas.length})
+            {x.nombre} ({respondidas(x)}/{x.preguntas.length})
           </button>
         ))}
       </div>

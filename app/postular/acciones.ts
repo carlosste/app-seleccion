@@ -110,10 +110,31 @@ async function asegurarPostulacion(
   return null;
 }
 
+// Resultado del formulario de postulación cuando algo falla. Los errores se devuelven (no se
+// redirige) para que el navegador conserve lo escrito y la hoja de vida elegida.
+export type EstadoPostulacion = { error: string | null; vez: number };
+
 // Pantalla 1: datos + hoja de vida. Crea la cuenta (sin correo de confirmación), abre la
 // sesión y crea la postulación. Si el documento ya tiene cuenta con ese mismo correo, se
 // usa esa cuenta: así la persona se postula a otra vacante sin crear otra.
-export async function postularse(formData: FormData) {
+export async function postularse(previo: EstadoPostulacion, formData: FormData): Promise<EstadoPostulacion> {
+  const vez = previo.vez + 1;
+  try {
+    await postularseOFallar(formData);
+  } catch (e) {
+    if (e instanceof ErrorPostulacion) return { error: e.codigo, vez };
+    throw e; // incluye el redirect de Next al terminar bien
+  }
+  return { error: "general", vez };
+}
+
+class ErrorPostulacion extends Error {
+  constructor(public codigo: string) {
+    super(codigo);
+  }
+}
+
+async function postularseOFallar(formData: FormData) {
   const token = String(formData.get("token") ?? "");
   const nombre = String(formData.get("nombre") ?? "").trim();
   const correo = String(formData.get("correo") ?? "").trim().toLowerCase();
@@ -124,7 +145,9 @@ export async function postularse(formData: FormData) {
   const cv = formData.get("cv");
 
   const vacante = await vacantePorToken(token);
-  const volver: (error: string) => never = (error) => redirect(`/postular/${token}?error=${error}`);
+  const volver: (error: string) => never = (error) => {
+    throw new ErrorPostulacion(error);
+  };
 
   const datosValidos =
     nombre.length >= 3 &&
@@ -241,19 +264,38 @@ export async function ingresar(formData: FormData) {
   redirect(`/postular/${token}/preguntas`);
 }
 
+// "Salir" cierra de verdad la sesión del postulante: en un computador compartido, quien llegue
+// después no entra a sus respuestas.
+export async function salirPostulante(formData: FormData) {
+  const token = String(formData.get("token") ?? "");
+  const supabase = await crearClientePostulante();
+  await supabase.auth.signOut({ scope: "local" });
+  redirect(/^[0-9a-f]{32}$/i.test(token) ? `/postular/${token}/ingreso?salida=1` : "/");
+}
+
 const LARGO_RESPUESTA = 3000;
 
 export type ResultadoRespuesta = { ok: true; fin?: boolean } | { ok: false; mensaje: string };
+// "voz": dictada en el navegador (Web Speech API) y quizá corregida a mano; "ajuste": el
+// postulante pidió responder por escrito una pregunta de voz; "texto": todo lo demás.
+export type ModoRespuesta = "texto" | "voz" | "ajuste";
 
-// Pantalla 3: guarda una respuesta. Por ahora las preguntas de voz también se responden
-// por escrito (decisión de Carlos, 2026-10-28). La base (puede_responder) revisa que la
-// pregunta sea de una etapa que ya alcanzó y que la postulación siga en proceso.
-export async function responderPregunta(token: string, preguntaId: string, texto: string): Promise<ResultadoRespuesta> {
+// Pantalla 3: guarda una respuesta. La de voz llega ya transcrita por el navegador: no se
+// guarda audio y va en `texto` (la columna `transcripcion` solo la escribe el servidor).
+// La base (puede_responder) revisa que la pregunta sea de una etapa que ya alcanzó y que la
+// postulación siga en proceso.
+export async function responderPregunta(
+  token: string,
+  preguntaId: string,
+  texto: string,
+  modo: ModoRespuesta = "texto",
+): Promise<ResultadoRespuesta> {
   const limpio = texto.trim();
   if (limpio.length < 2 || limpio.length > LARGO_RESPUESTA) {
     return { ok: false, mensaje: `Escribe tu respuesta (máximo ${LARGO_RESPUESTA} caracteres).` };
   }
   if (!/^[0-9a-f-]{36}$/i.test(preguntaId)) return { ok: false, mensaje: "Pregunta no válida." };
+  if (modo !== "texto" && modo !== "voz" && modo !== "ajuste") modo = "texto";
 
   const vacante = await vacantePorToken(token);
   const supabase = await crearClientePostulante();
@@ -274,7 +316,13 @@ export async function responderPregunta(token: string, preguntaId: string, texto
 
   const { error } = await supabase
     .from("respuestas")
-    .insert({ postulacion_id: postulacion.id, pregunta_id: preguntaId, modalidad: "texto", texto: limpio });
+    .insert({
+      postulacion_id: postulacion.id,
+      pregunta_id: preguntaId,
+      modalidad: modo === "voz" ? "voz" : "texto",
+      ajuste_solicitado: modo === "ajuste",
+      texto: limpio,
+    });
   if (error) {
     // Ya estaba respondida (doble clic o dos pestañas): para el postulante no es un error.
     if (error.code === "23505") return { ok: true };

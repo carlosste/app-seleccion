@@ -1,24 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AvisoModoPruebas } from "@/components/aviso-modo-pruebas";
 import { EncabezadoEmpresa } from "@/components/encabezado-empresa";
+import { FormularioPostulacion } from "@/components/postular/formulario-postulacion";
 import { CASILLA_DATOS, CASILLA_GRABACION } from "@/lib/legal/tratamiento-datos";
-import { vacantePorToken } from "@/lib/vacante-publica";
-import { postularse } from "../acciones";
+import { tituloVacante, vacantePorToken } from "@/lib/vacante-publica";
 
-const MENSAJES: Record<string, string> = {
-  datos:
-    "Revisa tus datos. Nombre, correo, teléfono y documento (de 6 a 20 letras o números) son obligatorios, y debes marcar las dos autorizaciones.",
-  cv: "Sube tu hoja de vida en PDF (un PDF real, no otro archivo renombrado), de máximo 4 MB.",
-  documento: "Ya existe una cuenta con ese documento y otro correo. Escribe el correo que usaste la primera vez.",
-  "correo-documento": "Ese correo ya tiene una cuenta con otro documento. Revisa el número de documento.",
-  "correo-registrado": "Ese correo ya está registrado en otra cuenta. Usa otro correo.",
-  empresa: "Ese correo es de una cuenta de empresa. Para postularte usa tu correo personal.",
-  limite: "Esta empresa ya no recibe más postulaciones por ahora.",
-  "limite-intentos": "Hubo demasiadas postulaciones desde tu red. Intenta de nuevo en una hora.",
+// Avisos que llegan por la URL desde otras pantallas (los errores del formulario llegan sin recargar).
+const AVISOS: Record<string, string> = {
   "sin-postulacion": "Aún no te has postulado a esta vacante. Llena el formulario y sube tu hoja de vida.",
   sesion: "Tu sesión venció o no has entrado. Ingresa con tu ID y contraseña.",
-  general: "Algo salió mal. Intenta de nuevo.",
 };
+
+// Con más texto que esto, la descripción se pliega para que el formulario no quede lejos en el celular.
+const DESCRIPCION_CORTA = 280;
+
+export async function generateMetadata({ params }: { params: Promise<{ vacante: string }> }): Promise<Metadata> {
+  return { title: await tituloVacante((await params).vacante, "Postúlate") };
+}
 
 // 1 · Postulación. Llega desde el link de la vacante (enlace_token). Aquí se envían los datos
 // y la hoja de vida; después solo se entra a responder las preguntas.
@@ -32,6 +31,7 @@ export default async function Postulacion({
   const { vacante: token } = await params;
   const { error } = await searchParams;
   const vacante = await vacantePorToken(token);
+  const descripcion = vacante.descripcion?.trim() ?? "";
 
   return (
     <>
@@ -42,115 +42,56 @@ export default async function Postulacion({
         <div className="campo" style={{ gap: 6 }}>
           <span className="etq">Vacante</span>
           <h1 className="titulo-vacante">{vacante.cargo}</h1>
-          {vacante.descripcion && <p className="texto-gris">{vacante.descripcion}</p>}
+          {descripcion &&
+            (descripcion.length > DESCRIPCION_CORTA ? (
+              <details className="descripcion-vacante">
+                <summary>
+                  <span className="texto-gris">{descripcion.slice(0, 160).trimEnd()}…</span>
+                  <span className="descripcion-vacante__mas">Leer la descripción completa</span>
+                </summary>
+                <p className="texto-gris">{descripcion}</p>
+              </details>
+            ) : (
+              <p className="texto-gris">{descripcion}</p>
+            ))}
         </div>
+
+        <ol className="como-funciona" aria-label="Cómo es el proceso">
+          <li>
+            <b>Llenas este formulario</b>
+            <span>Tus datos y tu hoja de vida en PDF. Toma unos 5 minutos.</span>
+          </li>
+          <li>
+            <b>Respondes unas preguntas</b>
+            <span>Por escrito y, si la vacante lo pide, en voz alta. Si prefieres, también esas las puedes escribir.</span>
+          </li>
+          <li>
+            <b>La empresa te contacta</b>
+            <span>Una persona revisa tus respuestas. Si pasas a la entrevista, te escriben con la fecha y la hora.</span>
+          </li>
+        </ol>
 
         <AvisoModoPruebas para="postulante" />
 
-        {error && MENSAJES[error] && (
+        {error && AVISOS[error] && (
           <div className="nota nota-na" role="alert">
-            {MENSAJES[error]}
+            {AVISOS[error]}
           </div>
         )}
 
-        <form action={postularse} className="tarjeta tarjeta-compacta">
-          <input type="hidden" name="token" value={token} />
+        <FormularioPostulacion
+          token={token}
+          empresa={vacante.empresa_nombre}
+          casillaDatos={CASILLA_DATOS}
+          casillaGrabacion={CASILLA_GRABACION}
+        />
 
-          <div className="campo">
-            <label htmlFor="nombre">Nombre completo</label>
-            <input
-              id="nombre"
-              name="nombre"
-              className="inp"
-              placeholder="Tu nombre"
-              required
-              minLength={3}
-              maxLength={120}
-              autoComplete="name"
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="correo">Correo electrónico</label>
-            <input
-              id="correo"
-              name="correo"
-              type="email"
-              className="inp"
-              placeholder="nombre@correo.com"
-              required
-              maxLength={254}
-              autoComplete="email"
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="telefono">Teléfono</label>
-            <input
-              id="telefono"
-              name="telefono"
-              type="tel"
-              className="inp"
-              placeholder="300 000 0000"
-              required
-              minLength={7}
-              maxLength={20}
-              autoComplete="tel"
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="documento">Número de documento</label>
-            <input
-              id="documento"
-              name="documento"
-              className="inp"
-              placeholder="1234567890"
-              required
-              inputMode="numeric"
-              pattern="[A-Za-z0-9.\- ]{6,20}"
-              title="De 6 a 20 letras o números"
-              aria-describedby="documento-ayuda"
-            />
-            <span id="documento-ayuda" className="texto-gris" style={{ fontSize: 13 }}>
-              Con este número vuelves a entrar: es tu ID y tu contraseña.
-            </span>
-          </div>
-          <div className="campo">
-            <label htmlFor="cv">Hoja de vida (PDF, máximo 4 MB)</label>
-            <input id="cv" name="cv" type="file" accept="application/pdf" className="inp" required />
-          </div>
-
-          <div className="nota nota-az" style={{ fontSize: 13, lineHeight: 1.5, flexDirection: "column", gap: 4 }}>
-            <span>
-              <b>Tus datos.</b> Responsable: <b>{vacante.empresa_nombre}</b>. Se usan solo para este proceso de selección. Una
-              IA de un proveedor externo (Google) analiza tu hoja de vida y tus respuestas; la decisión de cada etapa la toma
-              una persona, salvo el descarte por no cumplir un requisito mínimo. Puedes conocer, corregir o pedir que se
-              borren tus datos.
-            </span>
-            <Link href="/privacidad" target="_blank" style={{ fontWeight: 600 }}>
-              Lee la política de tratamiento de datos
-            </Link>
-          </div>
-
-          <div className="flex" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
-            <input id="acepto_datos" name="acepto_datos" type="checkbox" required style={{ width: 20, height: 20, marginTop: 2, flexShrink: 0 }} />
-            <label htmlFor="acepto_datos" style={{ fontSize: 13, lineHeight: 1.45, color: "var(--tx2)" }}>
-              {CASILLA_DATOS}
-            </label>
-          </div>
-          <div className="flex" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
-            <input id="acepto_grabacion" name="acepto_grabacion" type="checkbox" required style={{ width: 20, height: 20, marginTop: 2, flexShrink: 0 }} />
-            <label htmlFor="acepto_grabacion" style={{ fontSize: 13, lineHeight: 1.45, color: "var(--tx2)" }}>
-              {CASILLA_GRABACION}
-            </label>
-          </div>
-
-          <button type="submit" className="btn">
-            Postularme
-          </button>
-        </form>
-
-        <p className="texto-gris centrado">
-          ¿Ya te postulaste? <Link href={`/postular/${token}/ingreso`}>Ingresa con tu ID</Link>
-        </p>
+        <div className="ya-postulado">
+          <span>¿Ya te postulaste?</span>
+          <Link href={`/postular/${token}/ingreso`} className="btn btn-sec">
+            Ingresa con tu documento
+          </Link>
+        </div>
       </div>
     </>
   );

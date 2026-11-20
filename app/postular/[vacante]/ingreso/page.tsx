@@ -1,6 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { EncabezadoEmpresa } from "@/components/encabezado-empresa";
-import { vacantePorToken } from "@/lib/vacante-publica";
+import { tituloVacante, vacantePorToken } from "@/lib/vacante-publica";
 import { ingresar } from "../../acciones";
 
 const MENSAJES: Record<string, string> = {
@@ -9,6 +10,10 @@ const MENSAJES: Record<string, string> = {
   general: "Algo salió mal. Intenta de nuevo.",
 };
 
+export async function generateMetadata({ params }: { params: Promise<{ vacante: string }> }): Promise<Metadata> {
+  return { title: await tituloVacante((await params).vacante, "Ingresa") };
+}
+
 // 2 · Ingreso de quien ya se postuló: ID y contraseña (por ahora, los dos son el número de
 // documento). No sube nada: entra directo a sus preguntas.
 export default async function Ingreso({
@@ -16,10 +21,10 @@ export default async function Ingreso({
   searchParams,
 }: {
   params: Promise<{ vacante: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; salida?: string }>;
 }) {
   const { vacante: token } = await params;
-  const { error } = await searchParams;
+  const { error, salida } = await searchParams;
   const vacante = await vacantePorToken(token);
 
   return (
@@ -40,8 +45,13 @@ export default async function Ingreso({
           {MENSAJES[error]}
         </div>
       )}
+      {salida && !error && (
+        <div className="nota nota-az" role="status">
+          Cerraste tu sesión. Tus respuestas quedaron guardadas.
+        </div>
+      )}
 
-      <form action={ingresar} className="tarjeta">
+      <form action={ingresar} className="tarjeta form-postular">
         <input type="hidden" name="token" value={token} />
 
         <div className="campo">
@@ -76,7 +86,7 @@ export default async function Ingreso({
         <button type="submit" className="btn">
           Ingresar
         </button>
-        <Link href={`/postular/${token}`} className="centrado" style={{ fontSize: 13 }}>
+        <Link href={`/postular/${token}`} className="enlace-alto" style={{ justifyContent: "center", fontSize: 14 }}>
           ¿Aún no te postulas? Llena el formulario
         </Link>
       </form>

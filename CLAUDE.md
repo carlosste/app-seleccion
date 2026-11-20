@@ -85,8 +85,17 @@ superior blanca (`nav-gestion.tsx`); en cada vacante, barra lateral con Requisit
 Postulantes, y las etapas con su color y cuántos llegaron (`pestanas.tsx`; en tableta pasa a
 pestañas arriba). Postulantes en filas (número, etapa, ajuste, chip de decisión). Arriba, buscador por
 número de candidato ("14", "014" o "#14" → #014; filtra en el navegador,
-`components/gestion/lista-postulantes.tsx`, 2026-11-17). En "Vacantes activas" la columna
-del medio tiene ancho fijo para que los números queden alineados entre filas. En el detalle,
+`components/gestion/lista-postulantes.tsx`, 2026-11-17). En "Vacantes activas" cada fila
+muestra solo el total de postulantes (2026-11-19, Carlos; el detalle por etapa está dentro de
+la vacante), en una columna de ancho fijo para que los números queden alineados.
+Rúbrica (2026-11-19, rediseño con `emil-design-eng`, a pedido de Carlos): arriba "cómo
+funciona" en tres pasos; cada criterio es una tarjeta numerada con etiquetas visibles
+("Criterio", "Qué debe mostrar el postulante") y la importancia como un número que se escribe
+(sin botones − / +, decisión de Carlos: los demás se reparten solos); "Quitar criterio" pide
+confirmación; al lado, un ejemplo con el primer criterio real y la nota de ética. En celular
+todo va en una columna. Favicon: el logo de cuatro puntos en toda la app (`app/icon.svg`,
+copia de `public/inicio/favicon.svg`); se quitó `app/favicon.ico`. Los `.btn` que son enlaces
+fijan el texto blanco al pasar el mouse (antes `a:hover` lo dejaba del color del fondo). En el detalle,
 la frase que la IA citó se marca dentro de la respuesta (`marcar-evidencia.tsx`). Para eso
 `puntuar_rubrica` guarda en `resultado.etapas[].criterios[]` dos campos opcionales, `cita` y
 `pregunta`, **solo si la cita se verificó** como fragmento literal de la respuesta. Sin migración
@@ -111,11 +120,53 @@ RLS: cada empresa solo ve sus datos. Registrar tokens usados por empresa en
 al crear la vacante.
 
 ## Audio
-Navegador graba con MediaRecorder (webm/opus comprimido) → sube a bucket
-privado de Supabase Storage → se guarda la ruta en `respuestas` → ruta de
-servidor envía el audio a Gemini → se guarda la transcripción.
-Borrado de archivos: pendiente, ver «Pendientes». Por ahora no se borra nada
-automáticamente.
+**Desde 2026-11-19 (Carlos): dictado en el navegador, sin guardar audio.** Las preguntas de
+voz usan la Web Speech API (`components/preguntas-voz.tsx`, `es-CO`): el texto aparece mientras
+la persona habla y lo puede corregir antes de enviar. Se guarda en `respuestas.texto` con
+`modalidad = 'voz'` (la columna `transcripcion` solo la escribe el servidor). "Prefiero
+responder por escrito" es el "Solicitar ajuste": guarda `ajuste_solicitado = true`. Sin
+dictado en el navegador (Firefox) se responde por escrito con un aviso. En Chrome el dictado lo
+hace un servicio de Google (lo dice la pantalla; lo cubre la casilla de grabación).
+El plan anterior (MediaRecorder → bucket → Gemini transcribe) queda como opción si hace falta
+el audio original. Borrado de archivos: pendiente, ver «Pendientes».
+
+## Etapas, entrevista y comparar (2026-11-19, decisiones de Carlos)
+- **Nombres de etapa:** en todo el panel una etapa es "Etapa N · nombre que le dio la empresa"
+  (`etiquetasEtapas` en `lib/gestion/datos.ts`); nunca el tipo (texto, voz, entrevista). Sin
+  nombre, "Etapa N". Las evaluaciones guardadas se muestran con el nombre de hoy.
+- **Filtro por etapa** en Postulantes: chips Todos · cada etapa (quienes siguen en proceso ahí)
+  · Seleccionados · Descartados, con su cantidad. Va en la URL (`?etapa=`) y las etapas de la
+  barra lateral abren la lista ya filtrada.
+- **Entrevista:** se hace en Teams/Meet/Zoom. En el detalle del postulante se pega o sube la
+  transcripción (.vtt/.txt, hasta 200.000 caracteres), se elige quién es el candidato y se
+  guarda en `entrevistas` (una por postulación). "Analizar entrevista con IA" la lee completa
+  (`analizarEntrevistaIa`, hasta 90 s por intento; `maxDuration = 120` en la página): resumen,
+  temas, puntaje por criterio con cita verificada contra lo que dijo el candidato, fortalezas,
+  puntos débiles, qué quedó sin aclarar y momentos clave. Se guarda como tarea
+  `analizar_entrevista` en `evaluaciones_ia`. Antes de la IA: datos personales ocultos y nombres
+  cambiados por "Candidato"/"Entrevistador" (`lib/transcripcion.ts`). Migración
+  `20261119120000_entrevista_ia` (aplicada el 2026-11-19 con el ok de Carlos).
+- **Total:** cada etapa se muestra con su puntaje y aparte el total = promedio de las etapas
+  evaluadas, la entrevista incluida (`ajusteTotal`).
+- **Comparar perfiles:** en Postulantes se marcan de 2 a 6 y se abre `/gestion/[vacante]/comparar`:
+  lo ya evaluado lado a lado (sin IA) y una pregunta libre que responde la IA
+  (`compararPerfilesIa`): respuesta, fortalezas, debilidades y cercanía al cargo por candidato.
+  No dice "el mejor" ni a quién contratar. **No se guarda** (Carlos); solo queda
+  `comparar_perfiles` en `registro_actividad`.
+- **Puntajes estables:** con temperatura 0 también van `seed` fijo y `topK: 1`
+  (`lib/ia/gemini.ts`). Una etapa solo se recalifica si cambian sus respuestas o
+  `VERSION_PUNTAJE`. Puede variar si responde un modelo de respaldo (queda en
+  `evaluaciones_ia.modelo`) o si Google actualiza el modelo.
+- **Prueba completa (2026-11-19)** con la empresa ficticia "Distribuciones Andinas S.A.S.
+  (ficticia)", usuario `rrhh.andinas@example.com` (contraseña de `SEED_CONTRASENA`), vacante
+  "Coordinador de logística" con 4 etapas con nombre y 12 candidatos repartidos (en proceso en
+  cada etapa, 1 seleccionado, 1 descartado, 1 con intento de manipulación en voz). Ajustes que
+  salieron de la prueba: la barra lateral cuenta los que **siguen en proceso** en cada etapa
+  (igual que el filtro), no los que llegaron alguna vez; el lector de transcripciones acepta a
+  quien habla **una sola vez** en formato "Nombre: texto" si parece nombre propio y ya hay otro
+  hablante en ese formato; la tabla de postulantes pasa a formato compacto bajo 1200px y la
+  rúbrica pone el ejemplo debajo bajo 1200px (cada criterio se apila con container query); en
+  el celular la barra del panel deja solo el logo para que quepa "Cerrar sesión".
 
 ## Gemini
 - Clave solo en servidor (GEMINI_API_KEY), nunca en el navegador.
@@ -188,8 +239,16 @@ Nunca subir .env.local al repositorio.
   responde de una vez la siguiente etapa de texto o voz (`orden_alcanzado`). Las
   preguntas de entrevista nunca le llegan.
 - **Preguntas reales.** Salen de `preguntas_pendientes(postulacion)` y cada
-  respuesta se guarda al enviarla; al volver sigue donde iba. **Por ahora la voz
-  se responde por escrito** (para la entrega del 50 %); la grabación va después.
+  respuesta se guarda al enviarla; al volver sigue donde iba. La voz se responde
+  dictando (ver «Audio», 2026-11-19).
+- **Pantallas del postulante (2026-11-19).** Formulario con "cómo es el proceso" en tres
+  pasos, descripción larga plegada, errores junto a cada campo sin perder lo escrito ni el
+  PDF (`components/postular/formulario-postulacion.tsx`; `postularse` devuelve el código de
+  error en vez de redirigir), casillas y enlaces de 44 px, título de pestaña "Cargo ·
+  Empresa". Al final, "Respuestas enviadas" explica qué sigue y "Cerrar sesión" cierra de
+  verdad (`salirPostulante`). **La entrevista la agenda gestión humana** (fecha y hora); si el
+  postulante no puede, responde a ese mensaje. Avisos de avance por correo: cuando haya
+  correo (de pago, pendiente). Sin sección de ayuda/tickets por ahora (Carlos).
 - **"Evaluar con IA" a mano**, desde el detalle del postulante, para ahorrar
   tokens (no se llama a Gemini en cada postulación). Lee el CV una sola vez
   (`leer_cv`): hoja de vida sin datos personales + requisitos mínimos. Si no

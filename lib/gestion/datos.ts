@@ -2,7 +2,7 @@ import "server-only";
 import { requerirEmpresa } from "@/lib/auth/sesion-empresa";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import type { Decision } from "@/lib/datos-prueba";
-import type { EvaluacionEtapa, ResultadoCv, ResultadoRubrica } from "./tipos-evaluacion";
+import type { EvaluacionEtapa, ResultadoCv, ResultadoEntrevista, ResultadoRubrica } from "./tipos-evaluacion";
 
 // Datos del panel de gestión. Cada función:
 // 1) exige una sesión de empresa (requerirEmpresa),
@@ -18,6 +18,17 @@ export const NOMBRE_ETAPA: Record<TipoEtapa, string> = {
   voz: "Preguntas por voz",
   entrevista: "Entrevista",
 };
+
+// Cómo se llama una etapa en el panel (2026-11-19, Carlos): "Etapa 2 · Prueba técnica", con su
+// número por orden y el nombre que le dio la empresa. Nunca el tipo (texto, voz, entrevista).
+// Sin nombre, solo "Etapa 2".
+export function etiquetasEtapas(etapas: { id: string; orden: number; nombre?: string | null }[]): Map<string, string> {
+  return new Map(
+    [...etapas]
+      .sort((a, b) => a.orden - b.orden)
+      .map((e, i) => [e.id, e.nombre?.trim() ? `Etapa ${i + 1} · ${e.nombre.trim()}` : `Etapa ${i + 1}`]),
+  );
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const esUuid = (v: string) => UUID.test(v);
@@ -148,6 +159,8 @@ export async function obtenerVacante(id: string) {
 export type PostulanteFila = {
   id: string;
   numero: string; // "014"
+  etapaId: string | null; // etapa actual: para el filtro por etapa
+  etapaOrden: number;
   etapa: string;
   ajuste: number | null;
   decision: Decision;
@@ -180,16 +193,22 @@ export async function listarPostulantes(vacanteId: string): Promise<PostulanteFi
     .in("postulacion_id", ids)
     .returns<{ postulacion_id: string; tarea: string; ajuste_total: number | null; resultado: unknown }[]>();
 
-  // El nombre que le puso la empresa; si no tiene, el del tipo de etapa.
-  const etapaPorId = new Map((etapas ?? []).map((e) => [e.id, e]));
-  const ajuste = new Map<string, number | null>();
+  // "Etapa N · nombre que le puso la empresa".
+  const etiqueta = etiquetasEtapas(etapas ?? []);
+  const ordenDe = new Map((etapas ?? []).map((e) => [e.id, e.orden]));
+  const rubricas = new Map<string, { resultado: unknown; ajuste: number | null }>();
+  const entrevistas = new Map<string, number | null>();
   const porRevisar = new Set<string>();
   const sospecha = new Set<string>();
   for (const e of evaluaciones ?? []) {
     if (e.tarea === "puntuar_rubrica") {
-      ajuste.set(e.postulacion_id, e.ajuste_total);
+      rubricas.set(e.postulacion_id, { resultado: e.resultado, ajuste: e.ajuste_total });
       const etapas = (e.resultado as Partial<ResultadoRubrica>)?.etapas;
       if (Array.isArray(etapas) && etapas.some((x) => x?.sospecha)) sospecha.add(e.postulacion_id);
+    }
+    if (e.tarea === "analizar_entrevista") {
+      entrevistas.set(e.postulacion_id, e.ajuste_total);
+      if ((e.resultado as Partial<ResultadoEntrevista>)?.sospecha) sospecha.add(e.postulacion_id);
     }
     if (e.tarea === "leer_cv") {
       const cv = e.resultado as ResultadoCv;
@@ -200,12 +219,14 @@ export async function listarPostulantes(vacanteId: string): Promise<PostulanteFi
 
   return filas
     .map((f) => {
-      const etapa = f.etapa_actual_id ? etapaPorId.get(f.etapa_actual_id) : undefined;
-      const nombre = etapa ? etapa.nombre?.trim() || NOMBRE_ETAPA[etapa.tipo] : "Sin etapa";
-      const valor = ajuste.get(f.id);
+      const nombre = (f.etapa_actual_id && etiqueta.get(f.etapa_actual_id)) || "Sin etapa";
+      const r = rubricas.get(f.id);
+      const valor = ajusteTotal(r?.resultado, r?.ajuste ?? null, entrevistas.get(f.id) ?? null);
       return {
         id: f.id,
         numero: formatoNumero(f.numero_anonimo),
+        etapaId: f.etapa_actual_id,
+        etapaOrden: f.etapa_actual_id ? (ordenDe.get(f.etapa_actual_id) ?? 0) : 0,
         etapa: f.estado === "en_proceso" && porRevisar.has(f.id) ? `${nombre} · CV por revisar` : nombre,
         ajuste: valor == null ? null : Math.round(Number(valor)),
         decision: DECISION_POR_ESTADO[f.estado],
@@ -258,8 +279,15 @@ export async function obtenerPostulante(vacanteId: string, numero: string) {
   if (!data) return null;
 
   // Solo se informa si hay CV; la ruta del archivo nunca sale al navegador.
-  const [{ data: cv }, { data: etapasDatos }, { data: preguntas }, { data: respuestas }, { data: evaluaciones }, { data: decisiones }] =
-    await Promise.all([
+  const [
+    { data: cv },
+    { data: etapasDatos },
+    { data: preguntas },
+    { data: respuestas },
+    { data: evaluaciones },
+    { data: decisiones },
+    { data: entrevista },
+  ] = await Promise.all([
       supabase.from("postulaciones").select("cv_path").eq("id", data.id).maybeSingle<{ cv_path: string | null }>(),
       supabase.from("vacante_etapas").select("id, tipo, orden, nombre").eq("vacante_id", vacante.id).order("orden").returns<Etapa[]>(),
       supabase
@@ -284,10 +312,16 @@ export async function obtenerPostulante(vacanteId: string, numero: string) {
         .eq("postulacion_id", data.id)
         .order("created_at", { ascending: false })
         .returns<{ resultado: "pasa" | "no_pasa"; motivo: string | null; etapa_id: string | null; usuario_id: string | null; created_at: string }[]>(),
+      supabase
+        .from("entrevistas")
+        .select("transcripcion, hablante_candidato, actualizada_at")
+        .eq("postulacion_id", data.id)
+        .maybeSingle<{ transcripcion: string | null; hablante_candidato: string | null; actualizada_at: string }>(),
     ]);
 
   const etapas = etapasDatos ?? [];
-  const nombreDe = (e: Etapa) => e.nombre?.trim() || NOMBRE_ETAPA[e.tipo];
+  const etiqueta = etiquetasEtapas(etapas);
+  const nombreDe = (e: Etapa) => etiqueta.get(e.id) ?? "Etapa";
   const actual = etapas.find((e) => e.id === data.etapa_actual_id);
   const siguiente = actual ? etapas.find((e) => e.orden > actual.orden) : etapas[0];
   const alcanzado = ordenAlcanzado(etapas, actual);
@@ -317,7 +351,10 @@ export async function obtenerPostulante(vacanteId: string, numero: string) {
 
   const leerCv = evaluaciones?.find((e) => e.tarea === "leer_cv");
   const rubrica = evaluaciones?.find((e) => e.tarea === "puntuar_rubrica");
+  const analisis = evaluaciones?.find((e) => e.tarea === "analizar_entrevista");
+  const resultadoEntrevista = analisis ? (analisis.resultado as ResultadoEntrevista) : null;
   const etapaPorId = new Map(etapas.map((e) => [e.id, e]));
+  const etapaEntrevista = etapas.find((e) => e.tipo === "entrevista");
 
   return {
     vacante,
@@ -333,7 +370,24 @@ export async function obtenerPostulante(vacanteId: string, numero: string) {
     grupos,
     totalRespuestas: respuestas?.length ?? 0,
     cv: leerCv ? { ...(leerCv.resultado as ResultadoCv), fecha: leerCv.created_at } : null,
-    rubrica: rubrica ? normalizarRubrica(rubrica.resultado, rubrica.ajuste_total, rubrica.created_at) : null,
+    // El nombre guardado en la evaluación puede ser viejo: se muestra el de hoy ("Etapa N · …").
+    rubrica: rubrica ? renombrar(normalizarRubrica(rubrica.resultado, rubrica.ajuste_total, rubrica.created_at), etiqueta) : null,
+    // Entrevista (2026-11-19): transcripción pegada por gestión humana y su análisis con IA.
+    hayEtapaEntrevista: Boolean(etapaEntrevista),
+    entrevista: entrevista?.transcripcion
+      ? { transcripcion: entrevista.transcripcion, hablante: entrevista.hablante_candidato, actualizada: entrevista.actualizada_at }
+      : null,
+    analisisEntrevista: resultadoEntrevista
+      ? {
+          ...resultadoEntrevista,
+          nombre:
+            (resultadoEntrevista.etapaId && etiqueta.get(resultadoEntrevista.etapaId)) ||
+            (etapaEntrevista && etiqueta.get(etapaEntrevista.id)) ||
+            "Entrevista",
+          fechaAnalisis: analisis!.created_at,
+        }
+      : null,
+    ajusteTotal: ajusteTotal(rubrica?.resultado, rubrica?.ajuste_total ?? null, analisis?.ajuste_total ?? null),
     decisiones: (decisiones ?? []).map((d) => {
       const e = d.etapa_id ? etapaPorId.get(d.etapa_id) : undefined;
       return {
@@ -346,6 +400,20 @@ export async function obtenerPostulante(vacanteId: string, numero: string) {
       };
     }),
   };
+}
+
+// Ajuste total (2026-11-19, Carlos): promedio de las etapas evaluadas, y la entrevista cuenta como
+// una etapa más. Cada etapa se sigue mostrando aparte con su propio puntaje.
+export function ajusteTotal(rubrica: unknown, ajusteRubrica: number | null, ajusteEntrevista: number | null): number | null {
+  const etapas = (rubrica as Partial<ResultadoRubrica> | undefined)?.etapas;
+  const valores = Array.isArray(etapas) ? etapas.map((e) => e?.ajuste) : [ajusteRubrica];
+  if (ajusteEntrevista != null) valores.push(Number(ajusteEntrevista));
+  const con = valores.filter((v): v is number => v != null && Number.isFinite(Number(v))).map(Number);
+  return con.length ? Math.round(con.reduce((s, v) => s + v, 0) / con.length) : null;
+}
+
+function renombrar<T extends { etapas: { etapaId: string; nombre: string }[] }>(r: T, etiqueta: Map<string, string>): T {
+  return { ...r, etapas: r.etapas.map((e) => ({ ...e, nombre: etiqueta.get(e.etapaId) ?? e.nombre })) };
 }
 
 // Antes del 2026-10-28 la rúbrica daba un solo puntaje para todas las respuestas. Esas

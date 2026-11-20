@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { Pestanas } from "@/components/pestanas";
 import { PublicarVacante } from "@/components/gestion/publicar-vacante";
 import { listarEtapas } from "@/lib/gestion/configuracion";
-import { NOMBRE_ETAPA, obtenerVacante } from "@/lib/gestion/datos";
+import { etiquetasEtapas, obtenerVacante } from "@/lib/gestion/datos";
 import { fechaCorta } from "@/lib/fecha";
+import { crearClienteServidor } from "@/lib/supabase/servidor";
 
 const ESTADO: Record<string, { texto: string; clase: string }> = {
   abierta: { texto: "Abierta", clase: "chip-estado chip-estado--ok" },
@@ -21,6 +22,19 @@ export default async function LayoutVacante({ children, params }: LayoutProps<"/
   const [vacante, etapas] = await Promise.all([obtenerVacante(id), listarEtapas(id)]);
   if (!vacante) notFound();
   const estado = ESTADO[vacante.estado] ?? ESTADO.borrador;
+  const etiqueta = etiquetasEtapas(etapas);
+  // Cuántos siguen en proceso en cada etapa: lo mismo que muestra el filtro al abrir el enlace.
+  const supabase = await crearClienteServidor();
+  const { data: enProceso } = await supabase
+    .from("postulaciones")
+    .select("etapa_actual_id")
+    .eq("vacante_id", vacante.id)
+    .eq("estado", "en_proceso")
+    .returns<{ etapa_actual_id: string | null }[]>();
+  const enEtapa = new Map<string, number>();
+  for (const p of enProceso ?? []) {
+    if (p.etapa_actual_id) enEtapa.set(p.etapa_actual_id, (enEtapa.get(p.etapa_actual_id) ?? 0) + 1);
+  }
 
   return (
     <>
@@ -47,8 +61,8 @@ export default async function LayoutVacante({ children, params }: LayoutProps<"/
           etapas={etapas.map((e) => ({
             id: e.id,
             tipo: e.tipo,
-            nombre: e.nombre?.trim() || NOMBRE_ETAPA[e.tipo],
-            llegaron: e.llegaron,
+            nombre: etiqueta.get(e.id) ?? "Etapa",
+            enEtapa: enEtapa.get(e.id) ?? 0,
           }))}
         />
         <div className="vacante-contenido">

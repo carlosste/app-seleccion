@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Barra } from "@/components/barra";
 import { DecisionPostulante } from "@/components/gestion/decision-postulante";
+import { EntrevistaPostulante } from "@/components/gestion/entrevista-postulante";
 import { EvaluarIa } from "@/components/gestion/evaluar-ia";
 import { RespuestasPostulante } from "@/components/gestion/respuestas-postulante";
 import { VisorCv } from "@/components/gestion/visor-cv";
@@ -20,6 +21,9 @@ const REQUISITO: Record<EstadoRequisito, { texto: string; clase: string }> = {
   no_cumple: { texto: "No cumple", clase: "chip-estado chip-estado--no" },
   no_se_sabe: { texto: "Sin dato", clase: "chip-estado chip-estado--revisar" },
 };
+
+// Analizar una entrevista de una hora puede tardar más de un minuto (lib/gestion/entrevista.ts).
+export const maxDuration = 120;
 
 const fecha = (iso: string) =>
   new Date(iso).toLocaleString("es-CO", { timeZone: "America/Bogota", dateStyle: "short", timeStyle: "short" });
@@ -41,7 +45,14 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
     Boolean(rubrica?.anterior) ||
     datos.totalRespuestas !== (rubrica?.respuestasEvaluadas ?? 0) ||
     Boolean(rubrica?.etapas.some((e) => e.version !== VERSION_PUNTAJE));
-  const variasEtapas = (rubrica?.etapas.length ?? 0) > 1;
+  // Cada etapa con su puntaje y, aparte, el total: promedio de las etapas, entrevista incluida.
+  const filasEtapas = [
+    ...(rubrica && !rubrica.anterior ? rubrica.etapas.map((e) => ({ id: e.etapaId, nombre: e.nombre, ajuste: e.ajuste })) : []),
+    ...(datos.analisisEntrevista
+      ? [{ id: "entrevista", nombre: datos.analisisEntrevista.nombre, ajuste: datos.analisisEntrevista.ajuste }]
+      : []),
+  ];
+  const variasEtapas = filasEtapas.length > 1;
 
   return (
     <>
@@ -66,6 +77,18 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
             <h2 id="h-respuestas">Respuestas por etapa</h2>
             <RespuestasPostulante grupos={datos.grupos} evaluaciones={rubrica && !rubrica.anterior ? rubrica.etapas : []} />
           </section>
+
+          {(datos.hayEtapaEntrevista || datos.entrevista || datos.analisisEntrevista) && (
+            <section className="superficie superficie--relleno" aria-labelledby="h-entrevista">
+              <h2 id="h-entrevista">Entrevista</h2>
+              <EntrevistaPostulante
+                vacanteId={vacante.id}
+                postulacionId={datos.id}
+                guardada={datos.entrevista}
+                analisis={datos.analisisEntrevista}
+              />
+            </section>
+          )}
 
           <section className="superficie superficie--relleno" aria-labelledby="h-cv">
             <h2 id="h-cv">Hoja de vida (sin datos personales)</h2>
@@ -112,7 +135,7 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
                   <span className="texto-gris">La IA no encontró algún dato: no se descarta. Revisa y decide tú.</span>
                 )}
                 <span className="texto-gris">
-                  Analizada por la IA el {fecha(cv.fecha)}. Los requisitos mínimos no los ve el postulante.
+                  Analizada por la IA el {fecha(cv.fecha)} · Los requisitos mínimos no los ve el postulante.
                 </span>
               </>
             )}
@@ -122,23 +145,18 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
         <aside className="detalle-lateral">
           <section className="superficie superficie--relleno" aria-labelledby="h-evaluacion">
             <h2 id="h-evaluacion">Evaluación de la IA</h2>
-            {rubrica?.ajuste != null && (
-              <div className="total-ia">
-                <b>{rubrica.ajuste}</b>
-                <span>de 100{variasEtapas ? ", promedio de las etapas" : ""}</span>
-              </div>
-            )}
-            {!rubrica ? (
-              <span className="texto-gris">Sin evaluar todavía.</span>
-            ) : rubrica.anterior ? (
+            {rubrica?.anterior && (
               <span className="texto-gris">
                 Esta evaluación se hizo antes de separar por etapa. Usa el botón para verla etapa por etapa.
               </span>
+            )}
+            {filasEtapas.length === 0 && !rubrica?.anterior ? (
+              <span className="texto-gris">Sin evaluar todavía.</span>
             ) : (
               <>
-                {/* Una barra por etapa; el total es el promedio de las etapas evaluadas. */}
-                {rubrica.etapas.map((e) => (
-                  <div key={e.etapaId} className="etapa-puntaje">
+                {/* Una barra por etapa con su puntaje; abajo, el total. */}
+                {filasEtapas.map((e) => (
+                  <div key={e.id} className="etapa-puntaje">
                     <div className="etapa-puntaje__fila">
                       <span>{e.nombre}</span>
                       <span className="num">{e.ajuste ?? "—"}</span>
@@ -146,7 +164,13 @@ export default async function DetallePostulante({ params }: PageProps<"/gestion/
                     <Barra valor={e.ajuste ?? 0} fina />
                   </div>
                 ))}
-                <span className="texto-gris">El detalle de cada etapa está en su pestaña de respuestas.</span>
+                {datos.ajusteTotal != null && (
+                  <div className="total-ia">
+                    <b>{datos.ajusteTotal}</b>
+                    <span>de 100 · total{variasEtapas ? ", promedio de las etapas" : ""}</span>
+                  </div>
+                )}
+                <span className="texto-gris">El detalle de cada etapa está en su pestaña de respuestas y en Entrevista.</span>
               </>
             )}
             <EvaluarIa

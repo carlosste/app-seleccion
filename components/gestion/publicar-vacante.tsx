@@ -15,7 +15,9 @@ export function PublicarVacante({ id, estado, enlaceToken }: { id: string; estad
       <div className="superficie aviso-vacante">
         <div className="aviso-vacante__texto">
           <b>Vacante publicada</b>
-          <span>Los postulantes entran con este link: /postular/{enlaceToken}</span>
+          <span>
+            Los postulantes entran con este link: <span className="aviso-vacante__enlace">/postular/{enlaceToken}</span>
+          </span>
         </div>
         <CopiarLink ruta={`/postular/${enlaceToken}`} />
       </div>

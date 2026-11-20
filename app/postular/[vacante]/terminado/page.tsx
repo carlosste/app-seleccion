@@ -1,58 +1,59 @@
-import Link from "next/link";
-import { vacantePorToken } from "@/lib/vacante-publica";
+import type { Metadata } from "next";
+import { tituloVacante, vacantePorToken } from "@/lib/vacante-publica";
+import { salirPostulante } from "../../acciones";
 
-// 4 · Cuestionario terminado. No muestra las etapas internas.
+export async function generateMetadata({ params }: { params: Promise<{ vacante: string }> }): Promise<Metadata> {
+  return { title: await tituloVacante((await params).vacante, "Respuestas enviadas") };
+}
+
+// 4 · Respuestas enviadas. No muestra las etapas internas ni el resultado: por ahora no hay
+// correos (plan de pago pendiente), así que explica cómo se entera la persona de lo que sigue.
+// La entrevista la agenda gestión humana (2026-11-19, Carlos): el postulante no elige fecha.
 export default async function Terminado({ params }: { params: Promise<{ vacante: string }> }) {
   const { vacante: token } = await params;
-  await vacantePorToken(token);
+  const vacante = await vacantePorToken(token);
 
   return (
-    <div className="contenido" style={{ padding: "64px 24px 32px", gap: 28 }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center" }}>
-        <div
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: "50%",
-            background: "var(--verde-cl)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--verde)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <div className="contenido final">
+      <div className="final__cabeza">
+        <div className="final__check" aria-hidden="true">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--verde)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12.5l4.5 4.5L19 7.5" />
           </svg>
         </div>
-        <h1 style={{ fontSize: 26 }}>Cuestionario terminado</h1>
-        <p style={{ fontSize: 15, lineHeight: 1.5, color: "var(--gris)" }}>
-          Gracias por responder. Tus respuestas quedaron enviadas a la empresa.
+        <h1>Respuestas enviadas</h1>
+        <p>
+          Gracias. Tus respuestas para <b>{vacante.cargo}</b> ya le llegaron a {vacante.empresa_nombre}.
         </p>
       </div>
 
-      <div className="tarjeta" style={{ flexDirection: "row", alignItems: "flex-start" }}>
-        <div>
-          <b style={{ fontSize: 16 }}>Espera el contacto de la empresa</b>
-          <p style={{ marginTop: 6, fontSize: 14, lineHeight: 1.5, color: "var(--tx2)" }}>
-            Cuando revisen tus respuestas, vuelve a entrar para ver si continúas en el proceso.
-          </p>
-        </div>
-      </div>
+      <ol className="final__pasos" aria-label="Qué sigue">
+        <li>
+          <b>La empresa revisa tus respuestas</b>
+          <span>Una persona de gestión humana las lee y decide quién continúa. Puede tardar unos días.</span>
+        </li>
+        <li>
+          <b>Si hay más preguntas para ti</b>
+          <span>
+            Entra de nuevo con el enlace de esta vacante. Tu ID y tu contraseña son tu número de documento. Si no ves preguntas
+            nuevas, tu proceso sigue en revisión.
+          </span>
+        </li>
+        <li>
+          <b>Si pasas a la entrevista</b>
+          <span>
+            Gestión humana te escribe con la fecha y la hora. Si no puedes asistir, responde a ese mensaje para acordar otro
+            momento.
+          </span>
+        </li>
+      </ol>
 
-      <div className="tarjeta" style={{ flexDirection: "row", alignItems: "flex-start" }}>
-        <div>
-          <b style={{ fontSize: 16 }}>Si continúas, vuelve a ingresar</b>
-          <p style={{ marginTop: 6, fontSize: 14, lineHeight: 1.5, color: "var(--tx2)" }}>
-            Entra desde el enlace de esta vacante con tu ID y tu contraseña (tu número de documento) para responder
-            las siguientes preguntas o agendar tu entrevista.
-          </p>
-        </div>
-      </div>
-
-      <div style={{ flex: 1 }} />
-      <Link href={`/postular/${token}`} className="btn btn-sec">
-        Salir
-      </Link>
+      <form action={salirPostulante}>
+        <input type="hidden" name="token" value={token} />
+        <button type="submit" className="btn btn-sec btn-grande" style={{ width: "100%" }}>
+          Cerrar sesión
+        </button>
+      </form>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import { sembrarRubricaSiFalta } from "./acciones-configuracion";
 import { type Criterio, type Numerada, puntuarEtapa, revisarCv } from "./calificacion-ia";
-import { NOMBRE_ETAPA } from "./datos";
+import { etiquetasEtapas, type NOMBRE_ETAPA } from "./datos";
 import { type EvaluacionEtapa, type ResultadoCv, type ResultadoRubrica, VERSION_PUNTAJE } from "./tipos-evaluacion";
 import { registrarError } from "@/lib/registro";
 
@@ -237,13 +237,14 @@ async function puntuarRespuestas(
       .filter((x): x is Numerada => x !== null),
   }));
 
+  const etiqueta = etiquetasEtapas(etapas ?? []);
   const anteriores = new Map((previa?.etapas ?? []).map((e) => [e.etapaId, e]));
   const resultado: EvaluacionEtapa[] = [];
   const etapasNuevas: string[] = [];
   let modeloUsado = "";
   for (const { etapa, respondidas } of grupos) {
     if (!respondidas.length) continue;
-    const nombre = etapa.nombre?.trim() || NOMBRE_ETAPA[etapa.tipo];
+    const nombre = etiqueta.get(etapa.id) ?? "Etapa";
     const conservada = anteriores.get(etapa.id);
     if (conservada && conservada.respuestasEvaluadas === respondidas.length && vigente(conservada)) {
       resultado.push(conservada);

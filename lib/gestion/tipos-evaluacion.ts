@@ -54,6 +54,27 @@ export type EvaluacionEtapa = {
   motivoSospecha?: string;
 };
 
+// Tarea analizar_entrevista (2026-11-19): la transcripción de la entrevista (Teams, Meet…)
+// analizada con la rúbrica. Las citas se verifican contra lo que dijo el candidato; "turno" es
+// el número de intervención en la transcripción. El ajuste cuenta en el total como una etapa más.
+export type ResultadoEntrevista = {
+  etapaId: string | null;
+  ajuste: number | null;
+  resumen: string;
+  temas: string[];
+  criterios: (CriterioPuntuado & { turno?: number })[];
+  fortalezas: string[];
+  debilidades: string[];
+  profundizar: string;
+  momentos: { turno: number; descripcion: string }[];
+  turnosCandidato: number;
+  palabrasCandidato: number;
+  fecha: string;
+  version: number;
+  sospecha?: boolean;
+  motivoSospecha?: string;
+};
+
 // Tarea puntuar_rubrica: una evaluación por etapa (desde el 2026-10-28), así se compara cómo
 // le fue en cada ronda. El total (ajuste_total de la fila) es el promedio de las etapas.
 export type ResultadoRubrica = {

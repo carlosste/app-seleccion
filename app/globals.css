@@ -318,8 +318,11 @@ h3 {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  /* El color va explícito: si el botón es un enlace, `a:hover` lo pintaría del mismo verde
+     azulado que el fondo y el texto desaparecería. */
   .btn:hover:not(:disabled) {
     background: var(--primario-hover);
+    color: #fff;
     box-shadow: var(--sombra-alta);
   }
 }
@@ -768,27 +771,198 @@ h3 {
   color: var(--primario-osc);
 }
 
-.crit {
+/* ---------- Editor de la rúbrica ----------
+   Una tarjeta por criterio, con etiquetas visibles (no solo para el lector de pantalla):
+   número, nombre, qué debe mostrar el postulante, importancia con − / + y su barra. */
+.rubrica {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--linea);
-  border-radius: 10px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.crit-texto {
-  flex: 1 1 260px;
+.rubrica__lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rubrica__vacia {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px;
+  border: 1.5px dashed var(--borde2);
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--tx2);
+}
+
+.rubrica__vacia b {
+  color: var(--tx);
+  font-weight: 600;
+}
+
+.crit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 14px 20px;
+  padding: 16px;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  background: var(--sup);
+}
+
+.crit__cabeza {
+  grid-column: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.crit__num {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--primario-cl);
+  color: var(--primario-osc);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.crit__campo {
+  grid-column: 1;
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.crit__campo label,
+.crit__peso-texto > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.crit__campo--nombre .inp {
+  font-weight: 500;
+}
+
+.crit__desc {
+  min-height: 0;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* La importancia va a la derecha, ocupando la altura de los dos campos de texto. */
+.crit__peso {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--fondo);
+}
+
+.crit__peso-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crit__peso-texto small {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--tx2);
+}
+
+/* Campo del peso: se escribe el número y los demás criterios se reparten solos. */
+.paso {
+  display: flex;
+  align-items: center;
+}
+
+.paso__valor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.paso__valor .peso {
+  width: 56px;
 }
 
 /* Barra del peso de cada criterio: se ve de un vistazo cuánto pesa frente a los demás. */
 .crit-barra {
   width: 100%;
   display: flex;
+}
+
+.crit__quitar {
+  grid-column: 1 / -1;
+  padding-top: 12px;
+  border-top: 1px solid var(--linea);
+}
+
+.crit__quitar-btn {
+  color: var(--peligro-osc);
+  font-size: 14px;
+}
+
+.crit__confirmar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  font-size: 14px;
+  color: var(--tx);
+}
+
+.crit__confirmar > span {
+  flex: 1 1 220px;
+}
+
+.rubrica__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rubrica__total {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rubrica__total small {
+  font-size: 13px;
+  color: var(--gris);
+}
+
+/* Solo para el lector de pantalla: se lee pero no ocupa espacio. */
+.rubrica__estado {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* .barra-fina no crece sola (flex: none): dentro de una fila flex se le da el ancho. */
@@ -799,12 +973,6 @@ h3 {
 
 .fila__ajuste .barra {
   max-width: 120px;
-}
-
-.crit-texto small {
-  font-size: 13px;
-  color: var(--gris);
-  line-height: 1.4;
 }
 
 .peso {
@@ -984,10 +1152,361 @@ td {
   gap: 10px;
 }
 
-.pregunta p {
+.pregunta p,
+.pregunta__texto {
   font-size: 19px;
   line-height: 1.4;
   font-weight: 600;
+  color: var(--tx);
+}
+
+.pregunta__texto:focus {
+  outline: none;
+}
+
+/* Solo para el lector de pantalla: se lee pero no se ve. */
+.sr-solo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Dictado (preguntas por voz) ---------- */
+.dictado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: var(--sup);
+  text-align: center;
+}
+
+.dictado .boton-grabar {
+  width: 88px;
+  height: 88px;
+  box-shadow: 0 4px 14px rgba(6, 82, 92, 0.25);
+  transition: background-color 150ms ease, transform 160ms var(--ease-out);
+}
+
+.dictado .boton-grabar:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.dictado .boton-grabar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.dictado .boton-grabar:focus-visible {
+  outline: 3px solid var(--primario);
+  outline-offset: 3px;
+}
+
+.dictado .boton-grabar.grabando {
+  box-shadow: 0 4px 14px rgba(190, 18, 60, 0.3);
+}
+
+.dictado__estado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--tx2);
+}
+
+.dictado__estado b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+}
+
+.dictado__punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 99px;
+  background: var(--peligro);
+  animation: latido 1.2s ease-in-out infinite;
+}
+
+@keyframes latido {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.dictado__parcial {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--fondo);
+  font-size: 14px;
+  font-style: italic;
+  color: var(--tx2);
+  text-align: left;
+}
+
+.dictado__privacidad {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--gris);
+}
+
+/* ---------- Formulario de postulación ---------- */
+/* Descripción larga plegada: el formulario queda cerca en el celular. */
+.descripcion-vacante > summary {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.descripcion-vacante > summary::-webkit-details-marker {
+  display: none;
+}
+
+.descripcion-vacante[open] > summary > .texto-gris {
+  display: none;
+}
+
+.descripcion-vacante__mas {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primario);
+}
+
+.descripcion-vacante[open] .descripcion-vacante__mas::after {
+  content: " · ocultar";
+  font-weight: 500;
+}
+
+.descripcion-vacante > summary:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.descripcion-vacante p,
+.contenido > .campo > p.texto-gris {
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* Cómo es el proceso: tres pasos cortos antes del formulario. */
+.como-funciona {
+  list-style: none;
+  counter-reset: paso;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.como-funciona > li {
+  counter-increment: paso;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 2px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--tx2);
+}
+
+.como-funciona > li::before {
+  content: counter(paso);
+  grid-row: 1 / span 2;
+  width: 26px;
+  height: 26px;
+  border-radius: 99px;
+  display: grid;
+  place-items: center;
+  background: var(--primario);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.como-funciona b {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.form-postular .inp {
+  height: 48px;
+  font-size: 16px; /* 16px: iOS no hace zoom al tocar el campo */
+}
+
+.form-postular .inp[aria-invalid="true"] {
+  border-color: var(--peligro);
+  background: #fff8f9;
+}
+
+.form-postular .inp-archivo {
+  height: auto;
+  min-height: 48px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.nota-datos {
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.enlace-alto {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+/* Autorizaciones: toda la fila se puede tocar y la casilla mide 24px. */
+.casilla {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 6px;
+  align-items: start;
+}
+
+.casilla input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  margin: 2px 0 0;
+  accent-color: var(--primario);
+  cursor: pointer;
+}
+
+.casilla label {
+  min-height: 44px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--tx2);
+  cursor: pointer;
+}
+
+.casilla .campo-error {
+  grid-column: 2;
+}
+
+.casilla input[aria-invalid="true"] {
+  outline: 2px solid var(--peligro);
+  outline-offset: 2px;
+}
+
+.ya-postulado {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--tx2);
+}
+
+/* ---------- Respuestas enviadas (pantalla final del postulante) ---------- */
+.final {
+  padding: 48px 20px 32px;
+  gap: 28px;
+}
+
+.final__cabeza {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.final__cabeza h1 {
+  font-size: 26px;
+}
+
+.final__cabeza p {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+
+.final__check {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--verde-cl);
+}
+
+.final__pasos {
+  list-style: none;
+  counter-reset: paso;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.final__pasos > li {
+  counter-increment: paso;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: var(--sup);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+
+.final__pasos > li::before {
+  content: counter(paso);
+  grid-row: 1 / span 2;
+  width: 28px;
+  height: 28px;
+  border-radius: 99px;
+  display: grid;
+  place-items: center;
+  background: var(--primario-cl);
+  color: var(--primario-osc);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.final__pasos b {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.boton-enlace--alto {
+  min-height: 44px;
+  padding: 0 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dictado__punto {
+    animation: none;
+  }
 }
 
 .zona-grabar {
@@ -1743,9 +2262,25 @@ button.pill:active:not(:disabled),
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 34px;
+  min-height: 36px;
   padding: 0 10px;
+  border-radius: 8px;
   color: var(--tx2);
+  transition: background-color 150ms ease;
+}
+
+.lateral__etapa[aria-current] {
+  background: var(--primario-cl);
+  color: var(--primario-osc);
+  font-weight: 600;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.lateral__etapa:hover {
+    background: var(--fondo);
+    color: var(--tx);
+    text-decoration: none;
+  }
 }
 
 .lateral__etapa i {
@@ -1891,6 +2426,187 @@ a.fila {
   grid-template-columns: 44px minmax(0, 1.4fr) minmax(0, 1fr) minmax(140px, 1fr) 132px 20px;
 }
 
+/* Casilla para comparar a la izquierda de cada fila: la fila sigue siendo un enlace. */
+/* La cabecera calza con la fila: 32px + 16px de separación = los 48px de la casilla. */
+.lista-postulantes .lista-filas__cabeza {
+  padding-left: 0;
+  grid-template-columns: 32px 44px minmax(0, 1.4fr) minmax(0, 1fr) minmax(140px, 1fr) 132px 20px;
+}
+
+.lista-filas__cabeza .cabeza__doble {
+  grid-column: span 2;
+}
+
+/* Con menos de 1200px la tabla de postulantes no cabe en columnas: pasa al formato compacto. */
+@media (max-width: 1199px) {
+  .lista-postulantes .lista-filas__cabeza {
+    display: none;
+  }
+
+  .lista-postulantes .fila {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    row-gap: 8px;
+  }
+
+  .lista-postulantes .fila__etapa,
+  .lista-postulantes .fila__ajuste {
+    grid-column: 2 / -1;
+  }
+
+  .lista-postulantes .fila__chip {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .lista-postulantes .fila__flecha {
+    display: none;
+  }
+}
+
+/* En el celular la decisión baja debajo de la etapa para que el nombre no se corte. */
+@media (max-width: 640px) {
+  /* Más específico que la regla de tableta, que va después en el archivo. */
+  .lista-postulantes .fila .fila__chip {
+    grid-column: 2 / -1;
+    grid-row: auto;
+    justify-self: start;
+  }
+}
+
+/* El link público es una sola "palabra" larga: se parte para no salirse de la tarjeta. */
+.aviso-vacante__enlace {
+  overflow-wrap: anywhere;
+}
+
+/* "Postulantes" junto al número: solo para lectores de pantalla mientras se ve la cabecera. */
+.embudo__rotulo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 1023px) {
+  .embudo__rotulo {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+}
+
+.fila-con-casilla {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  border-bottom: 1px solid var(--linea);
+}
+
+.lista-filas > li.fila-con-casilla:last-child {
+  border-bottom: 0;
+}
+
+.fila-con-casilla > .fila {
+  padding-left: 0;
+  border-bottom: 0;
+}
+
+.fila__casilla {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  padding-left: 12px;
+  cursor: pointer;
+}
+
+.fila__casilla input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primario);
+  cursor: pointer;
+}
+
+/* Filtro por etapa: una fila de chips que se pueden tocar, con su cantidad. */
+.filtro-etapas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filtro-etapas__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--borde);
+  border-radius: 99px;
+  background: var(--sup);
+  color: var(--tx2);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 160ms var(--ease-out);
+}
+
+.filtro-etapas__chip em {
+  font-style: normal;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gris);
+}
+
+.filtro-etapas__chip[aria-pressed="true"] {
+  background: var(--primario);
+  border-color: var(--primario);
+  color: #fff;
+}
+
+.filtro-etapas__chip[aria-pressed="true"] em {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.filtro-etapas__chip:active {
+  transform: scale(0.97);
+}
+
+.filtro-etapas__chip:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .filtro-etapas__chip:hover:not([aria-pressed="true"]) {
+    border-color: var(--primario-borde);
+    background: var(--primario-cl);
+    color: var(--primario-osc);
+  }
+}
+
+/* Barra que aparece al marcar perfiles para comparar. */
+.barra-comparar {
+  position: sticky;
+  top: 12px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--primario-borde);
+  border-radius: 12px;
+  background: var(--primario-cl);
+  color: var(--primario-osc);
+  font-size: 14px;
+  box-shadow: var(--sombra);
+}
+
 /* Buscador de postulantes por número, encima de la lista. */
 .buscador-postulantes {
   display: flex;
@@ -1928,7 +2644,7 @@ a.fila {
 .lista-vacantes .fila {
   /* Cada fila es su propia grilla: con la columna de acciones en `auto`, la fila con
      "Copiar link" corría los números. Ancho fijo para que todas compartan columnas. */
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 2fr) 256px;
+  grid-template-columns: minmax(0, 2fr) minmax(200px, 1fr) 256px;
 }
 
 .avatar-num {
@@ -2004,10 +2720,12 @@ a.fila {
   margin-top: 6px;
 }
 
-/* Embudo de una vacante: cuántos llegaron a cada etapa, en cuatro columnas cortas. */
+/* Cifras de una vacante en columnas cortas: en activas solo los postulantes; en cerradas,
+   postulados y seleccionados. */
 .embudo {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -2094,6 +2812,314 @@ a.fila {
 .total-ia span {
   font-size: 15px;
   color: var(--gris);
+}
+
+.total-ia--chico b {
+  font-size: 32px;
+}
+
+.etiqueta-sec {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+/* ---------- Comparar perfiles ---------- */
+/* Una columna por candidato; con muchos, se desliza de lado sin romper la página. */
+.comparar-tabla {
+  display: grid;
+  grid-template-columns: repeat(var(--columnas, 2), minmax(240px, 1fr));
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.comparar-perfil {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: var(--sup);
+}
+
+.comparar-perfil__cabeza {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.comparar-perfil__cabeza h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.comparar-perfil__cabeza small {
+  font-size: 13px;
+  color: var(--gris);
+}
+
+.comparar-perfil__total {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.comparar-perfil__total b {
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx);
+}
+
+.comparar-perfil__total span {
+  font-size: 14px;
+  color: var(--gris);
+}
+
+.comparar-perfil__bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linea);
+}
+
+.comparar-perfil__cv {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.comparar-perfil__cv dt {
+  font-size: 12px;
+  color: var(--gris);
+}
+
+.comparar-perfil__cv dd {
+  color: var(--tx);
+  line-height: 1.45;
+}
+
+.comparar-perfil__lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--tx2);
+}
+
+.comparar-perfil__lista li {
+  position: relative;
+  padding-left: 20px;
+}
+
+.comparar-perfil__lista li::before {
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+}
+
+.comparar-perfil__lista li[data-tipo="mas"]::before { content: "+"; color: var(--verde-tx); }
+.comparar-perfil__lista li[data-tipo="menos"]::before { content: "−"; color: var(--peligro-osc); }
+.comparar-perfil__lista li[data-tipo="duda"]::before { content: "?"; color: var(--naranja); }
+
+.comparar-pregunta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.comparar-pregunta__sugerencias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.comparar-pregunta__sugerencias .filtro-etapas__chip {
+  height: auto;
+  min-height: 40px;
+  padding: 8px 14px;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.comparar-pregunta__campo {
+  min-height: 88px;
+}
+
+.comparar-respuesta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--borde);
+}
+
+.comparar-respuesta__texto {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--tx);
+  white-space: pre-line;
+}
+
+.comparar-respuesta__perfiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.comparar-respuesta__perfil {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--linea);
+  border-radius: 12px;
+  background: var(--fondo);
+}
+
+/* ---------- Entrevista en el detalle del postulante ---------- */
+.entrevista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.entrevista__pasos {
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+
+.entrevista__texto {
+  min-height: 220px;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.entrevista__archivo {
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+.entrevista__archivo:focus-within {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}
+
+.entrevista__hablantes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+}
+
+.entrevista__hablantes legend {
+  padding: 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.entrevista__hablante {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.entrevista__hablante input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primario);
+}
+
+.entrevista__hablante span {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+.entrevista__hablante small {
+  font-size: 13px;
+  color: var(--gris);
+}
+
+.entrevista__guardada {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--tx2);
+}
+
+.analisis-entrevista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--borde);
+}
+
+.analisis-entrevista__cabeza {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.analisis-entrevista__cabeza > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.analisis-entrevista__resumen {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--tx);
+}
+
+.analisis-entrevista__temas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.analisis-entrevista__columnas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.analisis-entrevista__columnas ul,
+.analisis-entrevista__momentos {
+  margin-top: 6px;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+
+@media (max-width: 640px) {
+  .analisis-entrevista__columnas {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .etapa-puntaje {
@@ -2282,11 +3308,109 @@ mark.evidencia-marca {
 }
 
 /* ---------- Rúbrica ---------- */
+/* Cómo funciona, en tres pasos numerados arriba del editor. */
+.rubrica-pasos {
+  list-style: none;
+  counter-reset: paso;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.rubrica-pasos > li {
+  counter-increment: paso;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  background: var(--sup);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+
+.rubrica-pasos b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.rubrica-pasos b::before {
+  content: counter(paso);
+  width: 24px;
+  height: 24px;
+  border-radius: 99px;
+  display: grid;
+  place-items: center;
+  background: var(--primario);
+  color: #fff;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rubrica-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rubrica-ejemplo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--primario-cl);
+  color: var(--tx2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.rubrica-ejemplo b {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.rubrica-ejemplo strong {
+  color: var(--primario-osc);
+  font-weight: 600;
+}
+
 .rubrica-marco {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   gap: 24px;
   align-items: start;
+}
+
+/* Con menos de 1200px el ejemplo y el aviso pasan debajo: si no, los criterios quedan angostos. */
+@media (max-width: 1199px) {
+  .rubrica-marco {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Cada criterio se acomoda a su propio ancho: si la tarjeta es angosta, la importancia baja. */
+.rubrica__lista {
+  container-type: inline-size;
+}
+
+@container (max-width: 560px) {
+  .crit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .crit__peso {
+    grid-column: 1;
+    grid-row: auto;
+  }
 }
 
 .nota-etica {
@@ -2387,11 +3511,59 @@ mark.evidencia-marca {
     display: none;
   }
 
+  /* En el celular la barra deja solo el logo de cuatro puntos para que quepa "Cerrar sesión". */
+  .panel-barra .marca-plataforma__texto {
+    display: none;
+  }
+
+  .panel-barra__interior {
+    gap: 8px;
+  }
+
+  .panel-barra__enlaces {
+    margin-left: 4px;
+    gap: 0;
+  }
+
+  .panel-barra__enlace {
+    padding: 0 10px;
+  }
+
+  .panel-barra__usuario .btn-enlace {
+    white-space: nowrap;
+  }
+
   .panel-cabeza h1 {
     font-size: 28px;
   }
 
-  .embudo {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Vacantes: las acciones ocupan todo el ancho para que el dedo no tenga que apuntar. */
+  .lista-vacantes .fila,
+  .fila-vacante__quitar {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .lista-vacantes .fila__acciones > * {
+    flex: 1 1 140px;
+  }
+
+  /* Rúbrica: pasos y tarjetas en una sola columna; la importancia baja debajo del texto. */
+  .rubrica-pasos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .crit {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px;
+  }
+
+  .crit__peso {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .rubrica__pie > .btn {
+    width: 100%;
   }
 }

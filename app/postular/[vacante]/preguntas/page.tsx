@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { crearClientePostulante } from "@/lib/supabase/servidor";
-import { vacantePorToken } from "@/lib/vacante-publica";
+import type { Metadata } from "next";
+import { tituloVacante, vacantePorToken } from "@/lib/vacante-publica";
 import { PreguntasVoz, type PreguntaPendiente } from "@/components/preguntas-voz";
+
+export async function generateMetadata({ params }: { params: Promise<{ vacante: string }> }): Promise<Metadata> {
+  return { title: await tituloVacante((await params).vacante, "Preguntas") };
+}
 
 // 3 · Preguntas de la etapa, una por una. Son iguales para todos los postulantes del cargo.
 // Solo entra quien tiene sesión y una postulación en esta vacante. Muestra las que le faltan:

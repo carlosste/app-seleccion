@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
-type EtapaLateral = { id: string; tipo: string; nombre: string; llegaron: number };
+type EtapaLateral = { id: string; tipo: string; nombre: string; enEtapa: number };
 
 const ICONOS = {
   requisitos: (
@@ -26,10 +26,11 @@ const ICONOS = {
 };
 
 // Barra lateral de la vacante (como la ventana del inicio): Requisitos, Rúbrica y Postulantes,
-// y debajo las etapas con su color y cuántos postulantes llegaron a cada una. En tableta y
+// y debajo las etapas con su color y cuántos siguen en proceso en cada una (igual que el filtro). En tableta y
 // celular la hoja de estilos la pone arriba como una fila de pestañas.
 export function Pestanas({ base, total, etapas = [] }: { base: string; total: number; etapas?: EtapaLateral[] }) {
   const ruta = usePathname();
+  const etapaActiva = useSearchParams().get("etapa");
   const secciones = [
     { texto: "Requisitos", href: base, activa: ruta === base, icono: ICONOS.requisitos, cuenta: null },
     { texto: "Rúbrica", href: `${base}/rubrica`, activa: ruta.startsWith(`${base}/rubrica`), icono: ICONOS.rubrica, cuenta: null },
@@ -54,12 +55,20 @@ export function Pestanas({ base, total, etapas = [] }: { base: string; total: nu
       {etapas.length > 0 && (
         <>
           <span className="lateral__titulo">Etapas</span>
+          {/* Cada etapa abre la lista de postulantes filtrada en esa etapa. */}
           {etapas.map((e) => (
-            <span key={e.id} className="lateral__etapa" data-tipo={e.tipo} title={`${e.llegaron} postulantes llegaron a esta etapa`}>
+            <Link
+              key={e.id}
+              href={`${base}/postulantes?etapa=${e.id}`}
+              className="lateral__etapa"
+              data-tipo={e.tipo}
+              aria-current={ruta === `${base}/postulantes` && etapaActiva === e.id ? "true" : undefined}
+              title={`${e.nombre}: ${e.enEtapa} en proceso en esta etapa`}
+            >
               <i aria-hidden="true" />
               <span>{e.nombre}</span>
-              <em>{e.llegaron.toLocaleString("es-CO")}</em>
-            </span>
+              <em>{e.enEtapa.toLocaleString("es-CO")}</em>
+            </Link>
           ))}
         </>
       )}
